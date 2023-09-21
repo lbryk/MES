@@ -29,9 +29,9 @@ const Header = () => {
 				</div>
 				<div className='col-4 loggedInUser'>
 					<div className='row col-12 usernameDisplay'>
-						<span className='headerLogin'><strong>Zdający:</strong> fsdfsfdf sfdfsf</span>
+						<div className='headerLogin'><strong>Zdający:</strong> fsdfsfdf sfdfsf</div>
 					</div>
-					<div className='row col-12'>Wyloguj z systemu</div>
+					<div className='row col-12 logOut'>Wyloguj z systemu</div>
 				</div>
 			</div>
 		</div>
