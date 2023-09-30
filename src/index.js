@@ -15,6 +15,8 @@ import { collection, query, getDocs } from 'firebase/firestore';
 import db from './firebase';
 import Widget from './components/Widget';
 import ExitExam from './components/ExitExam';
+import LoginExam from './LoginExam';
+
 
 function Index() {
 	const urlAdress = window.location.href;
@@ -175,7 +177,7 @@ library.add(faCheckSquare);
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
 	<React.StrictMode>
-		<Index />
+		<LoginExam />
 	</React.StrictMode>
 );
 
