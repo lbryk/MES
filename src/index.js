@@ -17,7 +17,6 @@ import Widget from './components/Widget';
 import ExitExam from './components/ExitExam';
 import LoginExam from './LoginExam';
 
-
 function Index() {
 	const urlAdress = window.location.href;
 	const [id, setId] = useState(window.location.href.split('/').pop());
@@ -50,7 +49,7 @@ function Index() {
 
 	useEffect(() => {
 		const fetchSettings = async () => {
-			const settingsCollections = collection(db, 'codnigset');
+			const settingsCollections = collection(db, 'quizCode');
 			const querySettings = query(settingsCollections);
 			const settingsSnapshot = await getDocs(querySettings);
 			const settingsData = [];
@@ -62,9 +61,9 @@ function Index() {
 			const idExists = settingsData.some((item) => item.id === id);
 
 			// Jeśli id nie istnieje, przekieruj do domyślnego
-			if (!idExists) {
-				window.location.href = `${window.location.origin}/16tnMWfA`;
-			}
+			// if (!idExists) {
+			// 	window.location.href = `${window.location.origin}/16tnMWfA`;
+			// }
 
 			return settingsData;
 		};
@@ -165,6 +164,7 @@ function Index() {
 						<Route exact path='/quest/:i' element={<Quest />} />
 						<Route exact path='/quest/:idBase/:i' element={<Quest />} />
 						<Route exact path='/finish/:i' element={<ExitExam />} />
+						<Route exact path='/login' element={<LoginExam />} />
 					</Routes>
 				</BrowserRouter>
 			</TimerProvider>
@@ -177,7 +177,7 @@ library.add(faCheckSquare);
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
 	<React.StrictMode>
-		<LoginExam />
+		<Index />
 	</React.StrictMode>
 );
 

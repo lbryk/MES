@@ -399,3 +399,12 @@ a{
 	font-weight: bold;
 	cursor: pointer;
 }
+
+.aseHeader{
+	text-transform: uppercase;
+	font-size: 18.5px;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	font-weight: bold;
+}

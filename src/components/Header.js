@@ -1,5 +1,5 @@
 import React from 'react';
-import logoASE from '../ase.png';
+import logoASE from '../ase_mini.png';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faCircleQuestion } from '@fortawesome/free-solid-svg-icons';
@@ -11,8 +11,11 @@ const Header = () => {
 	return (
 		<div>
 			<div className='row header'>
-				<div className='col-lg-5 col-md-12'>
+				<div className='col-lg-1 col-md-12'>
 					<img className='logoCodenight' src={logoASE} />
+				</div>
+				<div className='col-lg-5 col-md-12 aseHeader'>
+					Autonomiczny System Egzaminacyjny
 				</div>
 				<div className='col-3 header-right '>
 					<Link
@@ -27,9 +30,11 @@ const Header = () => {
 						<span className='light-green'>&nbsp;Instrukcja obsługi</span>
 					</Link>
 				</div>
-				<div className='col-4 loggedInUser'>
+				<div className='col-3 loggedInUser'>
 					<div className='row col-12 usernameDisplay'>
-						<div className='headerLogin'><strong>Zdający:</strong> fsdfsfdf sfdfsf</div>
+						<div className='headerLogin'>
+							<strong>Zdający:</strong> fsdfsfdf sfdfsf
+						</div>
 					</div>
 					<div className='row col-12 logOut'>Wyloguj z systemu</div>
 				</div>

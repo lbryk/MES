@@ -1,4 +1,4 @@
-body {
+.bodyLog {
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -6,11 +6,13 @@ body {
 	margin: 0;
 	background-color: #f8f9fa;
 }
-.container {
-	display: flex;
+
+.conLog{
+    width: 25% !important;
 }
+
 .Form {
-	width: 100%;
+	width: 50% !important;
 	max-width: 330px;
 	padding: 35px;
 	display: flex;
@@ -30,7 +32,6 @@ body {
 	margin-top: 15px;
 	align-items: end;
 	justify-self: flex-end;
-    /* width: 50%; */
 	background-color: #2baab1;
 	border: 1px solid #2baab1;
 	transition: all 0.7s;

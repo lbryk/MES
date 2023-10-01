@@ -10,13 +10,13 @@ import 'firebase/firestore';
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-	apiKey: 'AIzaSyBnlltkYDUAVq-B4P9caO9O7-IYRrXluXw',
-	authDomain: 'codenight-test.firebaseapp.com',
-	projectId: 'codenight-test',
-	storageBucket: 'codenight-test.appspot.com',
-	messagingSenderId: '300953514821',
-	appId: '1:300953514821:web:8bfa90ae22fdb84404c42c',
-	measurementId: 'G-L10L8BYWBL',
+	apiKey: 'AIzaSyDVzKuhJ87oZCYYfbQbGodfgTYprB44m_8',
+	authDomain: 'mock-exam-system-708fd.firebaseapp.com',
+	projectId: 'mock-exam-system-708fd',
+	storageBucket: 'mock-exam-system-708fd.appspot.com',
+	messagingSenderId: '1088926954607',
+	appId: '1:1088926954607:web:8b75ff78ba79e54c0cc99a',
+	measurementId: 'G-LD9RPXBYVZ',
 };
 
 // Initialize Firebase
