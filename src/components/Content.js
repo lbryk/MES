@@ -19,7 +19,11 @@ const Content = () => {
 		setIsDisabled,
 		qi,
 		setQi,
+		
 	} = useContext(AppContext);
+	const { id, setId } = useContext(AppContext);
+	// setId(useState(window.location.href.split('/').pop()));
+	
 	const { timeLeft, timerInitialized, setTimerInitialized } = useTimer();
 	const [showError, setShowError] = useState(false);
 
@@ -28,6 +32,11 @@ const Content = () => {
 			setTimerInitialized(true);
 		}
 	}, []);
+	
+	const log = useNavigate();
+	if (id === undefined || id == "" || id == " "){	
+		log('/login');
+	} 
 	const finish = useNavigate();
 	useEffect(() => {
 		if (timeLeft === 0) {
@@ -61,7 +70,7 @@ const Content = () => {
 				<div className='row task'>
 					<div className='col-lg-5 col-md-12 col-sm-12 col-xs-11'>
 						{/* <Link to={`/quest/${i}`}> */}
-						<Link to={`/quest/${i}/${idBase[0]}`}>
+						<Link to={`/quest/${i}/${id}`}>
 							<button
 								type='button'
 								className='btn-classic'

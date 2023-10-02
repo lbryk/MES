@@ -33,9 +33,9 @@ function Index() {
 	const [rightKeyAnswers, setRightKeyAnswers] = useState(
 		new Array(40).fill('null')
 	);
-
+	
 	const [qi, setQi] = useState(1);
-
+	const [userName, setUserName] = useState('');
 	const sumOfRightAnswers = rightAnswers.reduce((accumulator, currentValue) => {
 		return accumulator + currentValue;
 	}, 0);
@@ -46,7 +46,8 @@ function Index() {
 
 	const [isDisabled, setIsDisabled] = useState(false);
 	const [showAlert, setShowAlert] = useState(false);
-
+	const [login, setLogin] = useState(false);
+	const [timeUser, setTimeUser] = useState(false); // czas pobierany z bazy
 	useEffect(() => {
 		const fetchSettings = async () => {
 			const settingsCollections = collection(db, 'quizCode');
@@ -60,9 +61,13 @@ function Index() {
 			// Sprawdź, czy istnieje id w ustawieniach
 			const idExists = settingsData.some((item) => item.id === id);
 
-			// Jeśli id nie istnieje, przekieruj do domyślnego
-			// if (!idExists) {
-			// 	window.location.href = `${window.location.origin}/16tnMWfA`;
+			//Jeśli id nie istnieje, przekieruj do logowania
+			// if (!idExists || keyExam === '') {
+			// 	window.location.href = `${window.location.origin}/login`;
+			// }
+
+			// if(id){
+			// 	window.location.reload();
 			// }
 
 			return settingsData;
@@ -98,7 +103,7 @@ function Index() {
 		displayQualification();
 		displayYear();
 		displaySession();
-	}, []);
+	}, [id]);
 
 	useEffect(() => {
 		if (Qualification && Year && Session) {
@@ -133,6 +138,8 @@ function Index() {
 			return updateSelectedAnswers;
 		});
 	}
+
+	// setId(window.location.href.split('/').pop());
 	return (
 		<AppContext.Provider
 			value={{
@@ -153,6 +160,14 @@ function Index() {
 				setIsDisabled,
 				qi,
 				setQi,
+				userName,
+				setUserName,
+				login,
+				setLogin,
+				setId,
+				id,
+				timeUser,
+				setTimeUser,
 			}}
 		>
 			<TimerProvider>

@@ -1,13 +1,28 @@
-import React from 'react';
+import React, { useContext, useState } from 'react';
 import logoASE from '../ase_mini.png';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faCircleQuestion } from '@fortawesome/free-solid-svg-icons';
-import { Link } from 'react-router-dom';
-
+import { Link, useNavigate } from 'react-router-dom';
+import AppContext from './AppContext';
+import ExitAlert from './ExitAlert';
 library.add(faCircleQuestion);
 
 const Header = () => {
+	const { userName, setUserName } = useContext(AppContext);
+	const navigate = useNavigate();
+	const [showAlert, setShowAlert] = useState(false);
+	const handleAlert = () => {
+		setShowAlert(true);
+	};
+
+	const closeAlert = () => {
+		setShowAlert(false);
+	};
+	const handleLogout = () => {
+		setShowAlert(true);
+	};
+
 	return (
 		<div>
 			<div className='row header'>
@@ -33,10 +48,17 @@ const Header = () => {
 				<div className='col-3 loggedInUser'>
 					<div className='row col-12 usernameDisplay'>
 						<div className='headerLogin'>
-							<strong>Zdający:</strong> fsdfsfdf sfdfsf
+							<strong>Zdający:</strong> {userName}
 						</div>
 					</div>
-					<div className='row col-12 logOut'>Wyloguj z systemu</div>
+					<div className='row col-12 logOut' onClick={handleLogout}>
+						Wyloguj z systemu
+					</div>
+					<ExitAlert
+						message='Czy na pewno chcesz zakończyć egzamin? Nie będziesz już mógł zmienić odpowiedzi'
+						show={showAlert}
+						onClose={closeAlert}
+					/>
 				</div>
 			</div>
 		</div>
@@ -44,3 +66,4 @@ const Header = () => {
 };
 
 export default Header;
+

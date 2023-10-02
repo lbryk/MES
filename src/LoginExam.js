@@ -1,19 +1,50 @@
 import React, { useState, useEffect, useContext } from 'react';
 import './LoginExam.css';
-
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useTimer } from './components/TimerContext';
 import AppContext from './components/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { Form, Button } from 'react-bootstrap';
-
+import db from './firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { collection, query, getDocs } from 'firebase/firestore';
 const LoginExam = () => {
-	//const navigate = useNavigate();
+	const { login, setLogin } = useContext(AppContext);
+	const [password, setPassword] = useState('');
+	const navigate = useNavigate();
+	const { userName, setUserName } = useContext(AppContext);
+	const { id, setId } = useContext(AppContext);
+	const { timeUser, setTimeUser } = useContext(AppContext);
+	const { setTimeLeft } = useTimer();
+	const { setTimerInitialized } = useTimer();
+	const { setTimerStarted } = useTimer();
+	useEffect(() => {
+		const timeInSeconds = timeUser ? parseInt(timeUser.slice(1)) * 60 : 0;
+		setTimeLeft(timeInSeconds);
+	}, [timeUser]);
 
-	const handleButtonClick = (event) => {
+	const handleButtonClick = async (event) => {
 		event.preventDefault();
-		//navigate('/app');
-		console.log('test');
+		const docRef = doc(db, 'users', `user${login}`);
+		const docSnap = await getDoc(docRef);
+
+		if (docSnap.exists() && docSnap.data().password === password) {
+			if (
+				docSnap.data().role == 's' &&
+				docSnap.data().attemptToSolve == '0'
+			) {
+				setUserName(`${docSnap.data().firstname} ${docSnap.data().lastname}`);
+				setId(`${docSnap.data().quizID}`);
+				setTimeUser(`/${docSnap.data().quizTime}`);
+				setTimerInitialized(true);
+				setTimerStarted(true);
+				navigate(`/${docSnap.data().quizID}`);
+			} else {
+				alert('Nie zalogowano!');
+			}
+		} else {
+			alert('Invalid login or password.');
+		}
 	};
 
 	return (
@@ -26,6 +57,7 @@ const LoginExam = () => {
 							className='fieldsLogin'
 							type='text'
 							placeholder='Enter exam login'
+							onChange={(e) => setLogin(e.target.value)}
 						/>
 						<Form.Text className='text-muted'>
 							We'll never share your login with anyone else.
@@ -38,6 +70,7 @@ const LoginExam = () => {
 							className='fieldsLogin'
 							type='password'
 							placeholder='Exam password'
+							onChange={(e) => setPassword(e.target.value)}
 						/>
 						<Form.Text className='text-muted'>
 							We'll never share your password with anyone else.

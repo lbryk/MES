@@ -26,7 +26,7 @@ const Quest = () => {
 		setRightKeyAnswers,
 		qi,
 	} = useContext(AppContext);
-
+	const { id, setId } = useContext(AppContext);
 	const { timeLeft, timerInitialized, setTimerInitialized } = useTimer();
 	const { minutes, remainingSeconds } = convertToTimeFormat(timeLeft);
 	const [showError, setShowError] = useState(false);
@@ -219,7 +219,7 @@ const Quest = () => {
 				updateRightAnswers(index, 0);
 			}
 
-			history(`/${idBase[0]}`);
+			history(`/${id}`);
 		} else {
 			setShowError(true);
 		}
@@ -312,7 +312,7 @@ const Quest = () => {
 							</div>
 						</div>
 						<div className='col-12 quest-buttons'>
-							<Link to={`/${idBase[0]}`}>
+							<Link to={`/${id}`}>
 								<button type='button' className='btn-cancel'>
 									Anuluj
 								</button>

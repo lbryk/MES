@@ -15,6 +15,7 @@ const Widget = () => {
 	const { keyQualification, selectedAnswers, setIsDisabled } =
 		useContext(AppContext);
 
+	
 	// funkcja licząca ilość wartości null w tablicy z zaznaczonymi odpowiedziami
 	const countNullsInSelectedAnswers = () => {
 		return selectedAnswers.reduce((count, answer) => {
@@ -59,11 +60,11 @@ const Widget = () => {
 		}
 	}, [timeLeft]);
 
-	useEffect(() => {
-		if (!timerInitialized) {
-			setTimerInitialized(true);
-		}
-	}, []);
+	// useEffect(() => {
+	// 	if (!timerInitialized) {
+	// 		setTimerInitialized(true);
+	// 	}
+	// }, []);
 
 	const exit = () => {
 		setIsPaused(!isPaused);

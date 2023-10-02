@@ -1,74 +1,55 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
 
+import AppContext from './AppContext';
 const TimerContext = createContext();
-//const { timeStop, setTimeStop } = useContext(AppContext);
 
 const TimerProvider = ({ children }) => {
-	// const [timeLeft, setTimeLeft] = useState(() => {
-	// 	const savedTimeLeft = localStorage.getItem('timeLeft');
-	// 	return savedTimeLeft !== null ? parseInt(savedTimeLeft, 10) : 3600;
-	// });
-	const [timeLeft, setTimeLeft] = useState(3600);
+	const { timeUser } = useContext(AppContext);
+	const timeInSeconds = timeUser ? parseInt(timeUser.slice(1)) * 60 : 0;
+	const timeInMiliSeconds = timeUser ? parseInt(timeUser.slice(1)) * 60000 : 0;
+	const [timeLeft, setTimeLeft] = useState(timeInSeconds);
+
+	useEffect(() => {
+		const timeInSeconds = timeUser ? parseInt(timeUser.slice(1)) * 60 : 0;
+		setTimeLeft(timeInSeconds);
+	}, [timeUser]);
 	const [timerStarted, setTimerStarted] = useState(false);
 	const [timerInitialized, setTimerInitialized] = useState(false);
 	const [timerKey, setTimerKey] = useState(0);
 	const [isPaused, setIsPaused] = useState(false);
 
 	useEffect(() => {
-		if (!timerStarted) return;
+		if (!timerStarted || isPaused) return;
 
 		const interval = setInterval(() => {
 			setTimeLeft((prevTime) => {
-				if (isPaused) {
-					return prevTime;
-				}
-
 				if (prevTime <= 0) {
 					clearInterval(interval);
 					return 0;
-				} else {
-					saveTimeLeft(prevTime - 1);
-					return prevTime - 1;
 				}
+
+				return prevTime - 1;
 			});
 		}, 1000);
 
 		return () => clearInterval(interval);
 	}, [isPaused, timerStarted, setTimeLeft, setIsPaused]);
 
-	useEffect(() => {
-		if (!timerInitialized) {
-			setTimerStarted(true);
-			setTimerInitialized(true);
-		}
-	}, [timerInitialized]);
-
-	// const [currentDate, setCurrentDate] = useState(() => {
-	// 	const savedCurrentDate = localStorage.getItem('currentDate');
-	// 	return savedCurrentDate !== null ? new Date(savedCurrentDate) : new Date();
-	// });
-
-	// const [futureDate, setFutureDate] = useState(() => {
-	// 	const savedFutureDate = localStorage.getItem('futureDate');
-	// 	return savedFutureDate !== null
-	// 		? new Date(savedFutureDate)
-	// 		: new Date(new Date().getTime() + 3600000);
-	// });
+	// useEffect(() => {
+	// 	if (!timerInitialized) {
+	// 		setTimerStarted(true);
+	// 		setTimerInitialized(true);
+	// 	}
+	// }, [timerInitialized]);
 
 	const [currentDate, setCurrentDate] = useState(new Date());
 
-	const [futureDate, setFutureDate] = useState(
-		new Date(new Date().getTime() + 3600000)
-	);
-
-	// useEffect(() => {
-	// 	localStorage.setItem('currentDate', currentDate.toISOString());
-	// }, [currentDate]);
-
-	// useEffect(() => {
-	// 	localStorage.setItem('futureDate', futureDate.toISOString());
-	// }, [futureDate]);
+	const [futureDate, setFutureDate] = useState(currentDate);
+	
+	useEffect(() => {
+		setFutureDate(new Date(currentDate.getTime() + timeInMiliSeconds));
+	}, [currentDate, timeInMiliSeconds]);
 
 	const saveTimeLeft = (time) => {
 		localStorage.setItem('timeLeft', time);
@@ -77,17 +58,18 @@ const TimerProvider = ({ children }) => {
 	const restartTimer = () => {
 		if (timerStarted) {
 			setTimerInitialized(false);
-			const defaultTimeLeft = 3600;
+			const defaultTimeLeft = timeInSeconds;
 			setTimerKey((prevKey) => prevKey + 1);
 			setTimeLeft(defaultTimeLeft);
 			setTimerStarted(true);
 			setCurrentDate(new Date());
-			setFutureDate(new Date(new Date().getTime() + 3600000));
+			setFutureDate(new Date(new Date().getTime() + timeInMiliSeconds));
 		}
 	};
 
 	return (
 		<TimerContext.Provider
+			timeUser={timeUser}
 			value={{
 				timeLeft,
 				setTimeLeft,
@@ -98,6 +80,8 @@ const TimerProvider = ({ children }) => {
 				restartTimer,
 				isPaused,
 				setIsPaused,
+				timerStarted,
+				setTimerStarted,
 			}}
 		>
 			{children}

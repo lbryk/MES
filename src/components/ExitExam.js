@@ -9,18 +9,21 @@ import {
 	faCheck,
 	faRightFromBracket,
 	faRotateLeft,
+	faDoorOpen,
 } from '@fortawesome/free-solid-svg-icons';
 import Footer from './Footer';
 import AppContext from './AppContext';
-import { collection, query, getDocs } from 'firebase/firestore';
+import { collection, query, getDocs, doc, setDoc } from 'firebase/firestore';
 import db from '../firebase';
 import { async } from '@firebase/util';
 
-library.add(faRotateLeft);
+library.add(faDoorOpen);
 
 const ExitExam = () => {
+	const navigate = useNavigate();
 	const {
 		keyExam,
+		setKeyExam,
 		selectedAnswers,
 		rightAnswers,
 		sumOfRightAnswers,
@@ -33,6 +36,10 @@ const ExitExam = () => {
 		setSelectedAnswers,
 		setRightAnswers,
 		qi,
+		userName,
+		setUserName,
+		login,
+		setLogin,
 	} = useContext(AppContext);
 
 	useEffect(() => {
@@ -87,14 +94,26 @@ const ExitExam = () => {
 	const percentResult = Math.round((sumOfRightAnswers / 40) * 100 * 100) / 100;
 	const divClassName = sumOfRightAnswers >= 20 ? 'checkquest' : 'notquest';
 	const divText = sumOfRightAnswers >= 20 ? 'Egzamin zdany' : 'Egzamin oblany';
-
-	const reset = () => {
+	useEffect(() => {
+		const docRef = doc(db, 'users', `user${login}`);
+		const updateUserData = async () => {
+			await setDoc(docRef, { quizResult: sumOfRightAnswers }, { merge: true });
+			await setDoc(docRef, { percentResult: percentResult }, { merge: true });
+			await setDoc(docRef, { attemptToSolve: 1 }, { merge: true });
+		};
+		updateUserData();
+	}, [db, login, sumOfRightAnswers, percentResult]);
+	const reset = async () => {
 		setIsDisabled(false);
 		setSelectedAnswers(new Array(40).fill('null'));
 		restartTimer();
 		setIsPaused(false);
 		setRightAnswers(new Array(40).fill(0));
-
+		setUserName('');
+		window.location.href = '/login';
+		navigate('/login');
+		setKeyExam('');
+		
 	};
 
 	console.log(rightKeyAnswers);
@@ -137,25 +156,25 @@ const ExitExam = () => {
 						Liczba błędnych odpowiedzi: {sumOfWrongAnswers}
 						<br />
 						<br />
-						<div className='col-12 reportTitle'>
+						{/* <div className='col-12 reportTitle'>
 							<span className='raportHeadertext'>Klucz odpowiedzi</span>
 						</div>
 						<div>
 							{ansTab.map((v) => {
 								return <div key={v.key}>{v.value}</div>;
 							})}
-						</div>
+						</div> */}
 					</div>
 				</div>
 				<div className='col-12 quest-buttons'>
-					<Link to={`/${idBase[0]}`}>
+					<Link to={`/`}>
 						<button
 							type='button'
 							className='btn-classic accept-quest'
 							onClick={reset}
 						>
-							Ponów egzamin&nbsp;
-							<FontAwesomeIcon icon='fa-solid fa-rotate-left' />
+							Wyloguj się z systemu&nbsp;
+							<FontAwesomeIcon icon='fa-solid fa-door-open' />
 						</button>
 					</Link>
 				</div>
@@ -167,3 +186,5 @@ const ExitExam = () => {
 };
 
 export default ExitExam;
+
+
