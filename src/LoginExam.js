@@ -43,7 +43,7 @@ const LoginExam = () => {
 				alert('Nie zalogowano!');
 			}
 		} else {
-			alert('Invalid login or password.');
+			alert('Błędny login lub hasło.');
 		}
 	};
 
@@ -52,7 +52,7 @@ const LoginExam = () => {
 			<div className='container conLog'>
 				<Form onSubmit={handleButtonClick}>
 					<Form.Group className='groupForm' controlId='formBasicEmail'>
-						<Form.Label>Exam login:</Form.Label>
+						<Form.Label>Login:</Form.Label>
 						<Form.Control
 							className='fieldsLogin'
 							type='text'
@@ -65,7 +65,7 @@ const LoginExam = () => {
 					</Form.Group>
 
 					<Form.Group className='groupForm' controlId='formBasicPassword'>
-						<Form.Label>Password:</Form.Label>
+						<Form.Label>Hasło:</Form.Label>
 						<Form.Control
 							className='fieldsLogin'
 							type='password'
@@ -82,7 +82,7 @@ const LoginExam = () => {
 							variant='primary'
 							type='submit'
 						>
-							Log in to the exam
+							Rozpocznij egzamin
 						</Button>
 					</div>
 				</Form>

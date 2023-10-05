@@ -44,8 +44,10 @@ const Quest = () => {
 	const [tempSelectedAnswer, setTempSelectedAnswer] = useState([]);
 	const history = useNavigate();
 	const finish = useNavigate();
+	const [quizData, setQuizData] = useState([]);
+	const [isLoading, setIsLoading] = useState(true);
+
 	useEffect(() => {
-	
 		const handleBeforeUnload = (event) => {
 			event.preventDefault();
 			event.returnValue = '';
@@ -75,86 +77,98 @@ const Quest = () => {
 		setTempSelectedAnswer([...selectedAnswers]);
 	}, [i, selectedAnswers]);
 
+	// Modify the fetchQuiz function to set the quizData state variable
+	const fetchQuiz = async () => {
+		setIsLoading(true);
+		const quizCollection = collection(db, `${keyExam}`);
+		const q = query(quizCollection);
+		const querySnapshot = await getDocs(q);
+		const quizData = [];
+
+		querySnapshot.forEach((doc) => {
+			quizData.push({ id: doc.id, ...doc.data() });
+		});
+
+		setQuizData(quizData);
+		setIsLoading(false);
+	};
+
+	// Call fetchQuiz in a useEffect hook
 	useEffect(() => {
-		const fetchQuiz = async () => {
-			const quizCollection = collection(db, `${keyExam}`);
-			const q = query(quizCollection);
-			const querySnapshot = await getDocs(q);
-			const quizData = [];
+		fetchQuiz();
+	}, [keyExam]);
 
-			querySnapshot.forEach((doc) => {
-				quizData.push({ id: doc.id, ...doc.data() });
-			});
+	// Pobieranie pytań
+	// Modify the display functions to use the quizData state variable
+	const displayQuestion = () => {
+		quizData.forEach((quizItem) => {
+			if (quizItem.id === `${i}`) {
+				setQuestion(quizItem.question);
+			}
+		});
+	};
 
-			return quizData;
-		};
+	// Call the display functions in a useEffect hook
+	useEffect(() => {
+		displayA();
+		displayB();
+		displayC();
+		displayD();
+		displayAnswer();
+		displayQuestion();
+		displayAllAnswer();
+	}, [quizData, i]);
 
-		// Pobieranie pytań
-		const displayQuestion = async () => {
-			const quizData = await fetchQuiz();
-			quizData.forEach((quizItem) => {
-				if (quizItem.id === `${i}`) {
-					// numer pytania
-					setQuestion(quizItem.question);
-				}
-			});
-		};
+	// Pobieranie odpowiedzi wyboru
+	const displayA = () => {
+		quizData.forEach((quizItem) => {
+			if (quizItem.id === `${i}`) {
+				// numer pytania
+				setA(quizItem.a);
+			}
+		});
+	};
 
-		// Pobieranie odpowiedzi wyboru
-		const displayA = async () => {
-			const quizData = await fetchQuiz();
-			quizData.forEach((quizItem) => {
-				if (quizItem.id === `${i}`) {
-					// numer pytania
-					setA(quizItem.a);
-				}
-			});
-		};
+	const displayB = () => {
+		quizData.forEach((quizItem) => {
+			if (quizItem.id === `${i}`) {
+				// numer pytania
+				setB(quizItem.b);
+			}
+		});
+	};
 
-		const displayB = async () => {
-			const quizData = await fetchQuiz();
-			quizData.forEach((quizItem) => {
-				if (quizItem.id === `${i}`) {
-					// numer pytania
-					setB(quizItem.b);
-				}
-			});
-		};
+	const displayC = () => {
+		quizData.forEach((quizItem) => {
+			if (quizItem.id === `${i}`) {
+				// numer pytania
+				setC(quizItem.c);
+			}
+		});
+	};
 
-		const displayC = async () => {
-			const quizData = await fetchQuiz();
-			quizData.forEach((quizItem) => {
-				if (quizItem.id === `${i}`) {
-					// numer pytania
-					setC(quizItem.c);
-				}
-			});
-		};
+	const displayD = () => {
+		quizData.forEach((quizItem) => {
+			if (quizItem.id === `${i}`) {
+				// numer pytania
+				setD(quizItem.d);
+			}
+		});
+	};
 
-		const displayD = async () => {
-			const quizData = await fetchQuiz();
-			quizData.forEach((quizItem) => {
-				if (quizItem.id === `${i}`) {
-					// numer pytania
-					setD(quizItem.d);
-				}
-			});
-		};
+	// pobieranie poprawnej odpowiedzi
+	const displayAnswer = () => {
+		quizData.forEach((quizItem) => {
+			if (quizItem.id === `${i}`) {
+				// numer pytania
+				setAnswer(quizItem.answer);
+			}
+		});
+	};
 
-		// pobieranie poprawnej odpowiedzi
-		const displayAnswer = async () => {
-			const quizData = await fetchQuiz();
-			quizData.forEach((quizItem) => {
-				if (quizItem.id === `${i}`) {
-					// numer pytania
-					setAnswer(quizItem.answer);
-				}
-			});
-		};
-
-		// pobieranie wszystkich poprawnych odpowiedzi
-		const displayAllAnswer = async () => {
-			const quizData = await fetchQuiz();
+	// pobieranie wszystkich poprawnych odpowiedzi
+	const displayAllAnswer = () => {
+		if (!isLoading) {
 			const allAnswers = [];
 			const rightKeyAnswers = [];
 
@@ -165,16 +179,20 @@ const Quest = () => {
 
 			setAllAnswer(allAnswers);
 			setRightKeyAnswers(rightKeyAnswers);
-		};
+		}
+	};
 
-		displayA();
-		displayB();
-		displayC();
-		displayD();
-		displayAnswer();
-		displayQuestion();
-		displayAllAnswer();
-	}, [keyExam]);
+	useEffect(() => {
+		if (!isLoading) {
+			displayA();
+			displayB();
+			displayC();
+			displayD();
+			displayAnswer();
+			displayQuestion();
+			displayAllAnswer();
+		}
+	}, [quizData, i, isLoading]);
 
 	const countAnswersInSelectedAnswers = () => {
 		return selectedAnswers.reduce((count, answer) => {
@@ -196,7 +214,6 @@ const Quest = () => {
 		});
 	};
 
-	
 	const saveAnswer = () => {
 		const index = i - 1;
 

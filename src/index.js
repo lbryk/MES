@@ -33,7 +33,7 @@ function Index() {
 	const [rightKeyAnswers, setRightKeyAnswers] = useState(
 		new Array(40).fill('null')
 	);
-	
+	const [quizData, setQuizData] = useState([]);
 	const [qi, setQi] = useState(1);
 	const [userName, setUserName] = useState('');
 	const sumOfRightAnswers = rightAnswers.reduce((accumulator, currentValue) => {
@@ -168,6 +168,8 @@ function Index() {
 				id,
 				timeUser,
 				setTimeUser,
+				quizData,
+				setQuizData,
 			}}
 		>
 			<TimerProvider>
