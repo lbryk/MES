@@ -9,6 +9,7 @@
 
 .conLog{
     width: 26% !important;
+	min-height: 330px;
 }
 
 .Form {

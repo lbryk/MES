@@ -9,10 +9,10 @@ import { faCheck, faRightFromBracket } from '@fortawesome/free-solid-svg-icons';
 import Footer from './Footer';
 import ExitExam from './ExitExam';
 import AppContext from './AppContext';
-import { collection, query, getDocs } from 'firebase/firestore';
-import db from '../firebase';
-import { async } from '@firebase/util';
-
+// import { collection, query, getDocs } from 'firebase/firestore';
+// import db from '../firebase';
+// import { async } from '@firebase/util';
+import QuizLoader from './QuizLoader';
 library.add(faCheck);
 const Quest = () => {
 	const {
@@ -44,8 +44,8 @@ const Quest = () => {
 	const [tempSelectedAnswer, setTempSelectedAnswer] = useState([]);
 	const history = useNavigate();
 	const finish = useNavigate();
-	const [quizData, setQuizData] = useState([]);
-	const [isLoading, setIsLoading] = useState(true);
+	// const [quizData, setQuizData] = useState([]);
+	// const [isLoading, setIsLoading] = useState(true);
 
 	useEffect(() => {
 		const handleBeforeUnload = (event) => {
@@ -77,29 +77,8 @@ const Quest = () => {
 		setTempSelectedAnswer([...selectedAnswers]);
 	}, [i, selectedAnswers]);
 
-	// Modify the fetchQuiz function to set the quizData state variable
-	const fetchQuiz = async () => {
-		setIsLoading(true);
-		const quizCollection = collection(db, `${keyExam}`);
-		const q = query(quizCollection);
-		const querySnapshot = await getDocs(q);
-		const quizData = [];
-
-		querySnapshot.forEach((doc) => {
-			quizData.push({ id: doc.id, ...doc.data() });
-		});
-
-		setQuizData(quizData);
-		setIsLoading(false);
-	};
-
-	// Call fetchQuiz in a useEffect hook
-	useEffect(() => {
-		fetchQuiz();
-	}, [keyExam]);
-
-	// Pobieranie pytań
-	// Modify the display functions to use the quizData state variable
+	const { quizData, isLoading } = useContext(AppContext);
+	
 	const displayQuestion = () => {
 		quizData.forEach((quizItem) => {
 			if (quizItem.id === `${i}`) {
@@ -108,23 +87,10 @@ const Quest = () => {
 		});
 	};
 
-	// Call the display functions in a useEffect hook
-	useEffect(() => {
-		displayA();
-		displayB();
-		displayC();
-		displayD();
-		displayAnswer();
-		displayQuestion();
-		displayAllAnswer();
-	}, [quizData, i]);
-
-	// Pobieranie odpowiedzi wyboru
 	const displayA = () => {
 		quizData.forEach((quizItem) => {
 			if (quizItem.id === `${i}`) {
-				// numer pytania
-				setA(quizItem.a);
+				setA(quizItem.a); // assuming 'a' is the property in your quiz item for 'A' option
 			}
 		});
 	};
@@ -132,8 +98,7 @@ const Quest = () => {
 	const displayB = () => {
 		quizData.forEach((quizItem) => {
 			if (quizItem.id === `${i}`) {
-				// numer pytania
-				setB(quizItem.b);
+				setB(quizItem.b); // assuming 'a' is the property in your quiz item for 'A' option
 			}
 		});
 	};
@@ -141,8 +106,7 @@ const Quest = () => {
 	const displayC = () => {
 		quizData.forEach((quizItem) => {
 			if (quizItem.id === `${i}`) {
-				// numer pytania
-				setC(quizItem.c);
+				setC(quizItem.c); // assuming 'a' is the property in your quiz item for 'A' option
 			}
 		});
 	};
@@ -150,37 +114,28 @@ const Quest = () => {
 	const displayD = () => {
 		quizData.forEach((quizItem) => {
 			if (quizItem.id === `${i}`) {
-				// numer pytania
-				setD(quizItem.d);
+				setD(quizItem.d); // assuming 'a' is the property in your quiz item for 'A' option
 			}
 		});
 	};
 
-	// pobieranie poprawnej odpowiedzi
 	const displayAnswer = () => {
 		quizData.forEach((quizItem) => {
 			if (quizItem.id === `${i}`) {
-				// numer pytania
-				setAnswer(quizItem.answer);
+				setAnswer(quizItem.answer); // assuming 'answer' is the property in your quiz item for the answer
 			}
 		});
 	};
 
-	// pobieranie wszystkich poprawnych odpowiedzi
 	const displayAllAnswer = () => {
-		if (!isLoading) {
-			const allAnswers = [];
-			const rightKeyAnswers = [];
-
-			quizData.forEach((quizItem) => {
-				allAnswers.push(quizItem.answer);
-				rightKeyAnswers.push(quizItem.answer);
-			});
-
-			setAllAnswer(allAnswers);
-			setRightKeyAnswers(rightKeyAnswers);
-		}
+		quizData.forEach((quizItem) => {
+			if (quizItem.id === `${i}`) {
+				setAllAnswer(quizItem.allAnswer); // assuming 'allAnswer' is the property in your quiz item for all answers
+			}
+		});
 	};
+
+	console.log(quizData);
 
 	useEffect(() => {
 		if (!isLoading) {
@@ -193,7 +148,6 @@ const Quest = () => {
 			displayAllAnswer();
 		}
 	}, [quizData, i, isLoading]);
-
 	const countAnswersInSelectedAnswers = () => {
 		return selectedAnswers.reduce((count, answer) => {
 			return answer !== 'null' ? count + 1 : count;

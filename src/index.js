@@ -16,6 +16,7 @@ import db from './firebase';
 import Widget from './components/Widget';
 import ExitExam from './components/ExitExam';
 import LoginExam from './LoginExam';
+import QuizLoader from './components/QuizLoader';
 
 function Index() {
 	const urlAdress = window.location.href;
@@ -33,7 +34,7 @@ function Index() {
 	const [rightKeyAnswers, setRightKeyAnswers] = useState(
 		new Array(40).fill('null')
 	);
-	const [quizData, setQuizData] = useState([]);
+	const { quizData, isLoading } = QuizLoader({ keyExam });
 	const [qi, setQi] = useState(1);
 	const [userName, setUserName] = useState('');
 	const sumOfRightAnswers = rightAnswers.reduce((accumulator, currentValue) => {
@@ -48,6 +49,7 @@ function Index() {
 	const [showAlert, setShowAlert] = useState(false);
 	const [login, setLogin] = useState(false);
 	const [timeUser, setTimeUser] = useState(false); // czas pobierany z bazy
+
 	useEffect(() => {
 		const fetchSettings = async () => {
 			const settingsCollections = collection(db, 'quizCode');
@@ -139,7 +141,21 @@ function Index() {
 		});
 	}
 
+	// useEffect(() => {
+	// 	if (!isLoading) {
+	// 		setQuizData(quizData);
+	// 	}
+	// }, [quizData, isLoading]);
+	// const [Question, setQuestion] = useState('');
+	// const [Aradio, setA] = useState('');
+	// const [Bradio, setB] = useState('');
+	// const [Cradio, setC] = useState('');
+	// const [Dradio, setD] = useState('');
+	// const [Answer, setAnswer] = useState('');
+	// const [AllAnswer, setAllAnswer] = useState('');
+
 	// setId(window.location.href.split('/').pop());
+
 	return (
 		<AppContext.Provider
 			value={{
@@ -169,7 +185,22 @@ function Index() {
 				timeUser,
 				setTimeUser,
 				quizData,
-				setQuizData,
+				isLoading,
+				// setQuizData,
+				// Question,
+				// setQuestion,
+				// Aradio,
+				// setA,
+				// Bradio,
+				// setB,
+				// Cradio,
+				// setC,
+				// Dradio,
+				// setD,
+				// Answer,
+				// setAnswer,
+				// AllAnswer,
+				// setAllAnswer,
 			}}
 		>
 			<TimerProvider>
