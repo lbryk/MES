@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.572fcd6a.css",
-    "main.js": "/static/js/main.b681dc42.js",
+    "main.css": "/static/css/main.f767e7cc.css",
+    "main.js": "/static/js/main.fb25ebcd.js",
     "static/js/787.a1bed081.chunk.js": "/static/js/787.a1bed081.chunk.js",
     "static/media/fontawesome-webfont.svg?v=4.7.0": "/static/media/fontawesome-webfont.c1e38fd9e0e74ba58f7a.svg",
     "static/media/fontawesome-webfont.eot": "/static/media/fontawesome-webfont.8b43027f47b20503057d.eot",
@@ -10,12 +10,12 @@
     "static/media/fontawesome-webfont.woff2?v=4.7.0": "/static/media/fontawesome-webfont.20fd1704ea223900efa9.woff2",
     "static/media/cke.png": "/static/media/cke.7639e4aa7a3d38e656f0.png",
     "index.html": "/index.html",
-    "main.572fcd6a.css.map": "/static/css/main.572fcd6a.css.map",
-    "main.b681dc42.js.map": "/static/js/main.b681dc42.js.map",
+    "main.f767e7cc.css.map": "/static/css/main.f767e7cc.css.map",
+    "main.fb25ebcd.js.map": "/static/js/main.fb25ebcd.js.map",
     "787.a1bed081.chunk.js.map": "/static/js/787.a1bed081.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.572fcd6a.css",
-    "static/js/main.b681dc42.js"
+    "static/css/main.f767e7cc.css",
+    "static/js/main.fb25ebcd.js"
   ]
 }

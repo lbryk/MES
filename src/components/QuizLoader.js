@@ -16,7 +16,6 @@ const QuizLoader = ({ keyExam }) => {
 			quizData.push({ id: doc.id, ...doc.data() });
 		});
 
-		// setQuizData(quizData);
 		setIsLoading(false);
 	};
 

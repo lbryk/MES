@@ -60,12 +60,6 @@ const Widget = () => {
 		}
 	}, [timeLeft]);
 
-	// useEffect(() => {
-	// 	if (!timerInitialized) {
-	// 		setTimerInitialized(true);
-	// 	}
-	// }, []);
-
 	const exit = () => {
 		setIsPaused(!isPaused);
 		setIsDisabled(true); // blokowanie formularza
@@ -128,9 +122,11 @@ const Widget = () => {
 					<FontAwesomeIcon icon='fa-solid fa-right-from-bracket' />
 				</button>
 				<ExitAlert
+					header='Zakończenie egzaminu'
 					message='Czy na pewno chcesz zakończyć egzamin? Nie będziesz już mógł zmienić odpowiedzi'
 					show={showAlert}
 					onClose={closeAlert}
+					buttons = 'NoYes'
 				/>
 			</div>
 		</div>

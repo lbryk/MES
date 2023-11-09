@@ -12,11 +12,11 @@ const Footer = () => {
 					</h6>
 				</div>
 				<div className='col-lg-12 version'>
-					<small>WERSJA 1.0.1</small>
+					<small>WERSJA 1.5.0</small>
 				</div>
 				<div className='col-lg-12 foot'>
 					<small>
-						PROJEKT POWSTAŁ W CELACH EDUKACYJNYCH NA PODSTAWIE AUTONOMICZNEGO SYSTEMU EGZAMINACYJNEGO.
+						System próbnych egzaminów zawodowych
 					</small>
 				</div>
 			</div>

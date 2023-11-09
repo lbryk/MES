@@ -17,6 +17,8 @@ import Widget from './components/Widget';
 import ExitExam from './components/ExitExam';
 import LoginExam from './LoginExam';
 import QuizLoader from './components/QuizLoader';
+import AdminPanel from './components/AdminPanel';
+import ExamCreator from './components/ExamCreator';
 
 function Index() {
 	const urlAdress = window.location.href;
@@ -62,15 +64,6 @@ function Index() {
 			});
 			// Sprawdź, czy istnieje id w ustawieniach
 			const idExists = settingsData.some((item) => item.id === id);
-
-			//Jeśli id nie istnieje, przekieruj do logowania
-			// if (!idExists || keyExam === '') {
-			// 	window.location.href = `${window.location.origin}/login`;
-			// }
-
-			// if(id){
-			// 	window.location.reload();
-			// }
 
 			return settingsData;
 		};
@@ -140,22 +133,7 @@ function Index() {
 			return updateSelectedAnswers;
 		});
 	}
-
-	// useEffect(() => {
-	// 	if (!isLoading) {
-	// 		setQuizData(quizData);
-	// 	}
-	// }, [quizData, isLoading]);
-	// const [Question, setQuestion] = useState('');
-	// const [Aradio, setA] = useState('');
-	// const [Bradio, setB] = useState('');
-	// const [Cradio, setC] = useState('');
-	// const [Dradio, setD] = useState('');
-	// const [Answer, setAnswer] = useState('');
-	// const [AllAnswer, setAllAnswer] = useState('');
-
-	// setId(window.location.href.split('/').pop());
-
+const [showExitAlert, setShowExitAlert] = useState(false);
 	return (
 		<AppContext.Provider
 			value={{
@@ -186,21 +164,8 @@ function Index() {
 				setTimeUser,
 				quizData,
 				isLoading,
-				// setQuizData,
-				// Question,
-				// setQuestion,
-				// Aradio,
-				// setA,
-				// Bradio,
-				// setB,
-				// Cradio,
-				// setC,
-				// Dradio,
-				// setD,
-				// Answer,
-				// setAnswer,
-				// AllAnswer,
-				// setAllAnswer,
+				showExitAlert,
+				setShowExitAlert,
 			}}
 		>
 			<TimerProvider>
@@ -225,7 +190,8 @@ library.add(faCheckSquare);
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
 	<React.StrictMode>
-		<Index />
+		{/* <Index /> */}
+		<AdminPanel />
 	</React.StrictMode>
 );
 

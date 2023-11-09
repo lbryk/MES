@@ -8,9 +8,11 @@ import { Form, Button } from 'react-bootstrap';
 import db from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { collection, query, getDocs } from 'firebase/firestore';
+import ExitAlert from './components/ExitAlert';
 const LoginExam = () => {
 	const { login, setLogin } = useContext(AppContext);
 	const [password, setPassword] = useState('');
+	const [showAlert, setShowAlert] = useState(false);
 	const navigate = useNavigate();
 	const { userName, setUserName } = useContext(AppContext);
 	const { id, setId } = useContext(AppContext);
@@ -18,6 +20,15 @@ const LoginExam = () => {
 	const { setTimeLeft } = useTimer();
 	const { setTimerInitialized } = useTimer();
 	const { setTimerStarted } = useTimer();
+	// const [showExitAlert, setShowExitAlert] = React.useState(false);
+	const handleAlert = () => {
+		setShowAlert(true);
+	};
+
+	const closeAlert = () => {
+		setShowAlert(false);
+	};
+
 	useEffect(() => {
 		const timeInSeconds = timeUser ? parseInt(timeUser.slice(1)) * 60 : 0;
 		setTimeLeft(timeInSeconds);
@@ -29,10 +40,7 @@ const LoginExam = () => {
 		const docSnap = await getDoc(docRef);
 
 		if (docSnap.exists() && docSnap.data().password === password) {
-			if (
-				docSnap.data().role == 's' &&
-				docSnap.data().attemptToSolve == '0'
-			) {
+			if (docSnap.data().role == 's' && docSnap.data().attemptToSolve == '0') {
 				setUserName(`${docSnap.data().firstname} ${docSnap.data().lastname}`);
 				setId(`${docSnap.data().quizID}`);
 				setTimeUser(`/${docSnap.data().quizTime}`);
@@ -40,10 +48,24 @@ const LoginExam = () => {
 				setTimerStarted(true);
 				navigate(`/${docSnap.data().quizID}`);
 			} else {
-				alert('Nie zalogowano!');
+				setShowAlert(true);
+				<ExitAlert
+					header='System próbnych egzaminów zawodowych'
+					message='Wystąpił problem z zalogowaniem'
+					show={showAlert}
+					onClose={closeAlert}
+					buttons='Ok'
+				/>;
 			}
 		} else {
-			alert('Błędny login lub hasło.');
+			setShowAlert(true);
+			<ExitAlert
+				header='System próbnych egzaminów zawodowych'
+				message='Błędny login lub hasło'
+				show={showAlert}
+				onClose={closeAlert}
+				buttons='Ok'
+			/>;
 		}
 	};
 
@@ -56,7 +78,7 @@ const LoginExam = () => {
 						<Form.Control
 							className='fieldsLogin'
 							type='text'
-							placeholder='Enter exam login'
+							placeholder='Podaj login zdającego'
 							onChange={(e) => setLogin(e.target.value)}
 						/>
 						<Form.Text className='text-muted'>
@@ -69,7 +91,7 @@ const LoginExam = () => {
 						<Form.Control
 							className='fieldsLogin'
 							type='password'
-							placeholder='Exam password'
+							placeholder='Wprowadź hasło do egzaminu'
 							onChange={(e) => setPassword(e.target.value)}
 						/>
 						<Form.Text className='text-muted'>
@@ -87,6 +109,14 @@ const LoginExam = () => {
 					</div>
 				</Form>
 			</div>
+
+			<ExitAlert
+				header='System próbnych egzaminów zawodowych'
+				message='Nie zalogowano.'
+				show={showAlert}
+				onClose={closeAlert}
+				buttons='Ok'
+			/>
 		</div>
 	);
 };

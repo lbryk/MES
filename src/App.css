@@ -408,3 +408,7 @@ a{
 	justify-content: flex-start;
 	font-weight: bold;
 }
+
+.page-link {
+	cursor: pointer;
+}

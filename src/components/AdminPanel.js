@@ -1,0 +1,201 @@
+import React, { useState, useEffect, useContext } from 'react';
+import 'bootstrap/dist/js/bootstrap.bundle';
+import ExamCreator from './ExamCreator';
+import ExamTable from './ExamTable';
+import Footer from './Footer';
+import ShowUser from './ShowUser';
+
+const AdminPanel = () => {
+	return (
+		<div>
+			<div className='container'>
+				<nav className='mt-4'>
+					<div className='nav nav-tabs' id='nav-tab' role='tablist'>
+						<button
+							className='nav-link active'
+							id='nav-users-tab'
+							data-bs-toggle='tab'
+							data-bs-target='#users'
+							type='button'
+							role='tab'
+							aria-controls='users'
+							aria-selected='true'
+						>
+							Lista zdających
+						</button>
+						<button
+							className='nav-link'
+							id='nav-exam-list-tab'
+							data-bs-toggle='tab'
+							data-bs-target='#nav-exam-list'
+							type='button'
+							role='tab'
+							aria-controls='nav-exam-list'
+							aria-selected='false'
+						>
+							Lista egzaminów
+						</button>
+						<button
+							className='nav-link'
+							id='nav-raports-tab'
+							data-bs-toggle='tab'
+							data-bs-target='#nav-raports'
+							type='button'
+							role='tab'
+							aria-controls='nav-raports'
+							aria-selected='false'
+						>
+							Raporty
+						</button>
+						<button
+							className='nav-link'
+							id='nav-exam-maker-tab'
+							data-bs-toggle='tab'
+							data-bs-target='#nav-exam-maker'
+							type='button'
+							role='tab'
+							aria-controls='nav-exam-maker'
+							aria-selected='false'
+						>
+							Kreator egzaminów
+						</button>
+						<button
+							className='nav-link'
+							id='nav-settings-tab'
+							data-bs-toggle='tab'
+							data-bs-target='#nav-settings'
+							type='button'
+							role='tab'
+							aria-controls='nav-settings'
+							aria-selected='false'
+						>
+							Ustawienia oprogramowania
+						</button>
+					</div>
+				</nav>
+				<div className='tab-content' id='nav-tabContent'>
+					<div
+						className='tab-pane fade show active'
+						id='users'
+						role='tabpanel'
+						aria-labelledby='nav-users-tab'
+						tabindex='0'
+					>
+						<ShowUser /> 
+                     
+					</div>
+					<div
+						className='tab-pane fade'
+						id='nav-exam-list'
+						role='tabpanel'
+						aria-labelledby='nav-exam-list-tab'
+						tabindex='0'
+					>
+						Componet 2
+					</div>
+					<div
+						className='tab-pane fade'
+						id='nav-raports'
+						role='tabpanel'
+						aria-labelledby='nav-raports-tab'
+						tabindex='0'
+					>
+						Componet 3
+					</div>
+					<div
+						className='tab-pane fade'
+						id='nav-exam-maker'
+						role='tabpanel'
+						aria-labelledby='nav-exam-maker'
+						tabindex='0'
+					>
+						<div className='mt-4'>
+							<ul class='nav nav-pills mb-3' id='pills-tab' role='tablist'>
+								<li class='nav-item' role='presentation'>
+									<button
+										class='nav-link active'
+										id='pills-home-tab'
+										data-bs-toggle='pill'
+										data-bs-target='#pills-home'
+										type='button'
+										role='tab'
+										aria-controls='pills-home'
+										aria-selected='true'
+									>
+										Twórz nowy egzamin
+									</button>
+								</li>
+								<li class='nav-item' role='presentation'>
+									<button
+										class='nav-link'
+										id='edit-exam-tab'
+										data-bs-toggle='pill'
+										data-bs-target='#edit-exam'
+										type='button'
+										role='tab'
+										aria-controls='edit-exam'
+										aria-selected='false'
+									>
+										Edytuj istniejący egzamin
+									</button>
+								</li>
+								<li class='nav-item' role='presentation'>
+									<button
+										class='nav-link'
+										id='pills-contact-tab'
+										data-bs-toggle='pill'
+										data-bs-target='#pills-contact'
+										type='button'
+										role='tab'
+										aria-controls='pills-contact'
+										aria-selected='false'
+									>
+										Contact
+									</button>
+								</li>
+							</ul>
+							<div class='tab-content' id='pills-tabContent'>
+								<div
+									class='tab-pane fade show active'
+									id='pills-home'
+									role='tabpanel'
+									aria-labelledby='pills-home-tab'
+								>
+									<ExamCreator />
+								</div>
+								<div
+									class='tab-pane fade'
+									id='edit-exam'
+									role='tabpanel'
+									aria-labelledby='edit-exam-tab'
+								>
+									<ExamTable />
+								</div>
+								<div
+									class='tab-pane fade'
+									id='pills-contact'
+									role='tabpanel'
+									aria-labelledby='pills-contact-tab'
+								>
+									...
+								</div>
+							</div>
+						</div>
+					</div>
+					<div
+						className='tab-pane fade'
+						id='nav-settings'
+						role='tabpanel'
+						aria-labelledby='nav-settings-tab'
+						tabindex='0'
+					>
+						Autor programu: Łukasz Bryk
+					</div>
+				</div>
+			</div>
+			<Footer />
+		</div>
+	);
+};
+
+export default AdminPanel;
