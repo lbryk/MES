@@ -25,16 +25,22 @@ const ShowUser = () => {
 	const [currentPage, setCurrentPage] = useState(1);
 	const [usersPerPage] = useState(10);
 	const [selectedUser, setSelectedUser] = useState(null);
+	const [oldTime, setOldTime] = useState(null);
 
 	useEffect(() => {
 		fetchData();
 	}, []);
 
-	// Get current users
-	// const indexOfLastUser = currentPage * usersPerPage;
-	// const indexOfFirstUser = indexOfLastUser - usersPerPage;
-	// const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
+	const [quizCodes, setQuizCodes] = useState([]);
 
+	useEffect(() => {
+		const fetchQuizCodes = async () => {
+			const querySnapshot = await getDocs(collection(db, 'quizCode'));
+			const codes = querySnapshot.docs.map((doc) => doc.id);
+			setQuizCodes(codes);
+		};
+		fetchQuizCodes();
+	}, []);
 	// Get current users
 	const filteredUsers = users.filter(
 		(user) => typeof user.role === 'string' && user.role.includes('s')
@@ -59,12 +65,8 @@ const ShowUser = () => {
 		setEditingValue(value);
 	};
 
-	const handleInputChange = (event) => {
-		setEditingValue(event.target.value);
-	};
-
 	const handleKeyDown = async (event, index, field) => {
-		if (event.key === 'Enter') {
+		if (event.key === 'Enter' || field === 'quizID') {
 			// Calculate the index of the user in the `users` array
 			const userIndex = usersPerPage * (currentPage - 1) + index;
 
@@ -79,6 +81,8 @@ const ShowUser = () => {
 			} catch (error) {
 				console.error('Error updating document: ', error);
 			}
+
+			// Reset oldTime when done editing quizTime
 
 			setEditingIndex(null);
 			setEditingField(null);
@@ -99,15 +103,15 @@ const ShowUser = () => {
 		};
 	}, [editingIndex, editingField]);
 
-	const handleClickOutside = (event) => {
-		if (event.target.tagName !== 'INPUT') {
+	const handleClickOutside = (event, field) => {
+		if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'SELECT') {
 			setEditingIndex(null);
 			setEditingField(null);
 		}
 	};
 
 	const [modalIsOpen, setModalIsOpen] = useState(false);
-const [userIndex, setUserIndex] = useState(null);
+	const [userIndex, setUserIndex] = useState(null);
 	const handleDelete = (index) => {
 		// Calculate the index of the user in the `users` array
 		const userIndex = usersPerPage * (currentPage - 1) + index;
@@ -116,20 +120,49 @@ const [userIndex, setUserIndex] = useState(null);
 		setModalIsOpen(true);
 	};
 
-const deleteUser = async () => {
-	if (userIndex === null) return;
+	const deleteUser = async () => {
+		if (userIndex === null) return;
 
-	try {
-		// Delete the user from your Firebase database
-		const userRef = doc(db, 'users', users[userIndex].id);
-		await deleteDoc(userRef);
+		try {
+			// Delete the user from your Firebase database
+			const userRef = doc(db, 'users', users[userIndex].id);
+			await deleteDoc(userRef);
 
-		// Fetch the updated list of users from Firebase
-		fetchData();
-	} catch (error) {
-		console.error('Error deleting document: ', error);
-	}
-};
+			// Fetch the updated list of users from Firebase
+			fetchData();
+		} catch (error) {
+			console.error('Error deleting document: ', error);
+		}
+	};
+
+	const handleInputChange = (event, index, field) => {
+		setEditingValue(event.target.value);
+
+		// Calculate the index of the user in the `users` array
+		const userIndex = usersPerPage * (currentPage - 1) + index;
+
+		const newUsers = [...users];
+		newUsers[userIndex][field] = event.target.value;
+		setUsers(newUsers);
+	};
+
+	const handleSelectBlur = async (index, field) => {
+		// Calculate the index of the user in the `users` array
+		const userIndex = usersPerPage * (currentPage - 1) + index;
+
+		// Update the data in your Firebase database
+		try {
+			const userRef = doc(db, 'users', users[userIndex].id);
+			await updateDoc(userRef, { [field]: users[userIndex][field] });
+		} catch (error) {
+			console.error('Error updating document: ', error);
+		}
+
+		if (field === 'quizID') {
+			setEditingIndex(null);
+			setEditingField(null);
+		}
+	};
 
 	return (
 		<div className='mt-4'>
@@ -142,7 +175,7 @@ const deleteUser = async () => {
 						<th>Login</th>
 						<th>Hasło</th>
 						<th>Role</th>
-						<th>Quiz ID</th>
+						<th>Przypisz arkusz</th>
 						<th>Quiz Result</th>
 						<th>Czas egzaminu</th>
 						<th>Wynik egzaminu</th>
@@ -193,11 +226,61 @@ const deleteUser = async () => {
 							<td>{user.login}</td>
 							<td>{user.password}</td>
 							<td>{user.role}</td>
-							<td>{user.quizID}</td>
+							<td>
+								{editingIndex === index && editingField === 'quizID' ? (
+									<select
+										className='form-select'
+										style={{ width: '105%' }}
+										value={editingValue}
+										onChange={async (e) => {
+											await handleInputChange(e, index, 'quizID');
+											await handleSelectBlur(index, 'quizID');
+										}}
+									>
+										{quizCodes.map((code, i) => (
+											<option key={i} value={code}>
+												{code}
+											</option>
+										))}
+									</select>
+								) : (
+									<span
+										onClick={() =>
+											handleDoubleClick(index, 'quizID', user.quizID)
+										}
+									>
+										{user.quizID || 'Przypisz egzamin'}
+									</span>
+								)}
+							</td>
 							<td>{user.quizResult}</td>
-							<td>{user.quizTime}</td>
+							<td
+								onClick={() =>
+									handleDoubleClick(index, 'quizTime', user.quizTime)
+								}
+							>
+								{editingIndex === index && editingField === 'quizTime' ? (
+									<input
+										id='typeNumber'
+										type='number'
+										className='form-control'
+										style={{ width: '80%' }}
+										value={editingValue}
+										onChange={async (e) => {
+											await handleInputChange(e, index, 'quizTime');
+											await handleSelectBlur(index, 'quizTime');
+										}}
+										// onChange={(e) => handleInputChange(e, index, 'quizTime')}
+										onKeyDown={(e) => handleKeyDown(e, index, 'quizTime')}
+									/>
+								) : (
+									user.quizTime
+								)}
+							</td>
+
 							<td>{user.percentResult}%</td>
-							<td>{user.attemptToSolve}</td>
+							<td>{user.attemptToSolve === 0 ? 'Tak' : 'Nie'}</td>
+							{/* <td>{user.attemptToSolve}</td> */}
 							<td>
 								<button
 									className='btn btn-danger'
@@ -208,9 +291,11 @@ const deleteUser = async () => {
 								<WindowConfirm
 									isOpen={modalIsOpen}
 									onClose={() => setModalIsOpen(false)}
+									title='Usuwanie zdającego'
+									windowText={`Czy napewno chcesz usunąć: ${users[userIndex]?.firstname} ${users[userIndex]?.lastname}?`}
 									onConfirm={() => {
-										 setModalIsOpen(false);
-											deleteUser();
+										setModalIsOpen(false);
+										deleteUser();
 									}}
 								/>
 							</td>

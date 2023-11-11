@@ -12,7 +12,7 @@ const Footer = () => {
 					</h6>
 				</div>
 				<div className='col-lg-12 version'>
-					<small>WERSJA 1.5.0</small>
+					<small>WERSJA 2.11.10</small>
 				</div>
 				<div className='col-lg-12 foot'>
 					<small>

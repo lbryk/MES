@@ -1,6 +1,6 @@
 import React from 'react';
 
-const WindowConfirm = ({ isOpen, onClose, onConfirm }) => {
+const WindowConfirm = ({ isOpen, onClose, onConfirm, title, windowText }) => {
 	if (!isOpen) {
 		return null;
 	}
@@ -13,10 +13,11 @@ const WindowConfirm = ({ isOpen, onClose, onConfirm }) => {
 				left: 0,
 				right: 0,
 				bottom: 0,
-				backgroundColor: 'rgba(0, 0, 0, 0.3)',
+				backgroundColor: 'rgba(0, 0, 0, 0.2)',
 				display: 'flex',
 				justifyContent: 'center',
 				alignItems: 'center',
+				zIndex: 999,
 			}}
 		>
 			<div
@@ -28,10 +29,26 @@ const WindowConfirm = ({ isOpen, onClose, onConfirm }) => {
 					maxWidth: '500px',
 				}}
 			>
-				<h2>Delete User</h2>
-				<p>Are you sure you want to delete this user?</p>
-				<button onClick={onConfirm}>Yes</button>
-				<button onClick={onClose}>No</button>
+				<h2>{title}</h2>
+				<hr />
+				<p>{windowText}</p>
+				<div
+					style={{
+						display: 'flex',
+						justifyContent: 'flex-end',
+						// gap: '10px',
+					}}
+				>
+					<button
+						className='custom-alert-button custom-alert-close'
+						onClick={onConfirm}
+					>
+						Tak
+					</button>
+					<button className='custom-alert-button' onClick={onClose}>
+						Nie
+					</button>
+				</div>
 			</div>
 		</div>
 	);
