@@ -413,3 +413,11 @@ a{
 .page-link {
 	cursor: pointer;
 }
+
+.my-form-field {
+  height: 30px;
+}
+
+.my-form-field .MuiInputBase-input {
+  padding: 6px 0;
+}
