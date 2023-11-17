@@ -37,7 +37,8 @@ const ShowUser = () => {
 	const [usersPerPage] = useState(10);
 	const [selectedUser, setSelectedUser] = useState(null);
 	const [oldTime, setOldTime] = useState(null);
-
+	
+	
 	useEffect(() => {
 		fetchData();
 	}, []);
@@ -460,7 +461,8 @@ const ShowUser = () => {
 									/>
 								) : (
 									user.quizTime
-								)} min
+								)}{' '}
+								min
 							</td>
 
 							<td>
@@ -558,6 +560,7 @@ const ShowUser = () => {
 					onSave={handleSave}
 					examcode={quizCodes}
 					profession={profession}
+					refreshUsers={fetchData}
 				/>
 			)}
 			<WindowConfirm

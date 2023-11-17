@@ -8,33 +8,38 @@ import Button from 'react-bootstrap/Button';
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
 import { Unstable_NumberInput as NumberInput } from '@mui/base/Unstable_NumberInput';
+import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
+import db from '../firebase';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+// import { collection, addDoc } from 'firebase/firestore';
 
-const AddUserForm = ({ onSave, examcode, profession }) => {
+const AddUserForm = ({ onSave, examcode, profession, refreshUsers }) => {
 	const [user, setUser] = React.useState({});
 	// const [inputValue, setInputValue] = useState('');
 	const [regNumber, setRegNumber] = useState(1);
 	const [quizcodeValue, setQuizcodeValue] = useState(null);
 	const [professionValue, setProfessionValue] = useState(null);
-	const [value, setValue] = useState('');
+	const [openSnackbar, setOpenSnackbar] = useState(false);
+	// const [quizTime, setQuizTime] = useState('defaultQuizTime');
+	const [time, setTime] = useState('');
 	const [attemptValue, setAttemptValue] = useState(null);
 	const [firstName, setFirstName] = useState('');
 	const [lastName, setLastName] = useState('');
 	const [className, setClassName] = useState('');
-	const [loginValid, setLoginValid] = useState(false);
+	const [isValid, setIsValid] = useState(false);
+	const [isValidPassword, setIsValidPassword] = useState(true);
+	const [login, setLogin] = useState('');
+	const [password, setPassword] = useState('');
 
-	const handleQuizCodeChange = (event, newValue) => {
-		setQuizcodeValue(newValue);
+	const handleAttemptValueChange = (event, newValue) => {
+		setAttemptValue(newValue);
 		setUser((prevUser) => ({ ...prevUser, examcode: newValue }));
 	};
 
 	const handleAutocompleteChange = (event, newValue) => {
 		setProfessionValue(newValue);
 		setUser((prevUser) => ({ ...prevUser, profession: newValue }));
-	};
-
-	const handleSubmit = (e) => {
-		e.preventDefault();
-		onSave(user);
 	};
 
 	const replaceSpecialChars = (str) => {
@@ -91,37 +96,116 @@ const AddUserForm = ({ onSave, examcode, profession }) => {
 	};
 
 	const validateLogin = (login) => {
-		const regex = /^[a-zA-Z]{5,}$/; // Regex for English characters, no special characters or whitespaces, and more than 4 characters
-		setLoginValid(regex.test(login));
+		const regex = /^[a-zA-Z0-9]{5,}$/; // Regex for English characters, no special characters or whitespaces, and more than 4 characters
+		setIsValid(regex.test(login));
 	};
 
 	const generateLoginName = () => {
 		const firstLetter = replaceSpecialChars(firstName.charAt(0));
 		const fourLetters = replaceSpecialChars(lastName.slice(0, 4).toLowerCase());
-		const login = firstLetter + fourLetters + className + regNumber;
-		// validateLogin(login);
+		let formattedRegNumber = regNumber;
+		if (regNumber < 10) {
+			formattedRegNumber = '0' + regNumber;
+		}
+		const login =
+			firstLetter.toUpperCase() + fourLetters + className + formattedRegNumber;
+		validateLogin(login);
 		return login;
 	};
 
 	const generatePassword = () => {
+		let formattedRegNumber = regNumber;
+		if (regNumber < 10) {
+			formattedRegNumber = '0' + regNumber;
+		}
 		if (regNumber) {
-			return '$tudent' + regNumber;
+			return '$tudent' + formattedRegNumber;
 		} else {
 			let randomNumber = Math.floor(Math.random() * (100 - 40 + 1)) + 40;
-			return '$tudent' + randomNumber;
+			let formattedRegNumber = randomNumber;
+			if (randomNumber < 10) {
+				formattedRegNumber = '0' + randomNumber;
+			}
+			return '$tudent' + formattedRegNumber;
 		}
 	};
 
+	const validatePassword = (password) => {
+		// Regex for password: at least 8 characters, at least one digit, at least one special character
+		const regex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,}$/;
+		setIsValidPassword(regex.test(password));
+	};
+
+	const generateLogin = () => {
+		const length = 8;
+		const chars =
+			'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+		let login = '';
+		for (let i = 0; i < length; i++) {
+			login += chars[Math.floor(Math.random() * chars.length)];
+		}
+		return login;
+	};
+	const [randLogin, setRandLogin] = useState(generateLogin());
+
+	useEffect(() => {
+		const newLogin = generateLoginName(
+			firstName,
+			lastName,
+			className,
+			regNumber
+		);
+		setLogin(newLogin);
+	}, [firstName, lastName, className, regNumber]);
+
+	useEffect(() => {
+		const newPass = generatePassword(regNumber);
+		setPassword(newPass);
+	}, [regNumber, attemptValue]);
+
+	const handleSubmit = async (e) => {
+		e.preventDefault();
+		onSave(user);
+
+		// Create a new user with email and password
+		try {
+			// Store additional user data in Firestore
+
+			await setDoc(doc(db, 'users', 'user' + login), {
+				// Check if all fields are complete
+
+				firstname: firstName,
+				lastname: lastName,
+				class: className,
+				profession: professionValue,
+				quizID: quizcodeValue ? quizcodeValue : 'URFvzAVO',
+				quizTime: time ? time : 60,
+				attemptToSolve: attemptValue == 'tak' ? 1 : 0, // === 'tak' ? '0' : '1',
+				login: login,
+				password: password,
+				percentResult: 0,
+				role: 's',
+			});
+			refreshUsers();
+			setOpenSnackbar(true);
+		} catch (error) {
+			console.error('Error creating user: ', error);
+		}
+	};
+setOpenSnackbar(true);
 	return (
 		<div className='mt-4'>
 			<Form onSubmit={handleSubmit}>
 				<fieldset className='border p-2'>
-					<legend className='float-none w-auto p-2'>Dane zdającego</legend>
+					<legend className='float-none w-auto p-2 fs-6'>Dane zdającego</legend>
 					<div className='row'>
 						<div className='col-md-6 mb-3'>
 							<TextField
 								label='Imię zdającego'
-								onChange={(event) => setFirstName(event.target.value)}
+								onChange={(event) => {
+									const newFirstName = event.target.value;
+									setFirstName(newFirstName);
+								}}
 								className='w-100'
 								size='small'
 								required
@@ -130,7 +214,10 @@ const AddUserForm = ({ onSave, examcode, profession }) => {
 						<div className='col-md-6 mb-3'>
 							<TextField
 								label='Nazwisko zdającego'
-								onChange={(event) => setLastName(event.target.value)}
+								onChange={(event) => {
+									const newLastName = event.target.value;
+									setLastName(newLastName);
+								}}
 								className='w-100'
 								size='small'
 								required
@@ -141,7 +228,10 @@ const AddUserForm = ({ onSave, examcode, profession }) => {
 						<div className='col-md-3 mb-3'>
 							<TextField
 								label='Klasa'
-								onChange={(event) => setClassName(event.target.value)}
+								onChange={(event) => {
+									const newClassName = event.target.value;
+									setClassName(newClassName);
+								}}
 								className='w-200'
 								size='small'
 								required
@@ -177,15 +267,17 @@ const AddUserForm = ({ onSave, examcode, profession }) => {
 						</div>
 					</div>
 				</fieldset>
-				<fieldset class='border p-2'>
-					<legend class='float-none w-auto p-2'>
+				<fieldset class='border p-2 mt-4'>
+					<legend class='float-none w-auto p-2 fs-6'>
 						Dostęp do arkusza egzaminacyjnego
 					</legend>
 					<div className='row'>
 						<div className='col-md-4 mb-3'>
 							<Autocomplete
 								value={quizcodeValue ? quizcodeValue : 'URFvzAVO'}
-								onChange={handleQuizCodeChange}
+								onChange={(event, newValue) => {
+									setQuizcodeValue(newValue);
+								}}
 								id='examcode-autocomplete'
 								size='small'
 								required
@@ -209,9 +301,11 @@ const AddUserForm = ({ onSave, examcode, profession }) => {
 								label='Czas egzaminu'
 								size='small'
 								required
-								value={value ? value : 60}
+								value={time ? time : 60}
 								inputProps={{ min: 0 }}
-								onChange={(event) => setValue(event.target.value)}
+								onChange={(event) => {
+									setTime(event.target.value);
+								}}
 								className='w-100'
 							/>
 						</div>
@@ -220,8 +314,13 @@ const AddUserForm = ({ onSave, examcode, profession }) => {
 								value={attemptValue ? attemptValue : 'Nie'}
 								size='small'
 								required
+								// onChange={(event, newValue) => {
+								// 	setAttemptValue(newValue);
+								// 	console.log(attemptValue);
+								// }}
 								onChange={(event, newValue) => {
 									setAttemptValue(newValue);
+									console.log(attemptValue);
 								}}
 								id='option-autocomplete'
 								options={['Tak', 'Nie']}
@@ -237,26 +336,47 @@ const AddUserForm = ({ onSave, examcode, profession }) => {
 						</div>
 					</div>
 				</fieldset>
-				<fieldset class='border p-2'>
-					<legend class='float-none w-auto p-2'>Dane logowania</legend>
+				<fieldset class='border p-2 mt-4'>
+					<legend class='float-none w-auto p-2 fs-6'>Dane logowania</legend>
+
 					<div className='row'>
 						<div className='col-md-4'>
 							<TextField
-								label='login'
-								className='w-100'
-								// className={`w-100 my-form-field ${
-								// 	loginValid ? 'Mui-success' : 'Mui-error'
-								// }`}
+								label='Login'
+								className={`w-100 form-control ${
+									isValid ? 'is-valid' : 'is-invalid'
+								}`}
 								size='small'
-								value={generateLoginName() === '' ? 'T' : generateLoginName()}
+								value={login}
+								onChange={(event) => {
+									const newLogin = event.target.value;
+									setLogin(newLogin);
+									validateLogin(newLogin);
+								}}
+								error={!isValid}
+								helperText={!isValid ? 'Nieprawidłowy login' : 'Ok'}
 							/>
 						</div>
 						<div className='col-md-8'>
 							<TextField
 								label='Hasło'
-								className='w-100'
+								className={`w-100 form-control ${
+									isValidPassword ? 'is-valid' : 'is-invalid'
+								}`}
 								size='small'
-								value={generatePassword()}
+								value={password}
+								variant='outlined'
+								onChange={(event) => {
+									const newPassword = event.target.value;
+									setPassword(newPassword);
+									validatePassword(newPassword);
+								}}
+								error={!isValidPassword}
+								helperText={
+									!isValidPassword
+										? 'Nieprawidłowe hasło (minimum 8 znaków, 1 cyfra, znak specjalny)'
+										: ''
+								}
 							/>
 						</div>
 					</div>
@@ -266,6 +386,15 @@ const AddUserForm = ({ onSave, examcode, profession }) => {
 						<Button variant='success' type='submit' className='w-100'>
 							Zapisz
 						</Button>
+						<Snackbar
+							open={openSnackbar}
+							autoHideDuration={6000}
+							onClose={() => setOpenSnackbar(false)}
+						>
+							<Alert onClose={() => setOpenSnackbar(false)} severity='success'>
+								User saved successfully!
+							</Alert>
+						</Snackbar>
 					</div>
 				</div>
 			</Form>
