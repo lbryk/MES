@@ -7,11 +7,12 @@ import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
-import { Unstable_NumberInput as NumberInput } from '@mui/base/Unstable_NumberInput';
-import { doc, setDoc, collection, addDoc } from 'firebase/firestore';
+// import { Unstable_NumberInput as NumberInput } from '@mui/base/Unstable_NumberInput';
+import { doc, setDoc, getDoc, collection, addDoc } from 'firebase/firestore';
 import db from '../firebase';
-import Snackbar from '@mui/material/Snackbar';
-import Alert from '@mui/material/Alert';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 // import { collection, addDoc } from 'firebase/firestore';
 
 const AddUserForm = ({ onSave, examcode, profession, refreshUsers }) => {
@@ -20,10 +21,10 @@ const AddUserForm = ({ onSave, examcode, profession, refreshUsers }) => {
 	const [regNumber, setRegNumber] = useState(1);
 	const [quizcodeValue, setQuizcodeValue] = useState(null);
 	const [professionValue, setProfessionValue] = useState(null);
-	const [openSnackbar, setOpenSnackbar] = useState(false);
+
 	// const [quizTime, setQuizTime] = useState('defaultQuizTime');
 	const [time, setTime] = useState('');
-	const [attemptValue, setAttemptValue] = useState(null);
+	const [attemptValue, setAttemptValue] = useState('nie');
 	const [firstName, setFirstName] = useState('');
 	const [lastName, setLastName] = useState('');
 	const [className, setClassName] = useState('');
@@ -164,35 +165,37 @@ const AddUserForm = ({ onSave, examcode, profession, refreshUsers }) => {
 	}, [regNumber, attemptValue]);
 
 	const handleSubmit = async (e) => {
+		const saveToast = 'addUser';
 		e.preventDefault();
-		onSave(user);
-
-		// Create a new user with email and password
-		try {
-			// Store additional user data in Firestore
-
-			await setDoc(doc(db, 'users', 'user' + login), {
-				// Check if all fields are complete
-
-				firstname: firstName,
-				lastname: lastName,
-				class: className,
-				profession: professionValue,
-				quizID: quizcodeValue ? quizcodeValue : 'URFvzAVO',
-				quizTime: time ? time : 60,
-				attemptToSolve: attemptValue == 'tak' ? 1 : 0, // === 'tak' ? '0' : '1',
-				login: login,
-				password: password,
-				percentResult: 0,
-				role: 's',
-			});
-			refreshUsers();
-			setOpenSnackbar(true);
-		} catch (error) {
-			console.error('Error creating user: ', error);
+		const docRef = doc(db, 'users', 'user' + login);
+		const docSnap = await getDoc(docRef);
+		if (docSnap.exists()) {
+			toast.error('Zdający o takim loginie już istnieje. Wygeneruj nowy lub utwórz nowy login ręcznie.');
+		} else {
+			try {
+				await setDoc(doc(db, 'users', 'user' + login), {
+					firstname: firstName,
+					lastname: lastName,
+					class: className,
+					profession: professionValue,
+					quizID: quizcodeValue ? quizcodeValue : 'URFvzAVO',
+					quizTime: time ? time : 60,
+					attemptToSolve: attemptValue == 'Tak' ? 0 : 1, //newValue === 'tak' ? 0 : 1, // === 'tak' ? '0' : '1',
+					login: login,
+					password: password,
+					percentResult: 0,
+					role: 's',
+				});
+				refreshUsers();
+				onSave(user);
+			} catch (error) {
+				console.error('Error creating user: ', error);
+				toast.error('Wystąpił błąd! Nie dodano zdającego do bazy danych.');
+			}
 		}
 	};
-setOpenSnackbar(true);
+
+	console.log(attemptValue);
 	return (
 		<div className='mt-4'>
 			<Form onSubmit={handleSubmit}>
@@ -311,18 +314,14 @@ setOpenSnackbar(true);
 						</div>
 						<div className='col-md-4 mb-3'>
 							<Autocomplete
-								value={attemptValue ? attemptValue : 'Nie'}
+								value={attemptValue}
 								size='small'
 								required
-								// onChange={(event, newValue) => {
-								// 	setAttemptValue(newValue);
-								// 	console.log(attemptValue);
-								// }}
 								onChange={(event, newValue) => {
 									setAttemptValue(newValue);
-									console.log(attemptValue);
 								}}
 								id='option-autocomplete'
+								getOptionLabel={(option) => option}
 								options={['Tak', 'Nie']}
 								renderInput={(params) => (
 									<TextField
@@ -386,15 +385,6 @@ setOpenSnackbar(true);
 						<Button variant='success' type='submit' className='w-100'>
 							Zapisz
 						</Button>
-						<Snackbar
-							open={openSnackbar}
-							autoHideDuration={6000}
-							onClose={() => setOpenSnackbar(false)}
-						>
-							<Alert onClose={() => setOpenSnackbar(false)} severity='success'>
-								User saved successfully!
-							</Alert>
-						</Snackbar>
 					</div>
 				</div>
 			</Form>

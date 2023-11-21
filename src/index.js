@@ -19,7 +19,7 @@ import LoginExam from './LoginExam';
 import QuizLoader from './components/QuizLoader';
 import AdminPanel from './components/AdminPanel';
 import ExamCreator from './components/ExamCreator';
-
+import AddUserForm from './components/AddUserForm';
 function Index() {
 	const urlAdress = window.location.href;
 	const [id, setId] = useState(window.location.href.split('/').pop());
@@ -192,6 +192,7 @@ root.render(
 	<React.StrictMode>
 		{/* <Index /> */}
 		<AdminPanel />
+		{/* <AddUserForm /> */}
 	</React.StrictMode>
 );
 

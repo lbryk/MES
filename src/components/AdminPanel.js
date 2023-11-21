@@ -4,8 +4,34 @@ import ExamCreator from './ExamCreator';
 import ExamTable from './ExamTable';
 import Footer from './Footer';
 import ShowUser from './ShowUser';
+import RaportExam from './RaportExam';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import {
+	collection,
+	getDocs,
+	doc,
+	updateDoc,
+	deleteDoc,
+} from 'firebase/firestore';
+import db from '../firebase';
 
 const AdminPanel = () => {
+	const [quizCodesData, setQuizCodesData] = useState({});
+
+	useEffect(() => {
+		const fetchQuizCodes = async () => {
+			const querySnapshot = await getDocs(collection(db, 'quizCode'));
+			const codesData = {};
+			querySnapshot.docs.forEach((doc) => {
+				codesData[doc.id] = doc.data();
+			});
+			setQuizCodesData(codesData);
+		};
+		fetchQuizCodes();
+	}, []);
+
+	
 	return (
 		<div>
 			<div className='container'>
@@ -81,8 +107,7 @@ const AdminPanel = () => {
 						aria-labelledby='nav-users-tab'
 						tabindex='0'
 					>
-						<ShowUser /> 
-                     
+						<ShowUser />
 					</div>
 					<div
 						className='tab-pane fade'
@@ -100,7 +125,7 @@ const AdminPanel = () => {
 						aria-labelledby='nav-raports-tab'
 						tabindex='0'
 					>
-						Componet 3
+						<RaportExam quizCodesData={quizCodesData} />
 					</div>
 					<div
 						className='tab-pane fade'
@@ -110,10 +135,10 @@ const AdminPanel = () => {
 						tabindex='0'
 					>
 						<div className='mt-4'>
-							<ul class='nav nav-pills mb-3' id='pills-tab' role='tablist'>
-								<li class='nav-item' role='presentation'>
+							<ul className='nav nav-pills mb-3' id='pills-tab' role='tablist'>
+								<li className='nav-item' role='presentation'>
 									<button
-										class='nav-link active'
+										className='nav-link active'
 										id='pills-home-tab'
 										data-bs-toggle='pill'
 										data-bs-target='#pills-home'
@@ -125,9 +150,9 @@ const AdminPanel = () => {
 										Twórz nowy egzamin
 									</button>
 								</li>
-								<li class='nav-item' role='presentation'>
+								<li className='nav-item' role='presentation'>
 									<button
-										class='nav-link'
+										className='nav-link'
 										id='edit-exam-tab'
 										data-bs-toggle='pill'
 										data-bs-target='#edit-exam'
@@ -139,9 +164,9 @@ const AdminPanel = () => {
 										Edytuj istniejący egzamin
 									</button>
 								</li>
-								<li class='nav-item' role='presentation'>
+								<li className='nav-item' role='presentation'>
 									<button
-										class='nav-link'
+										className='nav-link'
 										id='pills-contact-tab'
 										data-bs-toggle='pill'
 										data-bs-target='#pills-contact'
@@ -154,9 +179,9 @@ const AdminPanel = () => {
 									</button>
 								</li>
 							</ul>
-							<div class='tab-content' id='pills-tabContent'>
+							<div className='tab-content' id='pills-tabContent'>
 								<div
-									class='tab-pane fade show active'
+									className='tab-pane fade show active'
 									id='pills-home'
 									role='tabpanel'
 									aria-labelledby='pills-home-tab'
@@ -164,7 +189,7 @@ const AdminPanel = () => {
 									<ExamCreator />
 								</div>
 								<div
-									class='tab-pane fade'
+									className='tab-pane fade'
 									id='edit-exam'
 									role='tabpanel'
 									aria-labelledby='edit-exam-tab'
@@ -172,7 +197,7 @@ const AdminPanel = () => {
 									<ExamTable />
 								</div>
 								<div
-									class='tab-pane fade'
+									className='tab-pane fade'
 									id='pills-contact'
 									role='tabpanel'
 									aria-labelledby='pills-contact-tab'
@@ -191,6 +216,9 @@ const AdminPanel = () => {
 					>
 						Autor programu: Łukasz Bryk
 					</div>
+				</div>
+				<div>
+					<ToastContainer />
 				</div>
 			</div>
 			<Footer />

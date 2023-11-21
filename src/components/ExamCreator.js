@@ -32,7 +32,7 @@ const ExamCreator = () => {
 		<div className='mt-4'>
 			<div className='d-flex'>
 				<div className='col-2'>
-					<label for='exampleFormControlInput1'>Kod egzaminu: </label>
+					<label htmlFor='exampleFormControlInput1'>Kod egzaminu: </label>
 					<input
 						className='form-control text-primary'
 						style={{ width: 120, height: 38 }}
@@ -54,7 +54,7 @@ const ExamCreator = () => {
 				</div>
 			</div>
 			<div className='d-flex mt-5'>
-				<label className='col-3' for='exampleFormControlInput1'>
+				<label className='col-3' htmlFor='exampleFormControlInput1'>
 					Kwalifikacja zawodowa:{' '}
 				</label>
 				<select

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/js/bootstrap.bundle';
 import {
 	collection,
@@ -24,8 +24,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 library.add(faTrashCan, faFileExcel, faFile, faUserPlus, faUserMinus);
 
-const ShowUser = () => {
-	
+const RaportExam = () => {
 	const [originalUsers, setOriginalUsers] = useState([]);
 	const fetchData = async () => {
 		const data = await getDocs(collection(db, 'users'));
@@ -72,8 +71,6 @@ const ShowUser = () => {
 	const indexOfLastUser = currentPage * usersPerPage;
 	const indexOfFirstUser = indexOfLastUser - usersPerPage;
 	const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
-
-	const [toastRendered, setToastRendered] = useState(false);
 
 	// Change page
 	const paginate = (pageNumber) => setCurrentPage(pageNumber);
@@ -152,7 +149,6 @@ const ShowUser = () => {
 			autoClose: false,
 		});
 		try {
-			
 			// Delete the user from your Firebase database
 			const userRef = doc(db, 'users', users[userIndex].id);
 			await deleteDoc(userRef);
@@ -178,9 +174,45 @@ const ShowUser = () => {
 		}
 	};
 
+	// const deleteUser = async () => {
+	// 	if (userIndex === null) return;
+	// 	const id = toast.loading('Trwa usuwanie profili zdającego...', {
+	// 		autoClose: false,
+	// 	});
+	// 	try {
+	// 		// Delete the user from your Firebase database
+
+	// 		const userRef = doc(db, 'users', users[userIndex].id);
+	// 		await deleteDoc(userRef);
+
+	// 		//do something else
+	// 		toast.update(id, {
+	// 			render: 'Usuwanie zakończono z powodzeniem',
+	// 			type: 'success',
+	// 			autoClose: 100,
+	// 		});
+	// 		// Fetch the updated list of users from Firebase
+	// 		fetchData();
+	// 	} catch (error) {
+	// 		toast.error('Error deleting document: ' + error.message);
+	// 	} finally {
+	// 		// Ensure the toast is closed if it's still open
+	// 		if (!toast.isActive(id)) {
+	// 			toast.dismiss(id);
+	// 		}
+	// 	}
+	// };
+
 	const handleInputChange = (event, index, field) => {
 		setEditingValue(event.target.value);
+		// let value = event.target.value;
+		// if (field === 'attemptToSolve') {
+		// 	value = parseInt(value, 10);
+		// }
+		// setEditingValue(value);
+		// Calculate the index of the user in the `users` array
 		const userIndex = usersPerPage * (currentPage - 1) + index;
+
 		const newUsers = [...users];
 		newUsers[userIndex][field] = event.target.value;
 		setUsers(newUsers);
@@ -288,12 +320,7 @@ const ShowUser = () => {
 
 	const [isFormVisible, setFormVisible] = useState(false);
 	const handleSave = (user) => {
-		const saveToast = 'addUser';
-		if(!toast.isActive(saveToast)){
-
-			toast.success('Zdający został poprawnie dodany!', {toastId:saveToast});
-		}
-		
+		toast.success('Zdający został poprawnie dodany!');
 		setFormVisible(false);
 	};
 	return (
@@ -609,6 +636,9 @@ const ShowUser = () => {
 					deleteSelectedUsers();
 				}}
 			/>
+			<div className='mt-4'>
+				<ToastContainer />
+			</div>
 			<Pagination
 				usersPerPage={usersPerPage}
 				totalUsers={filteredUsers.length}
@@ -619,4 +649,4 @@ const ShowUser = () => {
 	);
 };
 
-export default ShowUser;
+export default RaportExam;
