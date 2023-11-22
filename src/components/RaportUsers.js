@@ -366,12 +366,12 @@ const RaportExam = ({ quizCodesData }) => {
 						<th onClick={() => handleSort('class')}>Klasa</th>
 						<th onClick={() => handleSort('quizID')}>Arkusz</th>
 						<th onClick={() => handleSort('quizResult')}>Wynik</th>
-						<th onClick={() => handleSort('quizTime')}>Procent</th>
+						<th onClick={() => handleSort('percentResult')}>Procent</th>
 						<th></th>
 					</tr>
 				</thead>
 				<tbody>
-					{filteredUsers.map((user, index) => (
+					{currentUsers.map((user, index) => (
 						<tr key={index} onClick={() => handleRowClick(user)}>
 							<td>
 								{lpSortDirection === 'asc'
