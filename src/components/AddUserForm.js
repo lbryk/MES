@@ -169,6 +169,12 @@ const AddUserForm = ({ onSave, examcode, profession, refreshUsers }) => {
 		e.preventDefault();
 		const docRef = doc(db, 'users', 'user' + login);
 		const docSnap = await getDoc(docRef);
+		let examDateValue;
+		if (attemptValue === 'Tak') {
+			examDateValue = new Date()
+				.toLocaleDateString('en-GB')
+				.replace(/\//g, '.');
+		}
 		if (docSnap.exists()) {
 			toast.error('Zdający o takim loginie już istnieje. Wygeneruj nowy lub utwórz nowy login ręcznie.');
 		} else {
@@ -184,12 +190,13 @@ const AddUserForm = ({ onSave, examcode, profession, refreshUsers }) => {
 					login: login,
 					password: password,
 					percentResult: 0,
+					quizResult: 0,
+					...(examDateValue && { examDate: examDateValue }),
 					role: 's',
 				});
 				refreshUsers();
 				onSave(user);
 			} catch (error) {
-				console.error('Error creating user: ', error);
 				toast.error('Wystąpił błąd! Nie dodano zdającego do bazy danych.');
 			}
 		}

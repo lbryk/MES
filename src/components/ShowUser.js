@@ -192,8 +192,17 @@ const ShowUser = () => {
 
 		// Update the data in your Firebase database
 		try {
+			
 			const userRef = doc(db, 'users', users[userIndex].id);
 			await updateDoc(userRef, { [field]: users[userIndex][field] });
+			if (users[userIndex].attemptToSolve) {
+				await updateDoc(userRef, {
+					attemptToSolve: 0,
+					quizResult: 0,
+					percentResult: 0,
+				});
+			}
+			// 
 		} catch (error) {
 			console.error('Error updating document: ', error);
 		}
@@ -202,6 +211,7 @@ const ShowUser = () => {
 			setEditingIndex(null);
 			setEditingField(null);
 		}
+		
 	};
 	const [sortField, setSortField] = useState(null);
 	const [sortDirection, setSortDirection] = useState('asc');
@@ -265,7 +275,11 @@ const ShowUser = () => {
 			try {
 				// Update the user in your Firebase database
 				const userRef = doc(db, 'users', id);
-				await updateDoc(userRef, { attemptToSolve: 0 });
+				await updateDoc(userRef, {
+					attemptToSolve: 0,
+					quizResult: 0,
+					percentResult: 0
+				});
 			} catch (error) {
 				console.error('Error updating document: ', error);
 			}

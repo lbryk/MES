@@ -40,7 +40,7 @@ library.add(
 
 const RaportExam = ({ quizCodesData }) => {
 	const [originalUsers, setOriginalUsers] = useState([]);
-	const [selectedQuizCode, setSelectedQuizCode] = useState('URFvzAVO'); // inicjalizacja z kodem testu 
+	const [selectedQuizCode, setSelectedQuizCode] = useState('URFvzAVO'); // inicjalizacja z kodem testu
 	const fetchData = async () => {
 		const data = await getDocs(collection(db, 'users'));
 		// setUsers(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
@@ -87,13 +87,13 @@ const RaportExam = ({ quizCodesData }) => {
 		(user) =>
 			typeof user.role === 'string' &&
 			user.role.includes('s') &&
-			(user.quizID === selectedQuizCode || user.quizID === 'URFvzAVO')
+			user.quizID === selectedQuizCode
+		// && user.profession === quizCode.profession dla nauczycieli z 'a'
 	);
 	const indexOfLastUser = currentPage * usersPerPage;
 	const indexOfFirstUser = indexOfLastUser - usersPerPage;
 	const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
 
-	// Change page
 	const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
 	const handleRowClick = (user) => {
@@ -133,29 +133,6 @@ const RaportExam = ({ quizCodesData }) => {
 	const [lpSortDirection, setLpSortDirection] = useState('asc');
 	console.log(quizCodesData);
 	const handlePDFraport = async (user) => {
-		console.log(quizCodesData[user.quizID]);
-		// if (user && user.quizID) {
-		// 	const quizID = user.quizID;
-		// 	const quizCodeRef = doc(collection(db, 'quizCode'), quizID);
-		// 	const docSnap = await getDoc(quizCodeRef);
-		// 	if (docSnap.exists()) {
-		// 		const data = docSnap.data();
-		// 		console.log('Retrieved data:', data); // Add this logging statement
-		// 		if (data && data.Qualification) {
-		// 			const qualification = data.Qualification;
-		// 			console.log('Retrieved qualification:', qualification); // Add this logging statement
-		// 			generatePDF(user, qualification); // Pass user and qualification to generatePDF
-		// 		} else {
-		// 			console.error(
-		// 				'Qualification field is missing or invalid in the document data'
-		// 			);
-		// 		}
-		// 	} else {
-		// 		console.error('No such document exists for the quizID');
-		// 	}
-		// } else {
-		// 	console.error('User or user.quizID is undefined or null');
-		// }
 		if (user && user.quizID && quizCodesData[user.quizID]) {
 			const data = quizCodesData[user.quizID];
 			if (data && data.Qualification) {
@@ -331,12 +308,12 @@ const RaportExam = ({ quizCodesData }) => {
 		}
 	};
 
-	
-
 	return (
 		<div className='mt-4'>
-			<div className='row d-flex'>
-				<div className='col-12 '>Raport zdającego</div>
+			<div className='row d-flex align-items-center'>
+				<div className='col-12 d-flex justify-content-center text-primary fs-5'>
+					Raport według zdającego
+				</div>
 			</div>
 			<div className='col-3'>
 				<p>
@@ -344,6 +321,7 @@ const RaportExam = ({ quizCodesData }) => {
 					<select
 						className='form-select'
 						aria-label='Select Quiz'
+						value={selectedQuizCode}
 						onChange={(e) => setSelectedQuizCode(e.target.value)}
 					>
 						{Object.keys(quizCodesData).map((quizCode, index) => (

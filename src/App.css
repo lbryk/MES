@@ -28,7 +28,6 @@ body {
 	min-height: 300px;
 	background-color: #ffffff;
 	box-shadow: 1px 1px 7px #ccc;
-
 }
 
 .App-logo {
@@ -236,7 +235,8 @@ body {
 	border: 1px solid black;
 }
 
-.code, code {
+.code,
+code {
 	color: black !important;
 	font-family: 'Courier New', Courier, monospace !important;
 	padding-left: 7px !important;
@@ -335,65 +335,66 @@ body {
 	justify-content: right;
 }
 
-.footer{
+.footer {
 	display: flex;
 	box-sizing: border-box;
 }
 
-.version{
+.version {
 	display: flex;
 	justify-content: center;
 	margin-right: 20px;
 }
 
-.cke{
+.cke {
 	display: flex;
 	align-self: center;
 	align-items: center;
 	justify-content: center;
 }
 
-.foot{
+.foot {
 	display: flex;
 	align-items: end;
 	justify-content: center;
 	font-size: 12px;
 }
 
-a{
+a {
 	text-decoration: none !important;
 }
 
-.help{
+.help {
 	text-decoration: none !important;
 	color: black !important;
 	cursor: default !important;
 	padding-left: 40px;
 }
 
-.usernameDisplay{
+.usernameDisplay {
 	display: flex;
 	width: 100%;
 	text-transform: uppercase;
 	font-family: Helvetica;
 	font-size: 14px;
-	margin-top: 15px;	
+	margin-top: 15px;
 }
 
-.headerLogin, .logOut{
+.headerLogin,
+.logOut {
 	text-align: right;
 }
 
-.headerLogin{
+.headerLogin {
 	padding-top: 15px;
 }
 
-.loggedInUser{
+.loggedInUser {
 	display: flex;
 	flex-direction: column;
 }
 
-.logOut{
+.logOut {
 	justify-content: end;
 	color: #54a8af;
 	text-transform: uppercase;
@@ -401,7 +402,7 @@ a{
 	cursor: pointer;
 }
 
-.aseHeader{
+.aseHeader {
 	text-transform: uppercase;
 	font-size: 18.5px;
 	display: flex;
@@ -415,9 +416,10 @@ a{
 }
 
 .my-form-field {
-  height: 30px;
+	height: 30px;
 }
 
 .my-form-field .MuiInputBase-input {
-  padding: 6px 0;
+	padding: 6px 0;
 }
+
