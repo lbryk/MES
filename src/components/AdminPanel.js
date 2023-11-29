@@ -31,6 +31,20 @@ const AdminPanel = () => {
 		fetchQuizCodes();
 	}, []);
 
+	const [professionsData, setProfessionsData] = useState({});
+
+	useEffect(() => {
+		const fetchProfessions = async () => {
+			const querySnapshot = await getDocs(collection(db, 'professions'));
+			const professions = {};
+			querySnapshot.docs.forEach((doc) => {
+				professions[doc.id] = doc.data();
+			});
+			setProfessionsData(professions);
+		};
+		fetchProfessions();
+	}, []);
+
 	
 	return (
 		<div>
@@ -125,7 +139,10 @@ const AdminPanel = () => {
 						aria-labelledby='nav-raports-tab'
 						tabindex='0'
 					>
-						<RaportExam quizCodesData={quizCodesData} />
+						<RaportExam
+							quizCodesData={quizCodesData}
+							professionsData={professionsData}
+						/>
 					</div>
 					<div
 						className='tab-pane fade'
@@ -186,7 +203,7 @@ const AdminPanel = () => {
 									role='tabpanel'
 									aria-labelledby='pills-home-tab'
 								>
-									<ExamCreator />
+									<ExamCreator quizCodesData={quizCodesData} professionsData={professionsData} />
 								</div>
 								<div
 									className='tab-pane fade'

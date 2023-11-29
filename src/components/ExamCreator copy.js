@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import 'bootstrap/dist/js/bootstrap.bundle';
 import { Editor } from '@tinymce/tinymce-react';
-
-const ExamCreator = ({ quizCodesData, professionsData }) => {
-	console.log(professionsData);
+const ExamCreator = () => {
 	const editorRef = useRef(null);
 	const log = () => {
 		if (editorRef.current) {
@@ -68,24 +66,6 @@ const ExamCreator = ({ quizCodesData, professionsData }) => {
 					<option value='1'>INF.02</option>
 					<option value='2'>INF.03</option>
 					<option value='3'>INF.04</option>
-				</select>
-			</div>
-
-			<div className='d-flex mt-5'>
-				<label className='col-3' htmlFor='exampleFormControlInput2'>
-					Profession:
-				</label>
-				<select
-					className='form-select'
-					size={{ width: 200 }}
-					aria-label='Zawód'
-				>
-					<option selected>Wybierz zawód</option>
-					{Object.keys(professionsData).map((profession, index) => (
-						<option key={index} value={index}>
-							{profession}
-						</option>
-					))}
 				</select>
 			</div>
 

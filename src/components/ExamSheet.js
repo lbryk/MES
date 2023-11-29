@@ -30,7 +30,11 @@ import 'jspdf-autotable';
 import robotoBase64 from '../fonts/RobotoBase64';
 
 import { Collapse } from 'react-bootstrap';
+import MyChart from './MyChart';
+import PieChart from './PieChart';
 
+
+// import { MyChart as LibraryChart } from 'library-name';
 library.add(
 	faTrashCan,
 	faFileExcel,
@@ -48,22 +52,11 @@ const ExamSheet = ({ quizCodesData }) => {
 	const [currentPage, setCurrentPage] = useState(1);
 	const [usersPerPage] = useState(10);
 	const [selectedUser, setSelectedUser] = useState(null); // inicjalizacja z kodem testu
-	const fetchData = async () => {
-		const data = await getDocs(collection(db, 'users'));
-		// setUsers(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-		const usersData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-		setUsers(usersData);
-		setOriginalUsers(usersData);
-	};
 
 	// const [users, setUsers] = useState([]);
 	// const [currentPage, setCurrentPage] = useState(1);
 	// const [usersPerPage] = useState(10);
 	// const [selectedUser, setSelectedUser] = useState(null);
-
-	useEffect(() => {
-		fetchData();
-	}, []);
 
 	const [quizCodes, setQuizCodes] = useState([]);
 
@@ -74,6 +67,17 @@ const ExamSheet = ({ quizCodesData }) => {
 			setQuizCodes(codes);
 		};
 		fetchQuizCodes();
+	}, []);
+
+	useEffect(() => {
+		const fetchData = async () => {
+			const data = await getDocs(collection(db, 'users'));
+			// setUsers(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
+			const usersData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+			setUsers(usersData);
+			setOriginalUsers(usersData);
+		};
+		fetchData();
 	}, []);
 
 	useEffect(() => {
@@ -119,6 +123,24 @@ const ExamSheet = ({ quizCodesData }) => {
 		}
 		setSortField(field);
 		setSortDirection(direction);
+	};
+
+	const handlePDFraport = async (group) => {
+		if (group && group.quizID && quizCodesData[group.quizID]) {
+			const data = quizCodesData[group.quizID];
+			if (data && data.Qualification) {
+				const qualification = data.Qualification;
+				generatePDF(group, qualification); // Pass user and qualification to generatePDF
+			} else {
+				console.error(
+					'Qualification field is missing or invalid in the document data'
+				);
+			}
+		} else {
+			console.error(
+				'User, user.quizID, or quizCodesData[user.quizID] is undefined or null'
+			);
+		}
 	};
 
 	useEffect(() => {
@@ -250,7 +272,7 @@ const ExamSheet = ({ quizCodesData }) => {
 	const groupedUsersArray = Object.values(groupedUsers);
 	const [open, setOpen] = useState({});
 
-	const generatePDF = (group) => {
+	const generatePDF = (group, qualification) => {
 		try {
 			const docpdf = new jsPDF('p', 'pt', 'a4');
 
@@ -263,11 +285,26 @@ const ExamSheet = ({ quizCodesData }) => {
 			y += 20;
 			docpdf.text(20, y, `Numer arkusza: ${group.quizID}`);
 			y += 25;
-			docpdf.text(20, y, `Kwalifikacja: ${group.Qualification}`);
+			docpdf.text(20, y, `Kwalifikacja:`);
+			docpdf.setFont('Roboto', 'bold');
+			docpdf.text(
+				125,
+				y,
+				`${qualification
+					.match(/[a-zA-Z]+/g)
+					.join('')
+					.toUpperCase()}` + `.${qualification.match(/\d+/g)}`
+			);
+			docpdf.setFont('Roboto', 'normal');
 			y += 30;
 			docpdf.text(20, y, `Klasa:`);
 			docpdf.setFont('Roboto', 'bold');
 			docpdf.text(70, y, `${group.class}`);
+			docpdf.setFont('Roboto', 'normal');
+			y += 30;
+			docpdf.text(20, y, `Data egzaminu:`);
+			docpdf.setFont('Roboto', 'bold');
+			docpdf.text(140, y, `${group.examTerm}`);
 			docpdf.setFont('Roboto', 'normal');
 
 			const columns = ['Etap pisemny', ''];
@@ -283,9 +320,31 @@ const ExamSheet = ({ quizCodesData }) => {
 				margin: { top: y + 20 },
 				styles: { font: 'Roboto', fontSize: 10 },
 			});
-			y += 20 * rows.length;
+			y += 180;
 
-			y += 20;
+			docpdf.text(20, y, `Lista zdających:`);
+			y += 20; // Add space after the inscription
+
+			const userColumns = [
+				'Lp.',
+				'Imię i nazwisko',
+				'Wynik',
+				'Wynik procentowy',
+			];
+			const userRows = group.users.map((user, index) => [
+				index + 1,
+				`${user.firstname} ${user.lastname}`,
+				`${user.quizResult}pkt`,
+				`${user.percentResult}%`,
+			]);
+
+			docpdf.autoTable(userColumns, userRows, {
+				startY: y,
+				styles: { font: 'Roboto', fontSize: 10 },
+			});
+
+			// Update y to the bottom of the table
+			y = docpdf.autoTable.previous.finalY;
 
 			docpdf.setFontSize(10);
 			const pageCount = docpdf.internal.getNumberOfPages();
@@ -325,106 +384,248 @@ const ExamSheet = ({ quizCodesData }) => {
 			});
 		}
 	};
-	// 	return (
-	// 		<div className='mt-4'>
-	// 			<div className='row d-flex align-items-center'>
-	// 				<div className='col-12 d-flex justify-content-center text-primary fs-5'>
-	// 					Raport według zdającego
-	// 				</div>
-	// 			</div>
-	// 			<div className='col-3'>
-	// 				<p>
-	// 					Wyświetl według arkusza:
-	// 					<select
-	// 						className='form-select'
-	// 						aria-label='Select Quiz'
-	// 						onChange={(e) => setSelectedQuizCode(e.target.value)}
-	// 					>
-	// 						{Object.keys(quizCodesData).map((quizCode, index) => (
-	// 							<option key={index} value={quizCode}>
-	// 								{quizCode}
-	// 							</option>
-	// 						))}
-	// 					</select>
-	// 				</p>
-	// 			</div>
 
-	// 			<table className='table table-striped caption-top'>
-	// 				<caption>Lista zdających</caption>
-	// 				<thead>
-	// 					<tr>
-	// 						<th>lp</th>
-	// 						<th onClick={() => handleSort('lastname')}>Imię i nazwisko</th>
+	const handleGroupPrint = (group) => {
+		if (group && group.quizID) {
+			const data = quizCodesData[group.quizID];
+			if (data && data.Qualification) {
+				const qualification = data.Qualification;
+				let iframe = document.createElement('iframe');
 
-	// 						<th onClick={() => handleSort('profession')}>Zawód</th>
-	// 						<th onClick={() => handleSort('class')}>Klasa</th>
-	// 						<th onClick={() => handleSort('quizID')}>Arkusz</th>
-	// 						<th onClick={() => handleSort('quizResult')}>Wynik</th>
-	// 						<th onClick={() => handleSort('percentResult')}>Procent</th>
-	// 						<th></th>
-	// 					</tr>
-	// 				</thead>
-	// 				<tbody>
-	// 					{currentUsers.map((user, index) => (
-	// 						<tr key={index} onClick={() => handleRowClick(user)}>
-	// 							<td>
-	// 								{lpSortDirection === 'asc'
-	// 									? (currentPage - 1) * usersPerPage + index + 1
-	// 									: filteredUsers.length -
-	// 									  ((currentPage - 1) * usersPerPage + index)}
-	// 							</td>
-	// 							<td>
-	// 								{user.firstname} {user.lastname}
-	// 							</td>
-	// 							<td>{user.profession}</td>
-	// 							<td>{user.class}</td>
-	// 							<td>{user.quizID}</td>
-	// 							<td>{user.quizResult}</td>
-	// 							<td
-	// 								className={
-	// 									user.percentResult >= 50 ? 'text-success' : 'text-danger'
-	// 								}
-	// 							>
-	// 								{user.percentResult}
-	// 							</td>
-	// 							<td>
-	// 								<button
-	// 									className='btn btn-light'
-	// 									onClick={() => handlePrint(user)}
-	// 								>
-	// 									<FontAwesomeIcon icon='fa-solid fa-print' />
-	// 								</button>
-	// 								&nbsp;
-	// 								<button
-	// 									className='btn btn-light'
-	// 									onClick={() => handlePDFraport(user)}
-	// 									// onClick={() => handlePDFraport(selectedUser)}
-	// 								>
-	// 									<FontAwesomeIcon icon='fa-solid fa-file-pdf' />
-	// 								</button>
-	// 							</td>
-	// 						</tr>
-	// 					))}
-	// 				</tbody>
-	// 			</table>
-	// 			<Pagination
-	// 				usersPerPage={usersPerPage}
-	// 				totalUsers={filteredUsers.length}
-	// 				paginate={paginate}
-	// 			/>
-	// 			<div style={{ height: 50 }}></div>
-	// 		</div>
-	// 	);
-	// };
+				// Set the iframe to be invisible
+				iframe.style.visibility = 'hidden';
+				iframe.style.position = 'fixed';
+				iframe.style.right = '0';
+				iframe.style.bottom = '0';
+				document.body.appendChild(iframe);
+				// Generate the content for the report
 
+				let content =
+					`
+<p>Numer arkusza:<b> ${group.quizID}</b></p>
+
+<p>Kwalifikacja:<b> ${qualification
+						.match(/[a-zA-Z]+/g)
+						.join('')
+						.toUpperCase()}` +
+					`.${qualification.match(/\d+/g)}</b></p>
+
+<p>Klasa: <b>${group.class}</b></p>
+<p>Data egzaminu: <b>${group.examTerm}</b></p>
+<table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+	<tr style="background-color: #407fb6;">
+		<th colspan="2" style="border: 1px solid black; padding: 10px;">Etap pisemny</th>
+	</tr>
+	<tr>
+		<td style="border: 1px solid black; padding: 10px;">Liczba zdających</td>
+		<td style="border: 1px solid black; padding: 10px;">${group.count}</td>
+	</tr>
+	<tr>
+		<td style="border: 1px solid black; padding: 10px;">Próg zaliczenia</td>
+		<td style="border: 1px solid black; padding: 10px;">50% &nbsp;&nbsp;&nbsp;20pkt</td>
+	</tr>
+	<tr>
+		<td style="border: 1px solid black; padding: 10px;">Wynik max</td>
+		<td style="border: 1px solid black; padding: 10px;">${
+			group.maxScore
+		}  &nbsp;&nbsp;&nbsp;${group.maxPerCent}%</td>
+	</tr>
+	<tr>
+		<td style="border: 1px solid black; padding: 10px;">Wynik min</td>
+		<td style="border: 1px solid black; padding: 10px;">${
+			group.minScore
+		} &nbsp;&nbsp;&nbsp;${group.minPerCent}%</td>
+	</tr>
+	<tr>
+		<td style="border: 1px solid black; padding: 10px;">Średni wynik</td>
+		<td style="border: 1px solid black; padding: 10px;">${(
+			group.totalScore / group.count
+		).toFixed(2)}</td>
+	</tr>
+</table><br />
+<p>Lista zdających:</p><br />
+<table style="width: 100%; border-collapse: collapse;">
+	<tr>
+		<td style="border: 1px solid black; padding: 10px;">Lp.</td>
+		<td style="border: 1px solid black; padding: 10px;">Imię i nazwisko</td>
+		<td style="border: 1px solid black; padding: 10px;">Wynik</td>
+		<td style="border: 1px solid black; padding: 10px;">Wynik procentowy</td>																									
+	</tr>
+	${
+		group.users
+			? group.users
+					.map(
+						(user, index) => `
+	<tr>
+		<td style="border: 1px solid black; padding: 10px;">${index + 1}</td>
+		<td style="border: 1px solid black; padding: 10px;">${user.firstname} ${
+							user.lastname
+						}</td>
+		<td style="border: 1px solid black; padding: 10px;">${user.quizResult}pkt</td>
+		<td style="border: 1px solid black; padding: 10px;">${user.percentResult}%</td>
+	</tr>
+	`
+					)
+					.join('')
+			: ''
+	}
+</table>
+<footer style="position: relative; width: 100%;">
+<small>Report created on: ${new Date().toLocaleDateString()}</small>
+<p><small>This report was generated by the MES application, a tool for creating and conducting mock professional exams</small></p></footer>
+`;
+
+				iframe.contentDocument.write(content);
+				iframe.contentDocument.close();
+
+				// Call the print function
+				iframe.contentWindow.print();
+
+				// Remove the iframe after printing
+				iframe.contentWindow.onafterprint = () => {
+					document.body.removeChild(iframe);
+				};
+			} else {
+				console.error(
+					'Qualification field is missing or invalid in the document data'
+				);
+			}
+		} else {
+			console.error('Group or group.quizID is undefined or null');
+		}
+	};
+
+	const handleUserPDFraport = async (user) => {
+		if (user && user.quizID && quizCodesData[user.quizID]) {
+			const data = quizCodesData[user.quizID];
+			if (data && data.Qualification) {
+				const qualification = data.Qualification;
+				generateUserPDF(user, qualification); // Pass user and qualification to generatePDF
+			} else {
+				console.error(
+					'Qualification field is missing or invalid in the document data'
+				);
+			}
+		} else {
+			console.error(
+				'User, user.quizID, or quizCodesData[user.quizID] is undefined or null'
+			);
+		}
+	};
+
+	const generateUserPDF = (user, qualification) => {
+		try {
+			const docpdf = new jsPDF('p', 'pt', 'a4');
+
+			docpdf.addFileToVFS('Roboto-Regular.ttf', robotoBase64);
+			docpdf.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+
+			docpdf.setFont('Roboto');
+			let y = 20;
+
+			y += 20;
+			docpdf.text(20, y, `Imię i nazwisko: ${user.firstname} ${user.lastname}`);
+			y += 20;
+			docpdf.line(0, y, 595, y);
+
+			y += 20;
+
+			docpdf.setFontSize(10);
+			docpdf.text(20, y, `Zawód: `);
+
+			docpdf.setFont('Roboto', 'bold');
+			docpdf.text(55, y, `${user.profession}`);
+			y += 20;
+			docpdf.setFont('Roboto', 'normal');
+			docpdf.text(20, y, `Klasa: ${user.class}`);
+
+			y += 40;
+			docpdf.text(20, y, `Kwalifikacja:`);
+			docpdf.setFont('Roboto', 'bold');
+			docpdf.text(
+				85,
+				y,
+				`${qualification
+					.match(/[a-zA-Z]+/g)
+					.join('')
+					.toUpperCase()}` + `.${qualification.match(/\d+/g)}`
+			);
+			docpdf.setFont('Roboto', 'normal');
+			y += 20;
+			docpdf.text(20, y, `Oznaczenie arkusza:`);
+			docpdf.setFont('Roboto', 'bold');
+			docpdf.text(120, y, `${user.quizID}`);
+			docpdf.setFont('Roboto', 'normal');
+			y += 20;
+			docpdf.text(20, y, `Wynik: ${user.quizResult} / 40`);
+
+			y += 20;
+			docpdf.text(20, y, `Wynik procentowy: ${user.percentResult}%`);
+			y += 20;
+
+			docpdf.setFontSize(10);
+			const pageCount = docpdf.internal.getNumberOfPages();
+			for (let i = 1; i <= pageCount; i++) {
+				docpdf.setPage(i);
+
+				docpdf.text(
+					'Raport utworzony dnia: ' + new Date().toLocaleDateString(),
+					20,
+					docpdf.internal.pageSize.height - 40
+				);
+				y += 20;
+				docpdf.setFontSize(8);
+				docpdf.text(
+					'Zestawienie zostało wygenerowane w programie MES, aplikacji do tworzenia i przeprowadzania próbnych egzaminów zawodowych ',
+					20,
+					docpdf.internal.pageSize.height - 20
+				);
+			}
+
+			docpdf.setFontSize(16);
+			if (user.percentResult >= 50) {
+				docpdf.setTextColor(0, 128, 0); // Set text color to green
+				y += 20; // Increase Y-coordinate for the next line
+				docpdf.text(20, y, 'Egzamin zdany');
+			} else {
+				docpdf.setTextColor(255, 0, 0); // Set text color to red
+				y += 20; // Increase Y-coordinate for the next line
+				docpdf.text(20, y, 'Egzamin oblany');
+			}
+
+			const id = toast.loading('Generowanie reportu...');
+			//do something else
+			setTimeout(() => {
+				toast.update(id, {
+					render: 'Za chwilę rozpocznie się automatyczne pobieranie...',
+					type: 'success',
+					isLoading: false,
+					autoClose: 1500,
+					onClose: () => {
+						docpdf.save(`wyniki_${user.firstname}_${user.lastname}.pdf`);
+					},
+				});
+			}, 1000);
+		} catch (error) {
+			toast.error('Błąd: ' + error.message, {
+				autoClose: 5000, // Close the error message after 5 seconds
+			});
+		}
+	};
+	// const passCount = group.users.filter(
+	// 	(user) => user.percentResult >= 50
+	// ).length;
+	// const failCount = group.users.filter(
+	// 	(user) => user.percentResult < 50
+	// ).length;
 	return (
 		<div className='mt-4'>
 			<div className='row d-flex align-items-center'>
-				<div className='col-12 d-flex justify-content-center text-primary fs-5'>
+				<div className='col-12 d-flex justify-content-center text-primary fs-5 mt-4'>
 					Raporty według arkuszy
 				</div>
 			</div>
-			<div className='table-responsive'>
+			<div className='table-responsive mt-5'>
 				<table className='table table-striped caption-top'>
 					<thead>
 						<tr>
@@ -475,7 +676,16 @@ const ExamSheet = ({ quizCodesData }) => {
 										<td className='text-success font-weight-bold'>
 											{group.quizID}
 										</td>
-										<td></td>
+										<td>
+											{/* {quizCodesData[group.quizID]?.Qualification || 'N/A'} */}
+											{quizCodesData[group.quizID]?.Qualification.match(
+												/[a-zA-Z]+/g
+											)
+												.join('')
+												.toUpperCase()}
+											.
+											{quizCodesData[group.quizID]?.Qualification.match(/\d+/g)}
+										</td>
 										<td>{group.class}</td>
 										<td>{group.examTerm}</td>
 										<td className='font-weight-bold text-white bg-dark'>
@@ -490,17 +700,17 @@ const ExamSheet = ({ quizCodesData }) => {
 										<td>{group.minPerCent}%</td>
 										<td>{(group.totalScore / group.count).toFixed(2)}</td>
 
-										<td>
+										<td className='col-2'>
 											<button
 												className='btn btn-light'
-												// onClick={() => handlePrint(user)}
+												onClick={() => handleGroupPrint(group)}
 											>
 												<FontAwesomeIcon icon='fa-solid fa-print' />
 											</button>
 											&nbsp;
 											<button
 												className='btn btn-light'
-												onClick={() => generatePDF(group)}
+												onClick={() => handlePDFraport(group)}
 												// onClick={() => handlePDFraport(selectedUser)}
 											>
 												<FontAwesomeIcon icon='fa-solid fa-file-pdf' />
@@ -508,7 +718,7 @@ const ExamSheet = ({ quizCodesData }) => {
 										</td>
 									</tr>
 									<tr>
-										<td colSpan={7}>
+										<td colSpan={10}>
 											<Collapse
 												in={
 													open[
@@ -516,36 +726,77 @@ const ExamSheet = ({ quizCodesData }) => {
 													]
 												}
 											>
-												<div>
-													{group.users.map((user, index) => (
-														<div
-															className={`alert alert-${
-																user.percentResult >= 50 ? 'success' : 'danger'
-															}`}
-															key={index}
-														>
-															{index + 1}) {user.firstname} {user.lastname}
-															{'  '}
-															<div className='vr'></div> {user.quizResult}pkt
-															{'  '}
-															<div className='vr'></div> {user.percentResult}%
-															{'  '}
-															<button
-																className='btn btn-light'
-																// onClick={() => handlePrint(user)}
-															>
-																<FontAwesomeIcon icon='fa-solid fa-print' />
-															</button>
-															&nbsp;
-															<button
-																className='btn btn-light'
-																onClick={() => generatePDF(group)}
-																// onClick={() => handlePDFraport(selectedUser)}
-															>
-																<FontAwesomeIcon icon='fa-solid fa-file-pdf' />
-															</button>
+												<div className='container-fluid'>
+													<div className='row'>
+														<div className='col-10'>
+															<MyChart
+																data={group.users.map(
+																	(user) => user.quizResult
+																)}
+																labels={group.users.map(
+																	(user) => `${user.firstname} ${user.lastname}`
+																)}
+																label={`Wynik w punktach`}
+															/>
 														</div>
-													))}
+													</div>
+													<div className='row'>
+														<div className='col-md-7 mt-5'>
+															{group.users.map((user, index) => (
+																<div
+																	className={`alert alert-${
+																		user.percentResult >= 50
+																			? 'success'
+																			: 'danger'
+																	} d-flex justify-content-between align-items-center`} // Add flexbox classes here
+																	key={index}
+																>
+																	<div className='listUserExam'>
+																		{' '}
+																		{/* Wrap the text in a div */}
+																		{index + 1}) {user.firstname}{' '}
+																		{user.lastname}
+																		{'  '}
+																		<div className='vr'></div> {user.quizResult}
+																		pkt
+																		{'  '}
+																		<div className='vr'></div>{' '}
+																		{user.percentResult}%
+																	</div>
+																	<div>
+																		{' '}
+																		{/* Wrap the buttons in a div */}
+																		<button
+																			className='btn btn-light'
+																			onClick={() => handlePrint(user)}
+																		>
+																			<FontAwesomeIcon icon='fa-solid fa-print' />
+																		</button>
+																		&nbsp;
+																		<button
+																			className='btn btn-light'
+																			onClick={() => handleUserPDFraport(user)}
+																		>
+																			<FontAwesomeIcon icon='fa-solid fa-file-pdf' />
+																		</button>
+																	</div>
+																</div>
+															))}
+														</div>
+														<div className='col-md-4 mt-5'>
+															<PieChart
+																data={[
+																	group.users.filter(
+																		(user) => user.percentResult >= 50
+																	).length,
+																	group.users.filter(
+																		(user) => user.percentResult < 50
+																	).length,
+																]}
+																labels={['Zdało', 'Oblało']}
+															/>
+														</div>
+													</div>
 												</div>
 											</Collapse>
 										</td>
@@ -554,8 +805,12 @@ const ExamSheet = ({ quizCodesData }) => {
 							))}
 					</tbody>
 				</table>
+				<Pagination
+					usersPerPage={usersPerPage}
+					totalUsers={filteredUsers.length}
+					paginate={paginate}
+				/>
 			</div>
-			{/* ... other elements */}
 		</div>
 	);
 };

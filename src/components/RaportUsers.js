@@ -114,10 +114,41 @@ const RaportExam = ({ quizCodesData }) => {
 		setSortDirection(direction);
 	};
 
+	// useEffect(() => {
+	// 	let sortedUsers = [...filteredUsers];
+	// 	if (sortField !== null) {
+	// 		sortedUsers.sort((a, b) => {
+	// 			if (a[sortField] < b[sortField]) {
+	// 				return sortDirection === 'asc' ? -1 : 1;
+	// 			}
+	// 			if (a[sortField] > b[sortField]) {
+	// 				return sortDirection === 'asc' ? 1 : -1;
+	// 			}
+	// 			return 0;
+	// 		});
+	// 	}
+	// 	setUsers(sortedUsers);
+	// }, [sortField, sortDirection, filteredUsers]);
 	useEffect(() => {
-		let sortedUsers = [...users];
+		const filteredUsers = originalUsers.filter(
+			(user) =>
+				typeof user.role === 'string' &&
+				user.role.includes('s') &&
+				user.quizID === selectedQuizCode
+		);
+		setUsers(filteredUsers);
+	}, [selectedQuizCode, originalUsers]);
+
+	useEffect(() => {
+		let filteredUsers = originalUsers.filter(
+			(user) =>
+				typeof user.role === 'string' &&
+				user.role.includes('s') &&
+				user.quizID === selectedQuizCode
+		);
+
 		if (sortField !== null) {
-			sortedUsers.sort((a, b) => {
+			filteredUsers.sort((a, b) => {
 				if (a[sortField] < b[sortField]) {
 					return sortDirection === 'asc' ? -1 : 1;
 				}
@@ -127,11 +158,12 @@ const RaportExam = ({ quizCodesData }) => {
 				return 0;
 			});
 		}
-		setUsers(sortedUsers);
-	}, [sortField, sortDirection]);
+
+		setUsers(filteredUsers);
+	}, [selectedQuizCode, originalUsers, sortField, sortDirection]);
 
 	const [lpSortDirection, setLpSortDirection] = useState('asc');
-	console.log(quizCodesData);
+
 	const handlePDFraport = async (user) => {
 		if (user && user.quizID && quizCodesData[user.quizID]) {
 			const data = quizCodesData[user.quizID];
