@@ -1,9 +1,46 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import 'bootstrap/dist/js/bootstrap.bundle';
+import {
+	collection,
+	doc,
+	setDoc,
+	getDocs,
+	getDoc,
+	updateDoc,
+	arrayUnion,
+} from 'firebase/firestore';
+import db from '../firebase';
 import { Editor } from '@tinymce/tinymce-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { faFloppyDisk, faPen } from '@fortawesome/free-solid-svg-icons';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import QuestCreator from './QuestCreator';
 
-const ExamCreator = ({ quizCodesData, professionsData }) => {
-	console.log(professionsData);
+library.add(faFloppyDisk, faPen);
+
+const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
+	const [selectedProfession, setSelectedProfession] = useState('');
+	const [availableQualifications, setAvailableQualifications] = useState([]);
+	const [qualification, setQualification] = useState('');
+	const [isSaved, setIsSaved] = useState(false);
+	const [showQuestCreator, setShowQuestCreator] = useState(false);
+	const [examName, setExamName] = useState('');
+
+	useEffect(() => {
+		if (selectedProfession) {
+			const qualifications = Object.entries(qualificationName)
+				.filter(([key, value]) =>
+					value.professions.includes(selectedProfession)
+				)
+				.map(([key]) => key);
+			setAvailableQualifications(qualifications);
+		} else {
+			setAvailableQualifications([]);
+		}
+	}, [selectedProfession, qualificationName, isSaved, examName]);
+
 	const editorRef = useRef(null);
 	const log = () => {
 		if (editorRef.current) {
@@ -14,21 +51,143 @@ const ExamCreator = ({ quizCodesData, professionsData }) => {
 	// Function to generate an eight-character code consisting of lowercase letters, uppercase letters, and numbers.
 	const generateCode = () => {
 		let code = '';
+		//setIsSaved(false);
 		const characters =
 			'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 		for (let i = 0; i < 8; i++) {
 			code += characters.charAt(Math.floor(Math.random() * characters.length));
 		}
+
 		return code;
 	};
 
 	const [code, setCode] = useState(generateCode());
 
-	// Generate the code when the component is rendered
-	// useEffect(() => {
-	// 	const code = generateCode();
-	// 	console.log(code);
-	// }, []);
+	const validateAndCreateDocument = async () => {
+		// Check if code exists in quizCodesData
+		if (Object.keys(quizCodesData).includes(code)) {
+			toast.error(
+				'Egzamin o takim identyfikatorze istnieje. Wygeneruj nowy kod.'
+			);
+			return;
+		}
+
+		// Check if profession and qualification are selected
+		if (
+			!selectedProfession ||
+			selectedProfession === 'Wybierz zawód' ||
+			!qualification ||
+			qualification === 'Wybierz kwalifikację'
+		) {
+			toast.warn('Proszę wybrać zawód i kwalifikację zawodową');
+			return;
+		}
+
+		// Get the qualification document
+		const qualificationDocRef = doc(db, 'qualificationName', qualification);
+		const qualificationDocSnap = await getDoc(qualificationDocRef);
+
+		if (!qualificationDocSnap.exists()) {
+			toast.error(
+				'Arkusz o takiej nazwie już istniej. Odśwież stronę lub spróbuj ponownie.',
+				{
+					autoClose: 900,
+				}
+			);
+			return;
+		}
+
+		let session = 'A1';
+		let i = 0;
+		let j = 1;
+		let k = 1;
+		let l = 1;
+
+		const sessionsDocRef = doc(db, 'sessions', 'all');
+		let sessionsDocSnap = await getDoc(sessionsDocRef);
+
+		// Ifthe sessions document does not exist,e it undefined creatundefinedith an empty sessions array
+		if (!sessionsDocSnap.exists()) {
+			await setDoc(sessionsDocRef, { sessions: [] });
+			sessionsDocSnap = await getDoc(sessionsDocRef);
+		}
+
+		let existingSessions = sessionsDocSnap.data().sessions || [];
+
+		while (existingSessions.includes(session)) {
+			j++;
+			if (j > 9) {
+				j = 1;
+				i++;
+				if (i > 25) {
+					i = 0;
+					k++;
+					if (k > 9) {
+						k = 1;
+						l++;
+					}
+				}
+			}
+			session = `${String.fromCharCode(65 + i)}${j}`;
+			if (l > 1) {
+				session = `${String.fromCharCode(65 + l - 2)}${k}${session}`;
+			}
+		}
+
+		// Add the new session to the sessions document
+		await updateDoc(sessionsDocRef, {
+			sessions: arrayUnion(session),
+		});
+
+		const quizCodeDocRef = doc(db, 'quizCode', code);
+		const quizCodeDocSnap = await getDoc(quizCodeDocRef);
+
+		if (quizCodeDocSnap.exists()) {
+			toast.error('Arkusz o takim kodzie już istnieje! Wygeneruj nowy kod.', {
+				autoClose: 950,
+			});
+			return;
+		}
+
+		try {
+			const quizCodeDocRef = doc(db, 'quizCode', code);
+			await setDoc(quizCodeDocRef, {
+				Qualification: qualificationDocSnap.data().name,
+				Session: session,
+				Year: new Date().getFullYear(),
+				Profession: selectedProfession,
+				Autors: ['Łukasz Bryk', 'Joanna Radomska'],
+			});
+
+			const formattedQualification = qualification
+				.toLowerCase()
+				.replace('.', '');
+			const newCollectionRef = collection(
+				db,
+				`${formattedQualification}${new Date().getFullYear()}${session}`
+			);
+			setExamName(
+				`${formattedQualification}${new Date().getFullYear()}${session}`
+			);
+			const newDocRef = doc(newCollectionRef, '1');
+			await setDoc(newDocRef, {
+				// Add fields to the document as needed
+			});
+			// setCode(generateCode());
+			// setSelectedProfession('');
+			// setQualification('');
+			// setIsSaved(false);
+
+			toast.success('Nowy arkusz został utworzony', {
+				autoClose: 900,
+			});
+			setIsSaved(true);
+		} catch (error) {
+			toast.error(`Wystąpił błąd ${error}. Arkusz nie został utworzony.`, {
+				autoClose: 900,
+			});
+		}
+	};
 
 	return (
 		<div className='mt-4'>
@@ -48,12 +207,36 @@ const ExamCreator = ({ quizCodesData, professionsData }) => {
 				<div className='col-4 mt-4'>
 					<button
 						type='button'
-						onClick={() => setCode(generateCode())}
+						onClick={() => {
+							setCode(generateCode());
+							setIsSaved(false);
+							setShowQuestCreator(false);
+						}}
 						className='btn btn-success'
 					>
 						Generuj nowy kod egzaminu
 					</button>
 				</div>
+			</div>
+
+			<div className='d-flex mt-5'>
+				<label className='col-3' htmlFor='exampleFormControlInput2'>
+					Nazwa zawodu:
+				</label>
+				<select
+					className='form-select'
+					size={{ width: 200 }}
+					aria-label='Zawód'
+					value={selectedProfession}
+					onChange={(e) => setSelectedProfession(e.target.value)}
+				>
+					<option selected>Wybierz zawód</option>
+					{Object.keys(professionsData).map((profession, index) => (
+						<option key={index} value={profession}>
+							{profession}
+						</option>
+					))}
+				</select>
 			</div>
 			<div className='d-flex mt-5'>
 				<label className='col-3' htmlFor='exampleFormControlInput1'>
@@ -62,325 +245,44 @@ const ExamCreator = ({ quizCodesData, professionsData }) => {
 				<select
 					className='form-select'
 					size={{ width: 200 }}
-					aria-label='Kwalifikacja'
+					aria-label='Kwalifikacja zawodowa'
+					value={qualification} // Add this line
+					onChange={(e) => setQualification(e.target.value)}
 				>
 					<option selected>Wybierz kwalifikację</option>
-					<option value='1'>INF.02</option>
-					<option value='2'>INF.03</option>
-					<option value='3'>INF.04</option>
-				</select>
-			</div>
-
-			<div className='d-flex mt-5'>
-				<label className='col-3' htmlFor='exampleFormControlInput2'>
-					Profession:
-				</label>
-				<select
-					className='form-select'
-					size={{ width: 200 }}
-					aria-label='Zawód'
-				>
-					<option selected>Wybierz zawód</option>
-					{Object.keys(professionsData).map((profession, index) => (
-						<option key={index} value={index}>
-							{profession}
+					{availableQualifications.map((qualification, index) => (
+						<option key={index} value={qualification}>
+							{qualification}
 						</option>
 					))}
 				</select>
 			</div>
-
+			
 			<div className='mt-4'>
-				<div className='pb-3 h4'>Pytanie 1</div>
-				{
-					<Editor
-						apiKey='gv5fnyynnu54nbfl7gqe2noc7l3i4w7uq8ra8c9iglkcz2lh'
-						onInit={(evt, editor) => (editorRef.current = editor)}
-						initialValue='<p>Tu twórz pytanie.</p>'
-						init={{
-							selector: 'textarea',
-							toolbar: 'language',
-							language: 'pl',
-							content_langs: [{ title: 'Polish', code: 'pl' }],
-							height: 400,
-							menubar: false,
-							plugins: [
-								'advlist',
-								'autolink',
-								'lists',
-								'link',
-								'image',
-								'charmap',
-								'preview',
-								'anchor',
-								'searchreplace',
-								'visualblocks',
-								'code',
-								'fullscreen',
-								'insertdatetime',
-								'media',
-								'table',
-								'code',
-								'help',
-								'wordcount',
-								'codesample',
-								'hilitecolor',
-							],
-							toolbar:
-								'undo redo blocks | media image link codesample | ' +
-								'bold italic forecolor backcolor | alignleft aligncenter ' +
-								'alignright alignjustify | bullist numlist outdent indent | ' +
-								'removeformat | help',
-							content_style:
-								'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+				<div className='d-flex justify-content-end'>
+					<button
+						type='button'
+						className='mt-4 btn btn-warning'
+						onClick={() => {
+							setShowQuestCreator(!showQuestCreator);
 						}}
-					/>
-				}
-				<div className='mt-4'>
-					<strong className='h4'>Odpowiedzi</strong>
-					<div className='d-flex mt-3'>
-						<div className='col-1 d-flex justify-content-center'>
-							<input
-								type='radio'
-								className='form-check-input'
-								name='answer'
-								value='a'
-							/>
-							&nbsp;
-							<strong> A. </strong>
-						</div>
-						<div className='col-10'>
-							{
-								<Editor
-									apiKey='gv5fnyynnu54nbfl7gqe2noc7l3i4w7uq8ra8c9iglkcz2lh'
-									onInit={(evt, editor) => (editorRef.current = editor)}
-									initialValue='<p></p>'
-									init={{
-										selector: 'textarea',
-										toolbar: 'language',
-										language: 'pl',
-										content_langs: [{ title: 'Polish', code: 'pl' }],
-										height: 200,
-										width: 850,
-										menubar: false,
-										plugins: [
-											'advlist',
-											'autolink',
-											'lists',
-											'link',
-											'image',
-											'charmap',
-											'preview',
-											'anchor',
-											'searchreplace',
-											'visualblocks',
-											'code',
-											'fullscreen',
-											'insertdatetime',
-											'media',
-											'table',
-											'code',
-											'help',
-											'wordcount',
-											'codesample',
-											'hilitecolor',
-										],
-										toolbar:
-											'undo redo blocks | media image link codesample | ' +
-											'bold italic forecolor backcolor | alignleft aligncenter ' +
-											'alignright alignjustify | bullist numlist outdent indent | ' +
-											'removeformat | help',
-										content_style:
-											'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-									}}
-								/>
-							}
-						</div>
-					</div>
-					<div className='d-flex mt-4'>
-						<div className='col-1 d-flex justify-content-center'>
-							<input
-								type='radio'
-								className='form-check-input'
-								name='answer'
-								value='b'
-							/>
-							&nbsp;
-							<strong> B. </strong>
-						</div>
-						<div className='col-10'>
-							{
-								<Editor
-									apiKey='gv5fnyynnu54nbfl7gqe2noc7l3i4w7uq8ra8c9iglkcz2lh'
-									onInit={(evt, editor) => (editorRef.current = editor)}
-									initialValue='<p></p>'
-									init={{
-										selector: 'textarea',
-										toolbar: 'language',
-										language: 'pl',
-										content_langs: [{ title: 'Polish', code: 'pl' }],
-										height: 200,
-										width: 850,
-										menubar: false,
-										plugins: [
-											'advlist',
-											'autolink',
-											'lists',
-											'link',
-											'image',
-											'charmap',
-											'preview',
-											'anchor',
-											'searchreplace',
-											'visualblocks',
-											'code',
-											'fullscreen',
-											'insertdatetime',
-											'media',
-											'table',
-											'code',
-											'help',
-											'wordcount',
-											'codesample',
-											'hilitecolor',
-										],
-										toolbar:
-											'undo redo blocks | media image link codesample | ' +
-											'bold italic forecolor backcolor | alignleft aligncenter ' +
-											'alignright alignjustify | bullist numlist outdent indent | ' +
-											'removeformat | help',
-										content_style:
-											'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-									}}
-								/>
-							}
-						</div>
-					</div>
-					<div className='d-flex mt-4'>
-						<div className='col-1 d-flex justify-content-center'>
-							<input
-								type='radio'
-								className='form-check-input'
-								name='answer'
-								value='c'
-							/>
-							&nbsp;
-							<strong> C. </strong>
-						</div>
-						<div className='col-10'>
-							{
-								<Editor
-									apiKey='gv5fnyynnu54nbfl7gqe2noc7l3i4w7uq8ra8c9iglkcz2lh'
-									onInit={(evt, editor) => (editorRef.current = editor)}
-									initialValue='<p></p>'
-									init={{
-										selector: 'textarea',
-										toolbar: 'language',
-										language: 'pl',
-										content_langs: [{ title: 'Polish', code: 'pl' }],
-										height: 200,
-										width: 850,
-										menubar: false,
-										plugins: [
-											'advlist',
-											'autolink',
-											'lists',
-											'link',
-											'image',
-											'charmap',
-											'preview',
-											'anchor',
-											'searchreplace',
-											'visualblocks',
-											'code',
-											'fullscreen',
-											'insertdatetime',
-											'media',
-											'table',
-											'code',
-											'help',
-											'wordcount',
-											'codesample',
-											'hilitecolor',
-										],
-										toolbar:
-											'undo redo blocks | media image link codesample | ' +
-											'bold italic forecolor backcolor | alignleft aligncenter ' +
-											'alignright alignjustify | bullist numlist outdent indent | ' +
-											'removeformat | help',
-										content_style:
-											'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-									}}
-								/>
-							}
-						</div>
-					</div>
-					<div className='d-flex mt-4'>
-						<div className='col-1 d-flex justify-content-center'>
-							<input
-								type='radio'
-								className='form-check-input'
-								name='answer'
-								value='d'
-							/>
-							&nbsp;
-							<strong> D. </strong>
-						</div>
-						<div className='col-10'>
-							{
-								<Editor
-									apiKey='gv5fnyynnu54nbfl7gqe2noc7l3i4w7uq8ra8c9iglkcz2lh'
-									onInit={(evt, editor) => (editorRef.current = editor)}
-									initialValue='<p></p>'
-									init={{
-										selector: 'textarea',
-										toolbar: 'language',
-										language: 'pl',
-										content_langs: [{ title: 'Polish', code: 'pl' }],
-										height: 200,
-										width: 850,
-										menubar: false,
-										plugins: [
-											'advlist',
-											'autolink',
-											'lists',
-											'link',
-											'image',
-											'charmap',
-											'preview',
-											'anchor',
-											'searchreplace',
-											'visualblocks',
-											'code',
-											'fullscreen',
-											'insertdatetime',
-											'media',
-											'table',
-											'code',
-											'help',
-											'wordcount',
-											'codesample',
-											'hilitecolor',
-										],
-										toolbar:
-											'undo redo blocks | media image link codesample | ' +
-											'bold italic forecolor backcolor | alignleft aligncenter ' +
-											'alignright alignjustify | bullist numlist outdent indent | ' +
-											'removeformat | help',
-										content_style:
-											'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-									}}
-								/>
-							}
-						</div>
-					</div>
-					<div className='d-flex justify-content-end'>
-						<button type='submit' className='mt-4 btn btn-primary'>
-							Zapisz
-						</button>
-					</div>
+						// disabled={!isSaved}
+					>
+						<FontAwesomeIcon icon={faPen} />
+						&nbsp; Dodaj pytania do testu
+					</button>
+					&nbsp;{' '}
+					<button
+						type='submit'
+						onClick={validateAndCreateDocument}
+						className='mt-4 btn btn-success'
+					>
+						Zapisz <FontAwesomeIcon icon={faFloppyDisk} />
+					</button>
 				</div>
-				<div style={{ height: 50 }}></div>
+				<div>{showQuestCreator && <QuestCreator examName={examName} />}</div>
 			</div>
+			<div style={{ height: 50 }}></div>
 		</div>
 	);
 };

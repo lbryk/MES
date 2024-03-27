@@ -116,7 +116,6 @@ const ExitExam = () => {
 		
 	};
 
-	console.log(rightKeyAnswers);
 	let ansTab = [];
 	for (let i = 0; i < 40; i++) {
 		const lp = i + 1;

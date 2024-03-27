@@ -5,12 +5,13 @@ import { library } from '@fortawesome/fontawesome-svg-core';
 import { faCircleQuestion } from '@fortawesome/free-solid-svg-icons';
 import { Link, useNavigate } from 'react-router-dom';
 import AppContext from './AppContext';
-import ExitAlert from './ExitAlert';
+import ExitPanel from './ExitPanel';
 library.add(faCircleQuestion);
 
-const Header = () => {
+const AdminHeader = () => {
 	const { userName, setUserName } = useContext(AppContext);
 	const navigate = useNavigate();
+
 	const [showAlert, setShowAlert] = useState(false);
 	const handleAlert = () => {
 		setShowAlert(true);
@@ -22,6 +23,10 @@ const Header = () => {
 	const handleLogout = () => {
 		setShowAlert(true);
 	};
+
+	if (userName == '') {
+		navigate(`/login`);
+	}
 
 	return (
 		<div>
@@ -37,25 +42,25 @@ const Header = () => {
 						target='_blank'
 						to='https://exam.codenight.pl/instruction-exam.pdf'
 					>
-						<FontAwesomeIcon
+						{/* <FontAwesomeIcon
 							className='help'
 							icon='fa-solid fa-circle-question'
-						/>
+						/> */}
 
-						<span className='light-green'>&nbsp;Instrukcja obsługi</span>
+						{/* <span className='light-green'>&nbsp;Instrukcja obsługi</span> */}
 					</Link>
 				</div>
 				<div className='col-3 loggedInUser'>
 					<div className='row col-12 usernameDisplay'>
 						<div className='headerLogin'>
-							<strong>Zdający:</strong> {userName}
+							<strong>Zalogowany jako:</strong> {userName}
 						</div>
 					</div>
 					<div className='row col-12 logOut' onClick={handleLogout}>
 						Wyloguj z systemu
 					</div>
-					<ExitAlert
-						message='Czy na pewno chcesz zakończyć egzamin? Nie będziesz już mógł zmienić odpowiedzi'
+					<ExitPanel
+						message='Czy na pewno chcesz wylogować się z panelu administracyjnego?'
 						show={showAlert}
 						onClose={closeAlert}
 						buttons='NoYes'
@@ -66,5 +71,5 @@ const Header = () => {
 	);
 };
 
-export default Header;
+export default AdminHeader;
 

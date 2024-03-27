@@ -38,11 +38,11 @@ const Content = () => {
 		log('/login');
 	} 
 	const finish = useNavigate();
-	useEffect(() => {
-		if (timeLeft === 0) {
-			finish('/finish');
-		}
-	}, [timeLeft]);
+	// useEffect(() => {
+	// 	if (timeLeft === 0) {
+	// 		finish('/finish');
+	// 	}
+	// }, [timeLeft]);
 	let tab = [];
 
 	useEffect(() => {

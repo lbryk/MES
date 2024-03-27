@@ -30,6 +30,13 @@ body {
 	box-shadow: 1px 1px 7px #ccc;
 }
 
+.line {
+	margin-top: 0px;
+	border-top: 6px solid #2baab1;
+	min-height: 6px;
+	width: 100%;
+}
+
 .App-logo {
 	height: 40vmin;
 	pointer-events: none;

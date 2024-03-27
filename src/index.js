@@ -7,7 +7,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'font-awesome/css/font-awesome.min.css';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faCheckSquare } from '@fortawesome/free-solid-svg-icons';
-import { Route, BrowserRouter, Routes, useNavigate } from 'react-router-dom';
+import { Route, BrowserRouter, Routes, useNavigate, Navigate } from 'react-router-dom';
 import Quest from './components/Qeust';
 import { TimerProvider } from './components/TimerContext';
 import AppContext from './components/AppContext';
@@ -20,7 +20,9 @@ import QuizLoader from './components/QuizLoader';
 import AdminPanel from './components/AdminPanel';
 import ExamCreator from './components/ExamCreator';
 import AddUserForm from './components/AddUserForm';
+
 function Index() {
+
 	const urlAdress = window.location.href;
 	const [id, setId] = useState(window.location.href.split('/').pop());
 	const [Qualification, setQualification] = useState('');
@@ -133,7 +135,17 @@ function Index() {
 			return updateSelectedAnswers;
 		});
 	}
-const [showExitAlert, setShowExitAlert] = useState(false);
+
+	// useEffect(() => {
+	// 	if (userName) {
+	// 		console.log('User is logged in:', userName);
+	// 		// Perform actions after login, such as redirecting or updating UI
+	// 	} else {
+	// 		console.log('No user is logged in.');
+	// 		// Perform actions for when there is no user logged in
+	// 	}
+	// }, [userName]); 
+	const [showExitAlert, setShowExitAlert] = useState(false);
 	return (
 		<AppContext.Provider
 			value={{
@@ -174,9 +186,9 @@ const [showExitAlert, setShowExitAlert] = useState(false);
 						<Route path='/' element={<App />} />
 						<Route path='/:id' element={<App />} />
 						<Route exact path='/widget/' element={<Widget />} />
-						<Route exact path='/quest/:i' element={<Quest />} />
 						<Route exact path='/quest/:idBase/:i' element={<Quest />} />
 						<Route exact path='/finish/:i' element={<ExitExam />} />
+						<Route exact path='/admin' element={<AdminPanel />} />
 						<Route exact path='/login' element={<LoginExam />} />
 					</Routes>
 				</BrowserRouter>
@@ -190,8 +202,8 @@ library.add(faCheckSquare);
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
 	<React.StrictMode>
-		{/* <Index /> */}
-		<AdminPanel />
+		<Index />
+		{/* <AdminPanel /> */}
 		{/* <AddUserForm /> */}
 	</React.StrictMode>
 );

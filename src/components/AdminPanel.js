@@ -5,6 +5,9 @@ import ExamTable from './ExamTable';
 import Footer from './Footer';
 import ShowUser from './ShowUser';
 import RaportExam from './RaportExam';
+import AdminHeader from './AdminHeader';
+import AppContext from './AppContext';
+import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {
@@ -17,8 +20,13 @@ import {
 import db from '../firebase';
 
 const AdminPanel = () => {
+	const checkLogin = useNavigate();
 	const [quizCodesData, setQuizCodesData] = useState({});
-
+	const { userName, setUserName } = useContext(AppContext);
+	if (userName == '') {
+		checkLogin(`/login`);
+	}
+	
 	useEffect(() => {
 		const fetchQuizCodes = async () => {
 			const querySnapshot = await getDocs(collection(db, 'quizCode'));
@@ -45,9 +53,23 @@ const AdminPanel = () => {
 		fetchProfessions();
 	}, []);
 
-	
+	const [qualificationNameData, setQualificationNameData] = useState({});
+
+	useEffect(() => {
+		const fetchqualificationNameData = async () => {
+			const querySnapshot = await getDocs(collection(db, 'qualificationName'));
+			const qualificationName = {};
+			querySnapshot.docs.forEach((doc) => {
+				qualificationName[doc.id] = doc.data();
+			});
+			setQualificationNameData(qualificationName);
+		};
+		fetchqualificationNameData();
+	}, []);
+
 	return (
 		<div>
+			<AdminHeader />
 			<div className='container'>
 				<nav className='mt-4'>
 					<div className='nav nav-tabs' id='nav-tab' role='tablist'>
@@ -203,7 +225,11 @@ const AdminPanel = () => {
 									role='tabpanel'
 									aria-labelledby='pills-home-tab'
 								>
-									<ExamCreator quizCodesData={quizCodesData} professionsData={professionsData} />
+									<ExamCreator
+										quizCodesData={quizCodesData}
+										professionsData={professionsData}
+										qualificationName={qualificationNameData}
+									/>
 								</div>
 								<div
 									className='tab-pane fade'

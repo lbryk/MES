@@ -9,6 +9,7 @@ import db from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { collection, query, getDocs } from 'firebase/firestore';
 import ExitAlert from './components/ExitAlert';
+import AdminPanel from './components/AdminPanel';
 const LoginExam = () => {
 	const { login, setLogin } = useContext(AppContext);
 	const [password, setPassword] = useState('');
@@ -20,6 +21,8 @@ const LoginExam = () => {
 	const { setTimeLeft } = useTimer();
 	const { setTimerInitialized } = useTimer();
 	const { setTimerStarted } = useTimer();
+	const [showAdminPanel, setShowAdminPanel] = useState(false); // Add this line
+
 	// const [showExitAlert, setShowExitAlert] = React.useState(false);
 	const handleAlert = () => {
 		setShowAlert(true);
@@ -47,6 +50,11 @@ const LoginExam = () => {
 				setTimerInitialized(true);
 				setTimerStarted(true);
 				navigate(`/${docSnap.data().quizID}`);
+				// navigate('/'); // Navigate to the root, which should show the "app" container if that's the intended default route
+			} else if (docSnap.data().role == 'sa') {
+				setUserName(`${docSnap.data().firstname} ${docSnap.data().lastname}`);
+				//setId(`${docSnap.data().quizID}`);
+				navigate(`/admin`);
 			} else {
 				setShowAlert(true);
 				<ExitAlert
@@ -104,7 +112,7 @@ const LoginExam = () => {
 							variant='primary'
 							type='submit'
 						>
-							Rozpocznij egzamin
+							Start
 						</Button>
 					</div>
 				</Form>

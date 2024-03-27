@@ -7,6 +7,7 @@ import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import ExitAlert from './ExitAlert';
 
+
 library.add(faRightFromBracket);
 
 const Widget = () => {
@@ -59,6 +60,8 @@ const Widget = () => {
 			finish('/finish');
 		}
 	}, [timeLeft]);
+	
+  
 
 	const exit = () => {
 		setIsPaused(!isPaused);

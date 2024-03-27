@@ -33,6 +33,8 @@ const TimerProvider = ({ children }) => {
 			});
 		}, 1000);
 
+		setTimerInitialized(true);
+		setTimerStarted(true);
 		return () => clearInterval(interval);
 	}, [isPaused, timerStarted, setTimeLeft, setIsPaused]);
 
@@ -46,7 +48,7 @@ const TimerProvider = ({ children }) => {
 	const [currentDate, setCurrentDate] = useState(new Date());
 
 	const [futureDate, setFutureDate] = useState(currentDate);
-	
+
 	useEffect(() => {
 		setFutureDate(new Date(currentDate.getTime() + timeInMiliSeconds));
 	}, [currentDate, timeInMiliSeconds]);
