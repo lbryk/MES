@@ -233,44 +233,60 @@ const Quest = () => {
 											className='answer'
 											name='answer'
 											value='a'
+											id='selectAnswerA'
 											onChange={handleChange}
 											checked={tempSelectedAnswer[i - 1] === 'a'}
 										/>
-										<strong> A. </strong>
-										<span dangerouslySetInnerHTML={{ __html: Aradio }}></span>
+										&nbsp;
+										<label htmlFor='selectAnswerA' class='form-check-label'>
+											<strong> A. </strong>
+											<span dangerouslySetInnerHTML={{ __html: Aradio }}></span>
+										</label>
 										<br />
 										<input
 											type='radio'
 											className='answer'
 											name='answer'
 											value='b'
+											id='selectAnswerB'
 											onChange={handleChange}
 											checked={tempSelectedAnswer[i - 1] === 'b'}
 										/>
-										<strong> B. </strong>
-										<span dangerouslySetInnerHTML={{ __html: Bradio }}></span>
+										&nbsp;
+										<label htmlFor='selectAnswerB' class='form-check-label'>
+											<strong> B. </strong>
+											<span dangerouslySetInnerHTML={{ __html: Bradio }}></span>
+										</label>
 										<br />
 										<input
 											type='radio'
 											className='answer'
 											name='answer'
 											value='c'
+											id='selectAnswerC'
 											onChange={handleChange}
 											checked={tempSelectedAnswer[i - 1] === 'c'}
 										/>
-										<strong> C. </strong>
-										<span dangerouslySetInnerHTML={{ __html: Cradio }}></span>
+										&nbsp;
+										<label htmlFor='selectAnswerC' class='form-check-label'>
+											<strong> C. </strong>
+											<span dangerouslySetInnerHTML={{ __html: Cradio }}></span>
+										</label>
 										<br />
 										<input
 											type='radio'
 											className='answer'
 											name='answer'
 											value='d'
+											id='selectAnswerD'
 											onChange={handleChange}
 											checked={tempSelectedAnswer[i - 1] === 'd'}
 										/>
-										<strong> D. </strong>
-										<span dangerouslySetInnerHTML={{ __html: Dradio }}></span>
+										&nbsp;
+										<label htmlFor='selectAnswerD' class='form-check-label'>
+											<strong> D. </strong>
+											<span dangerouslySetInnerHTML={{ __html: Dradio }}></span>
+										</label>
 										<br />
 									</form>
 								</div>

@@ -61,10 +61,7 @@ const Widget = () => {
 		}
 	}, [timeLeft]);
 
-	console.log(timeLeft);
 	
-  
-
 	const exit = () => {
 		setIsPaused(!isPaused);
 		setIsDisabled(true); // blokowanie formularza

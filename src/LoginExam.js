@@ -24,9 +24,8 @@ const LoginExam = () => {
 	const { timeLeft, setTimeLeft } = useTimer();
 	const { setTimerInitialized } = useTimer();
 	const { setTimerStarted } = useTimer();
-	const [showAdminPanel, setShowAdminPanel] = useState(false); // Add this line
+	const [showAdminPanel, setShowAdminPanel] = useState(false); 
 
-	// const [showExitAlert, setShowExitAlert] = React.useState(false);
 	const handleAlert = () => {
 		setShowAlert(true);
 	};
@@ -128,7 +127,7 @@ const LoginExam = () => {
 							variant='primary'
 							type='submit'
 						>
-							Start
+							Rozpocznij
 						</Button>
 					</div>
 				</Form>

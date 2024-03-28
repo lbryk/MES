@@ -2,10 +2,12 @@ import React, { useContext } from 'react';
 import { useTimer } from './TimerContext';
 import AppContext from './AppContext';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../AuthContext';
 
 const ExitAlert = ({header, message, show, onClose, buttons }) => {
+	const auth = useAuth();
 	const { setIsDisabled, keyExam } = useContext(AppContext);
-
+	const { timeLeft, setTimeLeft } = useTimer();
 	const { restartTimer, isPaused, setIsPaused } = useTimer();
 	const finish = useNavigate();
 
@@ -16,7 +18,13 @@ const ExitAlert = ({header, message, show, onClose, buttons }) => {
 		setIsPaused(!isPaused);
 		setIsDisabled(true); // blokowanie formularza
 		restartTimer();
-		finish(`/finish/${id}`);
+		if(timeLeft !== 0){
+			finish(`/finish/${id}`);
+		}else{
+			auth.logout(); 
+		}
+		
+		console.log(timeLeft);
 	};
 
 	return (

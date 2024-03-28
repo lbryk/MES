@@ -18,8 +18,6 @@ import ExitExam from './components/ExitExam';
 import LoginExam from './LoginExam';
 import QuizLoader from './components/QuizLoader';
 import AdminPanel from './components/AdminPanel';
-import ExamCreator from './components/ExamCreator';
-import AddUserForm from './components/AddUserForm';
 
 import { AuthProvider } from './AuthContext'; // Import AuthProvider
 import ProtectedRoute from './ProtectedRoute'; // Import ProtectedRoute
@@ -113,7 +111,6 @@ function Index() {
 				countIdQual,
 				Qualification.length
 			);
-			//const NumberQual = Qualification.substring(countIdQual).match(/^d+/)[0];
 
 			const identifier = `${idQual}-${NumberQual}`;
 
@@ -138,16 +135,6 @@ function Index() {
 			return updateSelectedAnswers;
 		});
 	}
-
-	// useEffect(() => {
-	// 	if (userName) {
-	// 		console.log('User is logged in:', userName);
-	// 		// Perform actions after login, such as redirecting or updating UI
-	// 	} else {
-	// 		console.log('No user is logged in.');
-	// 		// Perform actions for when there is no user logged in
-	// 	}
-	// }, [userName]); 
 	const [showExitAlert, setShowExitAlert] = useState(false);
 
 	return (
@@ -185,37 +172,11 @@ function Index() {
 					setShowExitAlert,
 				}}
 			>
-				{/* <TimerProvider>
-				<BrowserRouter>
-					<Routes>
-						<Route path='/' element={<App />} />
-						<Route path='/:id' element={<App />} />
-						<Route exact path='/widget/' element={<Widget />} />
-						<Route exact path='/quest/:idBase/:i' element={<Quest />} />
-						<Route exact path='/finish/:i' element={<ExitExam />} />
-						<Route exact path='/admin' element={<AdminPanel />} />
-						<Route exact path='/login' element={<LoginExam />} />
-					</Routes>
-				</BrowserRouter>
-			</TimerProvider>
-		</AppContext.Provider> */}
 
 				<TimerProvider>
 					<BrowserRouter>
 						<Routes>
-							<Route path='/' element={<App />} />
-							<Route path='/:id' element={<App />} />
-
 							<Route exact path='/login' element={<LoginExam />} />
-							{/* <Route
-								exact
-								path='/:id'
-								element={
-									<ProtectedRoute>
-										<App />
-									</ProtectedRoute>
-								}
-							/>
 							<Route
 								exact
 								path='/'
@@ -224,7 +185,16 @@ function Index() {
 										<App />
 									</ProtectedRoute>
 								}
-							/> */}
+							/>
+							<Route
+								exact
+								path='/:id'
+								element={
+									<ProtectedRoute>
+										<App />
+									</ProtectedRoute>
+								}
+							/>
 							<Route
 								exact
 								path='/widget'
@@ -293,8 +263,6 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
 	<React.StrictMode>
 		<Index />
-		{/* <AdminPanel /> */}
-		{/* <AddUserForm /> */}
 	</React.StrictMode>
 );
 

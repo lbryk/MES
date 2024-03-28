@@ -8,11 +8,14 @@ import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons';
 import Header from './components/Header';
 import Content from './components/Content';
 import Footer from './components/Footer';
+import { useAuth } from './AuthContext';
 
 library.add(faRightFromBracket);
 
 function App() {
 	const finish = useNavigate();
+	const auth = useAuth();
+	
 	const {
 		Qualification,
 		setQualification,
@@ -24,8 +27,14 @@ function App() {
 		setKeyExam,
 		keyQualification,
 		setKeyQualification,
-		userName
+		userName,
 	} = useContext(AppContext);
+
+	useEffect(() => {
+		if (!auth.user) {
+			finish('/login', { replace: true });
+		}
+	}, [auth.user, finish]);
 
 	return (
 		<div>

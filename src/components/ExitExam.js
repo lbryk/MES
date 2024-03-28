@@ -16,11 +16,13 @@ import AppContext from './AppContext';
 import { collection, query, getDocs, doc, setDoc } from 'firebase/firestore';
 import db from '../firebase';
 import { async } from '@firebase/util';
+import { useAuth } from '../AuthContext';
 
 library.add(faDoorOpen);
 
 const ExitExam = () => {
 	const navigate = useNavigate();
+	const auth = useAuth();
 	const {
 		keyExam,
 		setKeyExam,
@@ -41,7 +43,11 @@ const ExitExam = () => {
 		login,
 		setLogin,
 	} = useContext(AppContext);
-
+	const { timeLeft, setTimeLeft } = useTimer();
+	const { setTimerInitialized } = useTimer();
+	const { setTimerStarted } = useTimer();
+	const { timeUser, setTimeUser } = useContext(AppContext);
+	const { id, setId } = useContext(AppContext);
 	useEffect(() => {
 		const fetchQuiz = async () => {
 			const quizCollection = collection(db, `${keyExam}`);
@@ -94,6 +100,7 @@ const ExitExam = () => {
 	const percentResult = Math.round((sumOfRightAnswers / 40) * 100 * 100) / 100;
 	const divClassName = sumOfRightAnswers >= 20 ? 'checkquest' : 'notquest';
 	const divText = sumOfRightAnswers >= 20 ? 'Egzamin zdany' : 'Egzamin oblany';
+	setTimeLeft(0);
 	useEffect(() => {
 		const docRef = doc(db, 'users', `user${login}`);
 		const updateUserData = async () => {
@@ -103,17 +110,15 @@ const ExitExam = () => {
 		};
 		updateUserData();
 	}, [db, login, sumOfRightAnswers, percentResult]);
+
+	useEffect(() => {
+		if (!auth.user) {
+			navigate('/login', { replace: true });
+		}
+	}, [auth.user, navigate]);
+
 	const reset = async () => {
-		setIsDisabled(false);
-		setSelectedAnswers(new Array(40).fill('null'));
-		restartTimer();
-		setIsPaused(false);
-		setRightAnswers(new Array(40).fill(0));
-		setUserName('');
-		window.location.href = '/login';
-		navigate('/login');
-		setKeyExam('');
-		
+		auth.logout(); 
 	};
 
 	let ansTab = [];
@@ -129,6 +134,7 @@ const ExitExam = () => {
 			),
 		});
 	}
+	
 	return (
 		<div>
 			<div className='container'>
@@ -185,5 +191,3 @@ const ExitExam = () => {
 };
 
 export default ExitExam;
-
-
