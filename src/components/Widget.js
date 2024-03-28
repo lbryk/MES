@@ -60,6 +60,8 @@ const Widget = () => {
 			finish('/finish');
 		}
 	}, [timeLeft]);
+
+	console.log(timeLeft);
 	
   
 

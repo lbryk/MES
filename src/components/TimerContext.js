@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
-
 import AppContext from './AppContext';
 const TimerContext = createContext();
 
@@ -14,6 +13,7 @@ const TimerProvider = ({ children }) => {
 		const timeInSeconds = timeUser ? parseInt(timeUser.slice(1)) * 60 : 0;
 		setTimeLeft(timeInSeconds);
 	}, [timeUser]);
+
 	const [timerStarted, setTimerStarted] = useState(false);
 	const [timerInitialized, setTimerInitialized] = useState(false);
 	const [timerKey, setTimerKey] = useState(0);

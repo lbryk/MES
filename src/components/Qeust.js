@@ -131,8 +131,6 @@ const Quest = () => {
 		});
 	};
 
-	console.log(quizData);
-
 	useEffect(() => {
 		if (!isLoading) {
 			displayA();

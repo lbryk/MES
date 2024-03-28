@@ -21,6 +21,9 @@ import AdminPanel from './components/AdminPanel';
 import ExamCreator from './components/ExamCreator';
 import AddUserForm from './components/AddUserForm';
 
+import { AuthProvider } from './AuthContext'; // Import AuthProvider
+import ProtectedRoute from './ProtectedRoute'; // Import ProtectedRoute
+
 function Index() {
 
 	const urlAdress = window.location.href;
@@ -146,41 +149,43 @@ function Index() {
 	// 	}
 	// }, [userName]); 
 	const [showExitAlert, setShowExitAlert] = useState(false);
+
 	return (
-		<AppContext.Provider
-			value={{
-				keyExam,
-				keyQualification,
-				idBase,
-				rightAnswers,
-				setRightAnswers,
-				updateRightAnswers,
-				sumOfRightAnswers,
-				selectedAnswers,
-				setSelectedAnswers,
-				updateSelectedAnswers,
-				sumOfWrongAnswers,
-				rightKeyAnswers,
-				setRightKeyAnswers,
-				isDisabled,
-				setIsDisabled,
-				qi,
-				setQi,
-				userName,
-				setUserName,
-				login,
-				setLogin,
-				setId,
-				id,
-				timeUser,
-				setTimeUser,
-				quizData,
-				isLoading,
-				showExitAlert,
-				setShowExitAlert,
-			}}
-		>
-			<TimerProvider>
+		<AuthProvider>
+			<AppContext.Provider
+				value={{
+					keyExam,
+					keyQualification,
+					idBase,
+					rightAnswers,
+					setRightAnswers,
+					updateRightAnswers,
+					sumOfRightAnswers,
+					selectedAnswers,
+					setSelectedAnswers,
+					updateSelectedAnswers,
+					sumOfWrongAnswers,
+					rightKeyAnswers,
+					setRightKeyAnswers,
+					isDisabled,
+					setIsDisabled,
+					qi,
+					setQi,
+					userName,
+					setUserName,
+					login,
+					setLogin,
+					setId,
+					id,
+					timeUser,
+					setTimeUser,
+					quizData,
+					isLoading,
+					showExitAlert,
+					setShowExitAlert,
+				}}
+			>
+				{/* <TimerProvider>
 				<BrowserRouter>
 					<Routes>
 						<Route path='/' element={<App />} />
@@ -193,7 +198,92 @@ function Index() {
 					</Routes>
 				</BrowserRouter>
 			</TimerProvider>
-		</AppContext.Provider>
+		</AppContext.Provider> */}
+
+				<TimerProvider>
+					<BrowserRouter>
+						<Routes>
+							<Route path='/' element={<App />} />
+							<Route path='/:id' element={<App />} />
+
+							<Route exact path='/login' element={<LoginExam />} />
+							{/* <Route
+								exact
+								path='/:id'
+								element={
+									<ProtectedRoute>
+										<App />
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								exact
+								path='/'
+								element={
+									<ProtectedRoute>
+										<App />
+									</ProtectedRoute>
+								}
+							/> */}
+							<Route
+								exact
+								path='/widget'
+								element={
+									<ProtectedRoute>
+										<Widget />
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								exact
+								path='/quest/:idBase/:i'
+								element={
+									<ProtectedRoute>
+										<Quest />
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								exact
+								path='/quest/'
+								element={
+									<ProtectedRoute>
+										<Quest />
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								exact
+								path='/finish/:i'
+								element={
+									<ProtectedRoute>
+										<ExitExam />
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								exact
+								path='/finish/'
+								element={
+									<ProtectedRoute>
+										<ExitExam />
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								exact
+								path='/admin'
+								element={
+									<ProtectedRoute>
+										<AdminPanel />
+									</ProtectedRoute>
+								}
+							/>
+						</Routes>
+					</BrowserRouter>
+				</TimerProvider>
+			</AppContext.Provider>
+		</AuthProvider>
 	);
 }
 

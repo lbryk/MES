@@ -10,15 +10,18 @@ import { doc, getDoc } from 'firebase/firestore';
 import { collection, query, getDocs } from 'firebase/firestore';
 import ExitAlert from './components/ExitAlert';
 import AdminPanel from './components/AdminPanel';
+import { useAuth } from './AuthContext';
+
 const LoginExam = () => {
 	const { login, setLogin } = useContext(AppContext);
+	const auth = useAuth(); 
 	const [password, setPassword] = useState('');
 	const [showAlert, setShowAlert] = useState(false);
 	const navigate = useNavigate();
 	const { userName, setUserName } = useContext(AppContext);
 	const { id, setId } = useContext(AppContext);
 	const { timeUser, setTimeUser } = useContext(AppContext);
-	const { setTimeLeft } = useTimer();
+	const { timeLeft, setTimeLeft } = useTimer();
 	const { setTimerInitialized } = useTimer();
 	const { setTimerStarted } = useTimer();
 	const [showAdminPanel, setShowAdminPanel] = useState(false); // Add this line
@@ -32,10 +35,19 @@ const LoginExam = () => {
 		setShowAlert(false);
 	};
 
+	// useEffect(() => {
+	// 	const timeInSeconds = timeUser ? parseInt(timeUser.slice(1)) * 60 : 0;
+	// 	setTimeLeft(timeInSeconds);
+	// }, [timeUser]);
+
 	useEffect(() => {
-		const timeInSeconds = timeUser ? parseInt(timeUser.slice(1)) * 60 : 0;
+		const timeInSeconds = timeUser ? parseInt(timeUser) * 60 : 0;
 		setTimeLeft(timeInSeconds);
-	}, [timeUser]);
+		if (timeInSeconds > 0) {
+			setTimerInitialized(true);
+			setTimerStarted(true);
+		}
+	}, [timeUser, setTimeLeft, setTimerInitialized, setTimerStarted]);
 
 	const handleButtonClick = async (event) => {
 		event.preventDefault();
@@ -43,17 +55,21 @@ const LoginExam = () => {
 		const docSnap = await getDoc(docRef);
 
 		if (docSnap.exists() && docSnap.data().password === password) {
+			  auth.login({
+					userName: `${docSnap.data().firstname} ${docSnap.data().lastname}`,
+					role: docSnap.data().role,
+				});
+
 			if (docSnap.data().role == 's' && docSnap.data().attemptToSolve == '0') {
 				setUserName(`${docSnap.data().firstname} ${docSnap.data().lastname}`);
 				setId(`${docSnap.data().quizID}`);
 				setTimeUser(`/${docSnap.data().quizTime}`);
+				setTimeLeft(`/${docSnap.data().quizTime}`);
 				setTimerInitialized(true);
 				setTimerStarted(true);
 				navigate(`/${docSnap.data().quizID}`);
-				// navigate('/'); // Navigate to the root, which should show the "app" container if that's the intended default route
 			} else if (docSnap.data().role == 'sa') {
 				setUserName(`${docSnap.data().firstname} ${docSnap.data().lastname}`);
-				//setId(`${docSnap.data().quizID}`);
 				navigate(`/admin`);
 			} else {
 				setShowAlert(true);
