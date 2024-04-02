@@ -15,14 +15,18 @@ import db from '../firebase';
 import { Editor } from '@tinymce/tinymce-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { library } from '@fortawesome/fontawesome-svg-core';
-import { faFloppyDisk, faPen } from '@fortawesome/free-solid-svg-icons';
+import {
+	faFloppyDisk,
+	faPen,
+	faUserCircle,
+} from '@fortawesome/free-solid-svg-icons';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import QuestCreator from './QuestCreator';
 import AppContext from './AppContext';
 import { Select, MenuItem, InputLabel, FormControl, Chip } from '@mui/material';
 
-library.add(faFloppyDisk, faPen);
+library.add(faFloppyDisk, faPen, faUserCircle);
 
 const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
 	const [selectedProfession, setSelectedProfession] = useState('');
@@ -36,6 +40,7 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
 	const [users, setUsers] = useState([]);
 	const [selectedUsers, setSelectedUsers] = useState([]);
 	const [availableUsers, setAvailableUsers] = useState([]);
+	const [isFormActive, setIsFormActive] = useState(true);
 
 	useEffect(() => {
 		const fetchUsers = async () => {
@@ -63,7 +68,6 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
 		setAvailableUsers((prevAvailable) =>
 			prevAvailable.filter((user) => user.id !== userId)
 		);
-		
 	};
 
 	const handleRemoveUser = (userId) => {
@@ -196,13 +200,17 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
 		}
 
 		try {
+			const Autors = [
+				userName,
+				...selectedUsers.map((user) => `${user.firstname} ${user.lastname}`),
+			].filter((name) => name !== undefined);
 			const quizCodeDocRef = doc(db, 'quizCode', code);
 			await setDoc(quizCodeDocRef, {
 				Qualification: qualificationDocSnap.data().name,
 				Session: session,
 				Year: new Date().getFullYear(),
 				Profession: selectedProfession,
-				Autors: [userName, 'Joanna Radomska'],
+				Autors: Autors,
 			});
 
 			const formattedQualification = qualification
@@ -226,6 +234,7 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
 
 			toast.success('Nowy arkusz został utworzony', {
 				autoClose: 900,
+				onClose: () => setIsFormActive(false),
 			});
 			setIsSaved(true);
 		} catch (error) {
@@ -248,6 +257,7 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
 						onChange={(e) => setCode(e.target.value)}
 						type='text'
 						placeholder='wprowadź kod testu'
+						disabled={!isFormActive}
 					></input>
 				</div>
 				<div className='col-4 mt-4'>
@@ -256,9 +266,11 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
 						onClick={() => {
 							setCode(generateCode());
 							setIsSaved(false);
+							setIsFormActive(true);
 							setShowQuestCreator(false);
 						}}
 						className='btn btn-success'
+						
 					>
 						Generuj nowy kod egzaminu
 					</button>
@@ -275,8 +287,11 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
 					aria-label='Zawód'
 					value={selectedProfession}
 					onChange={(e) => setSelectedProfession(e.target.value)}
+					disabled={!isFormActive}
 				>
-					<option selected>Wybierz zawód</option>
+					<option selected disabled={!isFormActive}>
+						Wybierz zawód
+					</option>
 					{Object.keys(professionsData).map((profession, index) => (
 						<option key={index} value={profession}>
 							{profession}
@@ -294,8 +309,11 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
 					aria-label='Kwalifikacja zawodowa'
 					value={qualification} // Add this line
 					onChange={(e) => setQualification(e.target.value)}
+					disabled={!isFormActive}
 				>
-					<option selected>Wybierz kwalifikację</option>
+					<option selected disabled={!isFormActive}>
+						Wybierz kwalifikację
+					</option>
 					{availableQualifications.map((qualification, index) => (
 						<option key={index} value={qualification}>
 							{qualification}
@@ -320,6 +338,8 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
 								label={`${user.firstname} ${user.lastname}`}
 								onClick={() => handleRemoveUser(user.id)}
 								style={{ margin: '5px' }}
+								disabled={!isFormActive}
+								icon={<FontAwesomeIcon icon={faUserCircle} />}
 							/>
 						))}
 					</div>
@@ -333,6 +353,7 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
 						labelId='user-select-label'
 						id='user-select'
 						value=''
+						disabled={!isFormActive}
 						label='Wybierz użytkownika, któremu nadasz dostęp do arkusza'
 						onChange={(e) => handleSelectUser(e.target.value)}
 					>
@@ -353,6 +374,7 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
 						onClick={() => {
 							setShowQuestCreator(!showQuestCreator);
 						}}
+						disabled={isFormActive}
 						// disabled={!isSaved}
 					>
 						<FontAwesomeIcon icon={faPen} />
@@ -362,6 +384,7 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
 					<button
 						type='submit'
 						onClick={validateAndCreateDocument}
+						disabled={!isFormActive}
 						className='mt-4 btn btn-success'
 					>
 						Zapisz <FontAwesomeIcon icon={faFloppyDisk} />
