@@ -10,12 +10,13 @@ import Content from './components/Content';
 import Footer from './components/Footer';
 import { useAuth } from './AuthContext';
 
+
 library.add(faRightFromBracket);
 
 function App() {
 	const finish = useNavigate();
 	const auth = useAuth();
-	
+
 	const {
 		Qualification,
 		setQualification,

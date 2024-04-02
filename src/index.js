@@ -41,6 +41,7 @@ function Index() {
 	);
 	const { quizData, isLoading } = QuizLoader({ keyExam });
 	const [qi, setQi] = useState(1);
+	const [currentUser, setCurrentUser] = useState('');
 	const [userName, setUserName] = useState('');
 	const sumOfRightAnswers = rightAnswers.reduce((accumulator, currentValue) => {
 		return accumulator + currentValue;
@@ -170,9 +171,10 @@ function Index() {
 					isLoading,
 					showExitAlert,
 					setShowExitAlert,
+					currentUser,
+					setCurrentUser
 				}}
 			>
-
 				<TimerProvider>
 					<BrowserRouter>
 						<Routes>

@@ -6,6 +6,7 @@ const AppContext = createContext({
 });
 
 export default AppContext;
+
 // import React from 'react';
 
 // const AppContext = React.createContext();

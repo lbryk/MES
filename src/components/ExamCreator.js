@@ -8,6 +8,8 @@ import {
 	getDoc,
 	updateDoc,
 	arrayUnion,
+	query,
+	where,
 } from 'firebase/firestore';
 import db from '../firebase';
 import { Editor } from '@tinymce/tinymce-react';
@@ -17,6 +19,8 @@ import { faFloppyDisk, faPen } from '@fortawesome/free-solid-svg-icons';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import QuestCreator from './QuestCreator';
+import AppContext from './AppContext';
+import { Select, MenuItem, InputLabel, FormControl, Chip } from '@mui/material';
 
 library.add(faFloppyDisk, faPen);
 
@@ -27,6 +31,48 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
 	const [isSaved, setIsSaved] = useState(false);
 	const [showQuestCreator, setShowQuestCreator] = useState(false);
 	const [examName, setExamName] = useState('');
+	const { userName, setUserName } = useContext(AppContext);
+	const { currentUser, setCurrentUser } = useContext(AppContext); // nazwa dokumentu aktualnie zalogowane użytkownika. Nazwa tworzona w LoginExam
+	const [users, setUsers] = useState([]);
+	const [selectedUsers, setSelectedUsers] = useState([]);
+	const [availableUsers, setAvailableUsers] = useState([]);
+
+	useEffect(() => {
+		const fetchUsers = async () => {
+			const q = query(
+				collection(db, 'users'),
+				where('role', 'in', ['sa', 'a'])
+			);
+			const querySnapshot = await getDocs(q);
+			const fetchedUsers = [];
+			querySnapshot.forEach((doc) => {
+				if (doc.id !== currentUser) {
+					fetchedUsers.push({ id: doc.id, ...doc.data() });
+				}
+			});
+			setUsers(fetchedUsers);
+			setAvailableUsers(fetchedUsers);
+		};
+
+		fetchUsers();
+	}, []);
+
+	const handleSelectUser = (userId) => {
+		const user = availableUsers.find((user) => user.id === userId);
+		setSelectedUsers((prevSelected) => [...prevSelected, user]);
+		setAvailableUsers((prevAvailable) =>
+			prevAvailable.filter((user) => user.id !== userId)
+		);
+		
+	};
+
+	const handleRemoveUser = (userId) => {
+		const user = selectedUsers.find((user) => user.id === userId);
+		setAvailableUsers((prevAvailable) => [...prevAvailable, user]);
+		setSelectedUsers((prevSelected) =>
+			prevSelected.filter((user) => user.id !== userId)
+		);
+	};
 
 	useEffect(() => {
 		if (selectedProfession) {
@@ -156,7 +202,7 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
 				Session: session,
 				Year: new Date().getFullYear(),
 				Profession: selectedProfession,
-				Autors: ['Łukasz Bryk', 'Joanna Radomska'],
+				Autors: [userName, 'Joanna Radomska'],
 			});
 
 			const formattedQualification = qualification
@@ -257,7 +303,48 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
 					))}
 				</select>
 			</div>
-			
+			<div className='d-flex mt-5'>
+				Autor:{'  '}&nbsp;
+				<InputLabel size='normal' focused color='info'>
+					{userName}
+				</InputLabel>{' '}
+			</div>
+			<div className='d-flex mt-5'>
+				<div style={{ marginTop: '20px', marginRight: '40px' }}>
+					<InputLabel>Osoby z dostępem do arkusza:</InputLabel>
+					<div>
+						{selectedUsers.map((user) => (
+							<Chip
+								key={user.id}
+								color='primary'
+								label={`${user.firstname} ${user.lastname}`}
+								onClick={() => handleRemoveUser(user.id)}
+								style={{ margin: '5px' }}
+							/>
+						))}
+					</div>
+				</div>
+
+				<FormControl fullWidth>
+					<InputLabel id='user-select-label'>
+						Wybierz użytkownika, któremu nadasz dostęp do arkusza
+					</InputLabel>
+					<Select
+						labelId='user-select-label'
+						id='user-select'
+						value=''
+						label='Wybierz użytkownika, któremu nadasz dostęp do arkusza'
+						onChange={(e) => handleSelectUser(e.target.value)}
+					>
+						{availableUsers.map((user) => (
+							<MenuItem key={user.id} value={user.id}>
+								{`${user.firstname} ${user.lastname}`}{' '}
+							</MenuItem>
+						))}
+					</Select>
+				</FormControl>
+			</div>
+
 			<div className='mt-4'>
 				<div className='d-flex justify-content-end'>
 					<button

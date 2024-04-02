@@ -14,17 +14,18 @@ import { useAuth } from './AuthContext';
 
 const LoginExam = () => {
 	const { login, setLogin } = useContext(AppContext);
-	const auth = useAuth(); 
+	const auth = useAuth();
 	const [password, setPassword] = useState('');
 	const [showAlert, setShowAlert] = useState(false);
 	const navigate = useNavigate();
 	const { userName, setUserName } = useContext(AppContext);
 	const { id, setId } = useContext(AppContext);
+	const { currentUser, setCurrentUser } = useContext(AppContext);
 	const { timeUser, setTimeUser } = useContext(AppContext);
 	const { timeLeft, setTimeLeft } = useTimer();
 	const { setTimerInitialized } = useTimer();
 	const { setTimerStarted } = useTimer();
-	const [showAdminPanel, setShowAdminPanel] = useState(false); 
+	const [showAdminPanel, setShowAdminPanel] = useState(false);
 
 	const handleAlert = () => {
 		setShowAlert(true);
@@ -34,30 +35,32 @@ const LoginExam = () => {
 		setShowAlert(false);
 	};
 
-	// useEffect(() => {
-	// 	const timeInSeconds = timeUser ? parseInt(timeUser.slice(1)) * 60 : 0;
-	// 	setTimeLeft(timeInSeconds);
-	// }, [timeUser]);
-
 	useEffect(() => {
-		const timeInSeconds = timeUser ? parseInt(timeUser) * 60 : 0;
+		const timeInSeconds = timeUser ? parseInt(timeUser.slice(1)) * 60 : 0;
 		setTimeLeft(timeInSeconds);
-		if (timeInSeconds > 0) {
-			setTimerInitialized(true);
-			setTimerStarted(true);
-		}
-	}, [timeUser, setTimeLeft, setTimerInitialized, setTimerStarted]);
+	}, [timeUser]);
+
+	// useEffect(() => {
+	// 	const timeInSeconds = timeUser ? parseInt(timeUser) * 60 : 0;
+	// 	setTimeLeft(timeInSeconds);
+	// 	if (timeInSeconds > 0) {
+	// 		setTimerInitialized(true);
+	// 		setTimerStarted(true);
+	// 	}
+	// }, [timeUser, setTimeLeft, setTimerInitialized, setTimerStarted]);
 
 	const handleButtonClick = async (event) => {
 		event.preventDefault();
 		const docRef = doc(db, 'users', `user${login}`);
 		const docSnap = await getDoc(docRef);
-
+		const usernameWithPrefix = `user${login}`;
+		
 		if (docSnap.exists() && docSnap.data().password === password) {
-			  auth.login({
-					userName: `${docSnap.data().firstname} ${docSnap.data().lastname}`,
-					role: docSnap.data().role,
-				});
+			setCurrentUser(usernameWithPrefix);
+			auth.login({
+				userName: `${docSnap.data().firstname} ${docSnap.data().lastname}`,
+				role: docSnap.data().role,
+			});
 
 			if (docSnap.data().role == 's' && docSnap.data().attemptToSolve == '0') {
 				setUserName(`${docSnap.data().firstname} ${docSnap.data().lastname}`);
@@ -66,9 +69,11 @@ const LoginExam = () => {
 				setTimeLeft(`/${docSnap.data().quizTime}`);
 				setTimerInitialized(true);
 				setTimerStarted(true);
+				// setUserId(`user${login}`);
 				navigate(`/${docSnap.data().quizID}`);
-			} else if (docSnap.data().role == 'sa') {
+			} else if (docSnap.data().role == 'sa' || docSnap.data().role == 'a') {
 				setUserName(`${docSnap.data().firstname} ${docSnap.data().lastname}`);
+				// setUserId(`user${login}`);
 				navigate(`/admin`);
 			} else {
 				setShowAlert(true);
