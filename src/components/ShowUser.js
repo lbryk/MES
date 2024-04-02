@@ -66,17 +66,14 @@ const ShowUser = () => {
 		};
 		fetchProfession();
 	}, []);
-	// Get current users
-	const filteredUsers = users.filter(
-		(user) => typeof user.role === 'string' && user.role.includes('s')
-	);
+	
+	const filteredUsers = users.filter((user) => user.role === 's');
 	const indexOfLastUser = currentPage * usersPerPage;
 	const indexOfFirstUser = indexOfLastUser - usersPerPage;
 	const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
 
 	const [toastRendered, setToastRendered] = useState(false);
 
-	// Change page
 	const paginate = (pageNumber) => setCurrentPage(pageNumber);
 	const handleRowClick = (user) => {
 		setSelectedUser(user);
@@ -92,36 +89,31 @@ const ShowUser = () => {
 		setEditingValue(value);
 	};
 
-const handleKeyDown = async (event, index, field) => {
-	if (event.key === 'Enter' || field === 'quizID') {
-		// Calculate theex of the user indundefinedin the `users` array
-		const userIndex = usersPerPage * (currentPage - 1) + index;
+const handleKeyDown = async (event, userId, field) => {
+	if (event.key === 'Enter') {
+		
+		const userToUpdate = users.find((user) => user.id === userId);
+		if (!userToUpdate) return; 
 
-		const newUsers = [...users];
-		newUsers[userIndex][field] = editingValue;
-		setUsers(newUsers);
-
-		// Update the data in your Firebase database
 		try {
-			const userRef = doc(db, 'users', newUsers[userIndex].id);
+			const userRef = doc(db, 'users', userId);
 			await updateDoc(userRef, { [field]: editingValue });
 			setEditingIndex(null);
 			setEditingField(null);
+			setEditingValue('');
 		} catch (error) {
-			console.error('Error updating document: ', error);
+			toast.error('Błąd aktualizacji: ', error.message);
 		}
 	}
 };
+
 	useEffect(() => {
 		if (editingIndex !== null && editingField !== null) {
-			// Add event listener when the input field is being edited
 			document.addEventListener('mousedown', handleClickOutside);
 		} else {
-			// Remove event listener when the input field is not being edited
 			document.removeEventListener('mousedown', handleClickOutside);
 		}
 
-		// Cleanup function
 		return () => {
 			document.removeEventListener('mousedown', handleClickOutside);
 		};
@@ -136,94 +128,60 @@ const handleKeyDown = async (event, index, field) => {
 
 	const [modalIsOpen, setModalIsOpen] = useState(false);
 	const [userIndex, setUserIndex] = useState(null);
-	const handleDelete = (index) => {
-		// Calculate the index of the user in the `users` array
-		const userIndex = usersPerPage * (currentPage - 1) + index;
-		console.log('Deleting user at index:', userIndex); // Add this line
-		setUserIndex(userIndex);
+	const handleDelete = (userId) => {
+
+		setUserIndex(userId);
 		setModalIsOpen(true);
 	};
 
 	const deleteUser = async () => {
-		if (userIndex === null) return;
+		if (!userIndex) return; 
 		const id = toast.loading('Trwa usuwanie profili zdającego...', {
 			autoClose: false,
 		});
 		try {
 			
-			// Delete the user from your Firebase database
-			const userRef = doc(db, 'users', users[userIndex].id);
+			const userRef = doc(db, 'users', userIndex);
 			await deleteDoc(userRef);
 
-			// Remove the existing toast before creating a new one
 			toast.dismiss(id);
-
-			// Create a new toast to indicate successful deletion
-			const successId = toast.success(
-				'Usuwanie zdającego zakończone z powodzeniem',
-				{
-					autoClose: 1000, // Close the success message after 3 seconds
-				}
-			);
-
-			// Fetch the updated list of users from Firebase
+			toast.success('Usuwanie zdającego zakończone z powodzeniem', {
+				autoClose: 1000,
+			});
 			fetchData();
 		} catch (error) {
-			// Display an error toast if the deletion fails
 			toast.error('Błąd podczas usuwania zdającego: ' + error.message, {
-				autoClose: 5000, // Close the error message after 5 seconds
+				autoClose: 5000,
 			});
 		}
 	};
 
-	// const handleInputChange =  (event, index, field) => {
-	// 	// if (field === 'attemptToSolve' && event.target.value === '1') {
-	// 	// 	const currentDate = new Date();
-	// 	// 	const formattedDate = `${currentDate.getDate()}.${currentDate.getMonth() + 1}.${currentDate.getFullYear()}`;
-	// 	// 	const userRef = doc(db, 'users', users[userIndex].id);
-	// 	// 	await updateDoc(userRef, { examDate: formattedDate });
-	// 	// }
-	// 	setEditingValue(event.target.value);
-	// 	const userIndex = usersPerPage * (currentPage - 1) + index;
-	// 	const newUsers = [...users];
-	// 	newUsers[userIndex][field] = event.target.value;
-	// 	setUsers(newUsers);
-	// };
-
-const handleInputChange = async (event, index, field) => {
+const handleInputChange = async (event, userId, field) => {
 	const value = event.target.value;
 	setEditingValue(value);
-	const userIndex = usersPerPage * (currentPage - 1) + index;
-	const newUsers = [...users];
-	newUsers[userIndex][field] = value;
-	setUsers(newUsers);
 
-	// Update the data in your Firebase database
+	const userToUpdate = users.find((user) => user.id === userId);
+	if (!userToUpdate) return; 
+
+	const updatedUsers = users.map((user) =>
+		user.id === userId ? { ...user, [field]: value } : user
+	);
+	setUsers(updatedUsers);
+
 	try {
-		const userRef = doc(db, 'users', newUsers[userIndex].id);
-		if (field === 'attemptToSolve' && Number(value) === 0) {
-			await updateDoc(userRef, {
-				[field]: Number(value),
-				quizResult: 0,
-				percentResult: 0,
-				examDate: new Date().toLocaleDateString('en-GB').split('/').join('.'),
-			});
-		} else {
-			await updateDoc(userRef, { [field]: value });
-		}
+		const userRef = doc(db, 'users', userId);
+		await updateDoc(userRef, {
+			[field]: field === 'attemptToSolve' ? Number(value) : value,
+		});
 	} catch (error) {
-		console.error('Error updating document: ', error);
+		toast.error('Błąd aktualizacji: ', error.message);
 	}
 };
-	const handleSelectBlur = async (index, field) => {
-		// Calculate the index of the user in the `users` array
-		const userIndex = usersPerPage * (currentPage - 1) + index;
 
-		// Convert editingValue to a number if the field is 'attemptToSolve'
+	const handleSelectBlur = async (index, field) => {
+		const userIndex = usersPerPage * (currentPage - 1) + index;
 		const value =
 			field === 'attemptToSolve' ? Number(editingValue) : editingValue;
-
-		// Update the data in your Firebase database
 		try {
 			const userRef = doc(db, 'users', users[userIndex].id);
 			await updateDoc(userRef, { [field]: value });
@@ -236,7 +194,7 @@ const handleInputChange = async (event, index, field) => {
 				});
 			}
 		} catch (error) {
-			console.error('Error updating document: ', error);
+			toast.error('Błąd aktualizacji: ', error.message);
 		}
 
 		if (field === 'quizID') {
@@ -245,33 +203,6 @@ const handleInputChange = async (event, index, field) => {
 		}
 	};
 
-	// const handleSelectBlur = async (index, field) => {
-	// 	// Calculate the index of the user in the `users` array
-	// 	const userIndex = usersPerPage * (currentPage - 1) + index;
-
-	// 	// Update the data in your Firebase database
-	// 	try {
-			
-	// 		const userRef = doc(db, 'users', users[userIndex].id);
-	// 		await updateDoc(userRef, { [field]: users[userIndex][field] });
-	// 		if (users[userIndex].attemptToSolve) {
-	// 			await updateDoc(userRef, {
-	// 				attemptToSolve: 0,
-	// 				quizResult: 0,
-	// 				percentResult: 0,
-	// 			});
-	// 		}
-	// 		// 
-	// 	} catch (error) {
-	// 		console.error('Error updating document: ', error);
-	// 	}
-
-	// 	if (field === 'quizID') {
-	// 		setEditingIndex(null);
-	// 		setEditingField(null);
-	// 	}
-		
-	// };
 	const [sortField, setSortField] = useState(null);
 	const [sortDirection, setSortDirection] = useState('asc');
 
@@ -308,17 +239,15 @@ const handleInputChange = async (event, index, field) => {
 	const deleteSelectedUsers = async () => {
 		for (const id of selectedUsers) {
 			try {
-				// Delete the user from your Firebase database
 				const userRef = doc(db, 'users', id);
 				await deleteDoc(userRef);
 				const successId = toast.success(
 					'Usuwanie zdającego zakończone z powodzeniem',
 					{
-						autoClose: 1000, // Close the success message after 3 seconds
+						autoClose: 1000, 
 					}
 				);
 			} catch (error) {
-				console.error('Error deleting document: ', error);
 				toast.error('Błąd podczas usuwania zdającego: ' + error.message, {
 					autoClose: 5000, // Close the error message after 5 seconds
 				});
@@ -329,27 +258,10 @@ const handleInputChange = async (event, index, field) => {
 		setSelectedUsers([]);
 	};
 
-	// const updateAttemptUsers = async () => {
-	// 	for (const id of selectedUsers) {
-	// 		try {
-	// 			// Update the user in your Firebase database
-	// 			const userRef = doc(db, 'users', id);
-	// 			await updateDoc(userRef, {
-	// 				attemptToSolve: 0,
-	// 				quizResult: 0,
-	// 				percentResult: 0
-	// 			});
-	// 		} catch (error) {
-	// 			console.error('Error updating document: ', error);
-	// 		}
-	// 	}
-	// 	fetchData();
-	// };
-
 	const updateAttemptUsers = async () => {
 		for (const id of selectedUsers) {
 			try {
-				// Update the user in your Firebase database
+
 				const userRef = doc(db, 'users', id);
 				await updateDoc(userRef, {
 					attemptToSolve: 0,
@@ -358,7 +270,7 @@ const handleInputChange = async (event, index, field) => {
 					examDate: new Date().toLocaleDateString('en-GB').split('/').join('.')
 				});
 			} catch (error) {
-				console.error('Error updating document: ', error);
+				toast.error('Błąd aktualizacji: ', error.message);
 			}
 		}
 		fetchData();
@@ -367,11 +279,10 @@ const handleInputChange = async (event, index, field) => {
 	const deactiveAttemptUsers = async () => {
 		for (const id of selectedUsers) {
 			try {
-				// Update the user in your Firebase database
 				const userRef = doc(db, 'users', id);
 				await updateDoc(userRef, { attemptToSolve: 1 });
 			} catch (error) {
-				console.error('Error updating document: ', error);
+				toast.error('Błąd aktualizacji: ', error.message);
 			}
 		}
 		fetchData();
@@ -462,8 +373,8 @@ const handleInputChange = async (event, index, field) => {
 										type='text'
 										style={{ width: '80%' }}
 										value={editingValue}
-										onChange={handleInputChange}
-										onKeyDown={(e) => handleKeyDown(e, index, 'firstname')}
+										onKeyDown={(e) => handleKeyDown(e, user.id, 'firstname')}
+										onChange={(e) => handleInputChange(e, user.id, 'firstname')}
 									/>
 								) : (
 									user.firstname
@@ -480,8 +391,8 @@ const handleInputChange = async (event, index, field) => {
 										className='form-control'
 										style={{ width: '80%' }}
 										value={editingValue}
-										onChange={handleInputChange}
-										onKeyDown={(e) => handleKeyDown(e, index, 'lastname')}
+										onKeyDown={(e) => handleKeyDown(e, user.id, 'lastname')}
+										onChange={(e) => handleInputChange(e, user.id, 'lastname')}
 									/>
 								) : (
 									user.lastname
@@ -496,12 +407,10 @@ const handleInputChange = async (event, index, field) => {
 										className='form-select'
 										style={{ width: '100%' }}
 										value={editingValue}
-										onChange={(e) => handleInputChange(e, index, 'profession')}
+										onChange={(e) =>
+											handleInputChange(e, user.id, 'profession')
+										}
 										onBlur={() => handleSelectBlur(index, 'profession')}
-										// onChange={async (e) => {
-										// 	await handleInputChange(e, index, 'profession');
-										// 	await handleSelectBlur(index, 'profession');
-										// }}
 									>
 										{profession.map((code, i) => (
 											<option key={i} value={code}>
@@ -526,8 +435,8 @@ const handleInputChange = async (event, index, field) => {
 										className='form-control'
 										style={{ width: '80%' }}
 										value={editingValue}
-										onChange={handleInputChange}
-										onKeyDown={(e) => handleKeyDown(e, index, 'class')}
+										onKeyDown={(e) => handleKeyDown(e, user.id, 'class')}
+										onChange={(e) => handleInputChange(e, user.id, 'class')}
 									/>
 								) : (
 									user.class
@@ -539,12 +448,8 @@ const handleInputChange = async (event, index, field) => {
 										className='form-select'
 										style={{ width: '105%' }}
 										value={editingValue}
-										onChange={(e) => handleInputChange(e, index, 'quizID')}
+										onChange={(e) => handleInputChange(e, user.id, 'quizID')}
 										onBlur={() => handleSelectBlur(index, 'quizID')}
-										// onChange={async (e) => {
-										// 	await handleInputChange(e, index, 'quizID');
-										// 	await handleSelectBlur(index, 'quizID');
-										// }}
 									>
 										{quizCodes.map((code, i) => (
 											<option key={i} value={code}>
@@ -576,12 +481,8 @@ const handleInputChange = async (event, index, field) => {
 										className='form-control'
 										style={{ width: '80%' }}
 										value={editingValue}
-										onChange={(e) => handleInputChange(e, index, 'quizTime')}
+										onChange={(e) => handleInputChange(e, user.id, 'quizTime')}
 										onBlur={() => handleSelectBlur(index, 'quizTime')}
-										// onChange={async (e) => {
-										// 	await handleInputChange(e, index, 'quizTime');
-										// 	await handleSelectBlur(index, 'quizTime');
-										// }}
 										onKeyDown={(e) => handleKeyDown(e, index, 'quizTime')}
 									/>
 								) : (
@@ -597,13 +498,9 @@ const handleInputChange = async (event, index, field) => {
 										style={{ width: '100%' }}
 										value={editingValue}
 										onChange={(e) =>
-											handleInputChange(e, index, 'attemptToSolve')
+											handleInputChange(e, user.id, 'attemptToSolve')
 										}
 										onBlur={() => handleSelectBlur(index, 'attemptToSolve')}
-										// onChange={async (e) => {
-										// 	await handleInputChange(e, index, 'attemptToSolve');
-										// 	await handleSelectBlur(index, 'attemptToSolve');
-										// }}
 									>
 										<option value={0}>Tak</option>
 										<option value={1}>Nie</option>
@@ -625,7 +522,7 @@ const handleInputChange = async (event, index, field) => {
 							<td>
 								<button
 									className='btn btn-danger'
-									onClick={() => handleDelete(index)}
+									onClick={() => handleDelete(user.id)}
 									disabled={selectedUsers.length > 1}
 								>
 									<FontAwesomeIcon icon='fa-solid fa-trash-can' />
@@ -634,7 +531,12 @@ const handleInputChange = async (event, index, field) => {
 									isOpen={modalIsOpen}
 									onClose={() => setModalIsOpen(false)}
 									title='Usuwanie zdającego'
-									windowText={`Czy napewno chcesz usunąć: ${users[userIndex]?.firstname} ${users[userIndex]?.lastname}?`}
+									windowText={(() => {
+										const userToDelete = users.find(
+											(user) => user.id === userIndex
+										);
+										return `Czy napewno chcesz usunąć: ${userToDelete?.firstname} ${userToDelete?.lastname}?`;
+									})()}
 									onConfirm={() => {
 										setModalIsOpen(false);
 										deleteUser();
