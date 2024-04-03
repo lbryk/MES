@@ -5,14 +5,20 @@ import { useAuth } from './AuthContext';
 const ProtectedRoute = ({ children }) => {
 	const { user } = useAuth();
 
-	 if (
-			!user ||
-			!(user.role === 'sa' || user.role === 's' || user.role === 'a')
-		) {
-			return <Navigate to='/login' />;
-		}
+	// Assuming `user` could be null or undefined initially, until verified.
+	if (user === undefined) {
+		// Optionally, render a loading indicator while the user state is being verified.
+		return <div>Loading...</div>;
+	}
+
+	if (
+		!user ||
+		!(user.role === 'sa' || user.role === 's' || user.role === 'a')
+	) {
+		return <Navigate to='/login' replace />;
+	}
 
 	return children;
 };
 
-export default ProtectedRoute; 
+export default ProtectedRoute;
