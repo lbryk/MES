@@ -176,7 +176,7 @@ const QuestCreator = ({ examName }) => {
 							<div className='col-10'>
 								{
 									<Editor
-										apiKey='gv5fnyynnu54nbfl7gqe2noc7l3i4w7uq8ra8c9iglkcz2lh'
+										apiKey='lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5'
 										onInit={(evt, editor) => (editorRef.current = editor)}
 										name='ansA'
 										onEditorChange={(content, editor) => {
@@ -242,7 +242,7 @@ const QuestCreator = ({ examName }) => {
 							<div className='col-10'>
 								{
 									<Editor
-										apiKey='gv5fnyynnu54nbfl7gqe2noc7l3i4w7uq8ra8c9iglkcz2lh'
+										apiKey='lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5'
 										onInit={(evt, editor) => (editorRef.current = editor)}
 										name='ansB'
 										onEditorChange={(content, editor) => {
@@ -308,7 +308,7 @@ const QuestCreator = ({ examName }) => {
 							<div className='col-10'>
 								{
 									<Editor
-										apiKey='gv5fnyynnu54nbfl7gqe2noc7l3i4w7uq8ra8c9iglkcz2lh'
+										apiKey='lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5'
 										onInit={(evt, editor) => (editorRef.current = editor)}
 										name='ansC'
 										onEditorChange={(content, editor) => {
@@ -371,7 +371,7 @@ const QuestCreator = ({ examName }) => {
 							<div className='col-10'>
 								{
 									<Editor
-										apiKey='gv5fnyynnu54nbfl7gqe2noc7l3i4w7uq8ra8c9iglkcz2lh'
+										apiKey='lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5'
 										onInit={(evt, editor) => (editorRef.current = editor)}
 										name='ansD'
 										onEditorChange={(content, editor) => {

@@ -203,20 +203,7 @@ const AdminPanel = () => {
 										Edytuj istniejący egzamin
 									</button>
 								</li>
-								<li className='nav-item' role='presentation'>
-									<button
-										className='nav-link'
-										id='pills-contact-tab'
-										data-bs-toggle='pill'
-										data-bs-target='#pills-contact'
-										type='button'
-										role='tab'
-										aria-controls='pills-contact'
-										aria-selected='false'
-									>
-										Contact
-									</button>
-								</li>
+							
 							</ul>
 							<div className='tab-content' id='pills-tabContent'>
 								<div

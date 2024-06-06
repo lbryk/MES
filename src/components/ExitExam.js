@@ -23,6 +23,7 @@ library.add(faDoorOpen);
 const ExitExam = () => {
 	const navigate = useNavigate();
 	const auth = useAuth();
+	
 	const {
 		keyExam,
 		setKeyExam,
@@ -112,7 +113,7 @@ const ExitExam = () => {
 	}, [db, login, sumOfRightAnswers, percentResult]);
 
 	useEffect(() => {
-		if (!auth.user) {
+		if (!auth.user || userName == '' || userName.length == 0) {
 			navigate('/login', { replace: true });
 		}
 	}, [auth.user, navigate]);
