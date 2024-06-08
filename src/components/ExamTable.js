@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle';
-import { Button, Dropdown, DropdownButton, Badge } from 'react-bootstrap';
+import { Button, Badge, DropdownButton, Dropdown } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPencilAlt, faTrash, faUserCircle, faCopy } from '@fortawesome/free-solid-svg-icons';
 import db from '../firebase';
@@ -21,7 +21,10 @@ const ExamTable = () => {
     const [exams, setExams] = useState([]);
     const [editingExamId, setEditingExamId] = useState(null);
     const [editingAuthors, setEditingAuthors] = useState([]);
+    const [editingField, setEditingField] = useState(null);
     const [availableUsers, setAvailableUsers] = useState([]);
+    const [professionsData, setProfessionsData] = useState({});
+    const [qualificationName, setQualificationName] = useState({});
     const [showAlert, setShowAlert] = useState(false);
     const tableRef = useRef(null);
     const editingFieldRef = useRef(null);
@@ -39,10 +42,7 @@ const ExamTable = () => {
                 lp: index + 1,
                 name: doc.id,
                 quizCode: doc.data().quizCode,
-                qualification: doc
-                    .data()
-                    .Qualification.toUpperCase()
-                    .replace(/(\d+)/, '-$1'),
+                qualification: formatQualificationForDisplay(doc.data().Qualification),
                 profession: doc.data().Profession,
                 autors: doc.data().Autors || [],
             }));
@@ -65,13 +65,39 @@ const ExamTable = () => {
         setAvailableUsers(fetchedUsers);
     };
 
+    const fetchProfessionsAndQualifications = async () => {
+        try {
+            const professionsSnapshot = await getDocs(collection(db, 'professions'));
+            const professionsData = {};
+            professionsSnapshot.forEach((doc) => {
+                professionsData[doc.id] = doc.data();
+            });
+            setProfessionsData(professionsData);
+
+            const qualificationsSnapshot = await getDocs(collection(db, 'qualificationName'));
+            const qualificationData = {};
+            qualificationsSnapshot.forEach((doc) => {
+                qualificationData[doc.id] = doc.data();
+            });
+            setQualificationName(qualificationData);
+        } catch (error) {
+            console.error('Error fetching professions and qualifications: ', error);
+        }
+    };
+
     useEffect(() => {
         fetchExams();
         fetchUsers();
+        fetchProfessionsAndQualifications();
     }, []);
 
-    const handleClick = (examId, authors) => {
+    const handleFieldClick = async (examId, authors, field) => {
+        if (editingExamId !== null) {
+            await handleBlur();
+        }
+
         setEditingExamId(examId);
+        setEditingField(field);
         setEditingAuthors(
             authors.map((author, index) => {
                 const [firstname, lastname] = author.split(' ');
@@ -96,7 +122,7 @@ const ExamTable = () => {
     };
 
     const handleBlur = async () => {
-        if (editingExamId !== null) {
+        if (editingExamId !== null && editingField === 'authors') {
             try {
                 const examDocRef = doc(db, 'quizCode', editingExamId);
                 const authorNames = editingAuthors.map(
@@ -109,10 +135,10 @@ const ExamTable = () => {
                 setExams(updatedExams);
             } catch (error) {
                 console.error('Error updating authors: ', error);
-            } finally {
-                setEditingExamId(null);
             }
         }
+        setEditingExamId(null);
+        setEditingField(null);
     };
 
     const handleClickOutside = async (event) => {
@@ -125,6 +151,13 @@ const ExamTable = () => {
             await handleBlur();
         }
     };
+
+    useEffect(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [editingExamId, editingAuthors]);
 
     const handleBadgeClick = (user) => {
         if (user.id === 'main') {
@@ -147,14 +180,37 @@ const ExamTable = () => {
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-    useEffect(() => {
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [editingExamId, editingAuthors]);
+    const handleProfessionChange = async (examId, newProfession) => {
+        const newQualifications = Object.keys(qualificationName).filter(
+            (qualification) =>
+                qualificationName[qualification].professions.includes(newProfession)
+        );
+        const formattedQualification = newQualifications[0];
+        await updateDoc(doc(db, 'quizCode', examId), { Profession: newProfession, Qualification: formattedQualification });
+        const updatedExams = exams.map((exam) =>
+            exam.id === examId ? { ...exam, profession: newProfession, qualification: formattedQualification } : exam
+        );
+        setExams(updatedExams);
+    };
 
-    // Get current exams
+    const handleQualificationChange = async (examId, newQualification) => {
+        const formattedQualification = formatQualificationForStorage(newQualification);
+        await updateDoc(doc(db, 'quizCode', examId), { Qualification: formattedQualification });
+        const updatedExams = exams.map((exam) =>
+            exam.id === examId ? { ...exam, qualification: formattedQualification } : exam
+        );
+        setExams(updatedExams);
+    };
+
+    const formatQualificationForDisplay = (qualification) => {
+        const match = qualification.match(/([a-z]+)(\d+)/i);
+        return match ? `${match[1].toUpperCase()}.${match[2]}` : qualification;
+    };
+
+    const formatQualificationForStorage = (qualification) => {
+        return qualification.toLowerCase().replace('.', '');
+    };
+
     const indexOfLastExam = currentPage * examsPerPage;
     const indexOfFirstExam = indexOfLastExam - examsPerPage;
     const currentExams = exams.slice(indexOfFirstExam, indexOfLastExam);
@@ -177,18 +233,75 @@ const ExamTable = () => {
                         <tr key={exam.id} className='align-middle'>
                             <td className='align-middle'>{exam.lp}</td>
                             <td className='align-middle'>{exam.name}</td>
-                            <td className='align-middle'>{exam.qualification}</td>
-                            <td className='align-middle'>{exam.profession}</td>
+                            <td className='align-middle' style={{ width: '20%' }}
+                                onClick={(e) => {
+                                    if (!isInsideEditingField.current) {
+                                        handleFieldClick(exam.id, exam.autors, 'qualification');
+                                    }
+                                }}
+                                ref={editingExamId === exam.id && editingField === 'qualification' ? editingFieldRef : null}
+                            >
+                                {editingExamId === exam.id && editingField === 'qualification' ? (
+                                    <div>
+                                        <DropdownButton
+                                            title={formatQualificationForDisplay(exam.qualification)}
+                                            onSelect={(e) => handleQualificationChange(exam.id, e)}
+                                            onMouseEnter={() => isInsideEditingField.current = true}
+                                            onMouseLeave={() => isInsideEditingField.current = false}
+                                        >
+                                            {Object.keys(qualificationName)
+                                                .filter(
+                                                    (key) =>
+                                                        qualificationName[key].professions.includes(exam.profession)
+                                                )
+                                                .map((key) => (
+                                                    <Dropdown.Item key={key} eventKey={key}>
+                                                        {formatQualificationForDisplay(key)}
+                                                    </Dropdown.Item>
+                                                ))}
+                                        </DropdownButton>
+                                    </div>
+                                ) : (
+                                    formatQualificationForDisplay(exam.qualification)
+                                )}
+                            </td>
+                            <td className='align-middle' style={{ width: '20%' }}
+                                onClick={(e) => {
+                                    if (!isInsideEditingField.current) {
+                                        handleFieldClick(exam.id, exam.autors, 'profession');
+                                    }
+                                }}
+                                ref={editingExamId === exam.id && editingField === 'profession' ? editingFieldRef : null}
+                            >
+                                {editingExamId === exam.id && editingField === 'profession' ? (
+                                    <div>
+                                        <DropdownButton
+                                            title={exam.profession}
+                                            onSelect={(e) => handleProfessionChange(exam.id, e)}
+                                            onMouseEnter={() => isInsideEditingField.current = true}
+                                            onMouseLeave={() => isInsideEditingField.current = false}
+                                        >
+                                            {Object.keys(professionsData).map((profession) => (
+                                                <Dropdown.Item key={profession} eventKey={profession}>
+                                                    {profession}
+                                                </Dropdown.Item>
+                                            ))}
+                                        </DropdownButton>
+                                    </div>
+                                ) : (
+                                    exam.profession
+                                )}
+                            </td>
                             <td
                                 className='align-middle'
                                 onClick={(e) => {
                                     if (!isInsideEditingField.current) {
-                                        handleClick(exam.id, exam.autors);
+                                        handleFieldClick(exam.id, exam.autors, 'authors');
                                     }
                                 }}
-                                ref={editingExamId === exam.id ? editingFieldRef : null}
+                                ref={editingExamId === exam.id && editingField === 'authors' ? editingFieldRef : null}
                             >
-                                {editingExamId === exam.id ? (
+                                {editingExamId === exam.id && editingField === 'authors' ? (
                                     <div>
                                         <div>
                                             {editingAuthors.map((user, index) => (
@@ -207,9 +320,8 @@ const ExamTable = () => {
                                             ))}
                                         </div><br />
                                         <DropdownButton
-                                            id="dropdown-basic-button"
                                             title="Wybierz użytkownika"
-                                            onSelect={(userId) => handleSelectUser(userId)}
+                                            onSelect={(e) => handleSelectUser(e)}
                                             onMouseEnter={() => isInsideEditingField.current = true}
                                             onMouseLeave={() => isInsideEditingField.current = false}
                                         >
