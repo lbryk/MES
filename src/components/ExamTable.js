@@ -3,7 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle';
 import { Button, Dropdown, DropdownButton, Badge } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPencilAlt, faTrash, faUserCircle } from '@fortawesome/free-solid-svg-icons';
+import { faPencilAlt, faTrash, faUserCircle, faCopy } from '@fortawesome/free-solid-svg-icons';
 import db from '../firebase';
 import {
     collection,
@@ -12,8 +12,10 @@ import {
     where,
     doc,
     updateDoc,
+    addDoc,
 } from 'firebase/firestore';
 import ExitAlert from './ExitAlert';
+import Pagination from './Pagination';
 
 const ExamTable = () => {
     const [exams, setExams] = useState([]);
@@ -22,48 +24,53 @@ const ExamTable = () => {
     const [availableUsers, setAvailableUsers] = useState([]);
     const [showAlert, setShowAlert] = useState(false);
     const tableRef = useRef(null);
+    const editingFieldRef = useRef(null);
+    const isInsideEditingField = useRef(false);
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const [examsPerPage] = useState(10);
+
+    const fetchExams = async () => {
+        try {
+            const q = query(collection(db, 'quizCode'));
+            const querySnapshot = await getDocs(q);
+            const examsData = querySnapshot.docs.map((doc, index) => ({
+                id: doc.id,
+                lp: index + 1,
+                name: doc.id,
+                quizCode: doc.data().quizCode,
+                qualification: doc
+                    .data()
+                    .Qualification.toUpperCase()
+                    .replace(/(\d+)/, '-$1'),
+                profession: doc.data().Profession,
+                autors: doc.data().Autors || [],
+            }));
+            setExams(examsData);
+        } catch (error) {
+            console.error('Error fetching exams: ', error);
+        }
+    };
+
+    const fetchUsers = async () => {
+        const q = query(
+            collection(db, 'users'),
+            where('role', 'in', ['a', 'sa'])
+        );
+        const querySnapshot = await getDocs(q);
+        const fetchedUsers = [];
+        querySnapshot.forEach((doc) => {
+            fetchedUsers.push({ id: doc.id, ...doc.data() });
+        });
+        setAvailableUsers(fetchedUsers);
+    };
 
     useEffect(() => {
-        const fetchExams = async () => {
-            try {
-                const q = query(collection(db, 'quizCode'));
-                const querySnapshot = await getDocs(q);
-                const examsData = querySnapshot.docs.map((doc, index) => ({
-                    id: doc.id,
-                    lp: index + 1,
-                    name: doc.id,
-                    quizCode: doc.data().quizCode,
-                    qualification: doc
-                        .data()
-                        .Qualification.toUpperCase()
-                        .replace(/(\d+)/, '-$1'),
-                    profession: doc.data().Profession,
-                    autors: doc.data().Autors || [],
-                }));
-                setExams(examsData);
-            } catch (error) {
-                console.error('Error fetching exams: ', error);
-            }
-        };
-
-        const fetchUsers = async () => {
-            const q = query(
-                collection(db, 'users'),
-                where('role', 'in', ['a', 'sa'])
-            );
-            const querySnapshot = await getDocs(q);
-            const fetchedUsers = [];
-            querySnapshot.forEach((doc) => {
-                fetchedUsers.push({ id: doc.id, ...doc.data() });
-            });
-            setAvailableUsers(fetchedUsers);
-        };
-
         fetchExams();
         fetchUsers();
     }, []);
 
-    const handleDoubleClick = (examId, authors) => {
+    const handleClick = (examId, authors) => {
         setEditingExamId(examId);
         setEditingAuthors(
             authors.map((author, index) => {
@@ -110,8 +117,10 @@ const ExamTable = () => {
 
     const handleClickOutside = async (event) => {
         if (
-            tableRef.current &&
-            !tableRef.current.contains(event.target)
+            editingFieldRef.current &&
+            !editingFieldRef.current.contains(event.target) &&
+            !event.target.closest('.dropdown-menu') &&
+            !event.target.closest('.dropdown-toggle')
         ) {
             await handleBlur();
         }
@@ -125,12 +134,30 @@ const ExamTable = () => {
         }
     };
 
+    const handleDuplicate = async (exam) => {
+        try {
+            const examCopy = { ...exam, name: `${exam.name}_copy` };
+            delete examCopy.id;
+            await addDoc(collection(db, 'quizCode'), examCopy);
+            fetchExams(); // Re-fetch the exams to update the list
+        } catch (error) {
+            console.error('Error duplicating exam: ', error);
+        }
+    };
+
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
     useEffect(() => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [editingExamId, editingAuthors]);
+
+    // Get current exams
+    const indexOfLastExam = currentPage * examsPerPage;
+    const indexOfFirstExam = indexOfLastExam - examsPerPage;
+    const currentExams = exams.slice(indexOfFirstExam, indexOfLastExam);
 
     return (
         <div className='mt-4' ref={tableRef}>
@@ -146,7 +173,7 @@ const ExamTable = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {exams.map((exam) => (
+                    {currentExams.map((exam) => (
                         <tr key={exam.id} className='align-middle'>
                             <td className='align-middle'>{exam.lp}</td>
                             <td className='align-middle'>{exam.name}</td>
@@ -154,7 +181,12 @@ const ExamTable = () => {
                             <td className='align-middle'>{exam.profession}</td>
                             <td
                                 className='align-middle'
-                                onDoubleClick={() => handleDoubleClick(exam.id, exam.autors)}
+                                onClick={(e) => {
+                                    if (!isInsideEditingField.current) {
+                                        handleClick(exam.id, exam.autors);
+                                    }
+                                }}
+                                ref={editingExamId === exam.id ? editingFieldRef : null}
                             >
                                 {editingExamId === exam.id ? (
                                     <div>
@@ -167,15 +199,19 @@ const ExamTable = () => {
                                                     className='me-2'
                                                     onClick={() => handleBadgeClick(user)}
                                                     style={{ cursor: 'pointer' }}
+                                                    onMouseEnter={() => isInsideEditingField.current = true}
+                                                    onMouseLeave={() => isInsideEditingField.current = false}
                                                 >
                                                     <FontAwesomeIcon icon={faUserCircle} /> {user.firstname} {user.lastname}
                                                 </Badge>
                                             ))}
-                                        </div>
+                                        </div><br />
                                         <DropdownButton
                                             id="dropdown-basic-button"
                                             title="Wybierz użytkownika"
                                             onSelect={(userId) => handleSelectUser(userId)}
+                                            onMouseEnter={() => isInsideEditingField.current = true}
+                                            onMouseLeave={() => isInsideEditingField.current = false}
                                         >
                                             {availableUsers
                                                 .filter((user) =>
@@ -203,14 +239,22 @@ const ExamTable = () => {
                                 <Button variant='primary' className='me-2'>
                                     <FontAwesomeIcon icon={faPencilAlt} />
                                 </Button>
-                                <Button variant='danger'>
+                                <Button variant='danger' className='me-2'>
                                     <FontAwesomeIcon icon={faTrash} />
+                                </Button>
+                                <Button variant='warning' onClick={() => handleDuplicate(exam)}>
+                                    <FontAwesomeIcon icon={faCopy} />
                                 </Button>
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
+            <Pagination
+                usersPerPage={examsPerPage}
+                totalUsers={exams.length}
+                paginate={paginate}
+            />
             <div style={{ height: 50 }}></div>
             <ExitAlert
                 header="Uwaga"
