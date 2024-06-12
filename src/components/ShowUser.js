@@ -25,7 +25,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 library.add(faTrashCan, faFileExcel, faFile, faUserPlus, faUserMinus);
 
-const ShowUser = () => {
+const ShowUser = ({ refreshKey }) => {
 	
 	const [originalUsers, setOriginalUsers] = useState([]);
 	const fetchData = async () => {
@@ -55,7 +55,7 @@ const ShowUser = () => {
 			setQuizCodes(codes);
 		};
 		fetchQuizCodes();
-	}, []);
+	}, [refreshKey]);
 
 	const [profession, setfetchProfession] = useState([]);
 	useEffect(() => {

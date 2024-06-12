@@ -28,7 +28,7 @@ import { Select, MenuItem, InputLabel, FormControl, Chip } from '@mui/material';
 
 library.add(faFloppyDisk, faPen, faUserCircle);
 
-const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
+const ExamCreator = ({ quizCodesData, professionsData, qualificationName, onExamCreated  }) => {
 	const [selectedProfession, setSelectedProfession] = useState('');
 	const [availableQualifications, setAvailableQualifications] = useState([]);
 	const [qualification, setQualification] = useState('');
@@ -232,10 +232,13 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName }) => {
 			// setQualification('');
 			// setIsSaved(false);
 
-			toast.success('Nowy arkusz został utworzony', {
-				autoClose: 900,
-				onClose: () => setIsFormActive(false),
-			});
+			  toast.success('Nowy arkusz został utworzony', {
+                autoClose: 900,
+                onClose: () => {
+                    setIsFormActive(false);
+                    onExamCreated(); // Wywołanie funkcji odświeżającej
+                },
+            });
 			setIsSaved(true);
 		} catch (error) {
 			toast.error(`Wystąpił błąd ${error}. Arkusz nie został utworzony.`, {

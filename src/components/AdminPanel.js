@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import 'bootstrap/dist/js/bootstrap.bundle';
 import ExamCreator from './ExamCreator';
 import ExamTable from './ExamTable';
@@ -23,6 +23,7 @@ const AdminPanel = () => {
 	const checkLogin = useNavigate();
 	const [quizCodesData, setQuizCodesData] = useState({});
 	const { userName, setUserName } = useContext(AppContext);
+	const [refreshExams, setRefreshExams] = useState(0);
 	if (userName == '') {
 		checkLogin(`/login`);
 	}
@@ -66,6 +67,11 @@ const AdminPanel = () => {
 		};
 		fetchqualificationNameData();
 	}, []);
+
+
+	const handleRefreshExams = useCallback(() => {
+        setRefreshExams(prev => prev + 1);
+    }, []);
 
 	return (
 		<div>
@@ -143,7 +149,7 @@ const AdminPanel = () => {
 						aria-labelledby='nav-users-tab'
 						tabindex='0'
 					>
-						<ShowUser />
+						<ShowUser  refreshKey={refreshExams} />
 					</div>
 					<div
 						className='tab-pane fade'
@@ -216,6 +222,7 @@ const AdminPanel = () => {
 										quizCodesData={quizCodesData}
 										professionsData={professionsData}
 										qualificationName={qualificationNameData}
+										onExamCreated={handleRefreshExams}
 									/>
 								</div>
 								<div
@@ -224,7 +231,7 @@ const AdminPanel = () => {
 									role='tabpanel'
 									aria-labelledby='edit-exam-tab'
 								>
-									<ExamTable />
+									<ExamTable onExamCreated={handleRefreshExams} refreshKey={refreshExams} />
 								</div>
 								<div
 									className='tab-pane fade'

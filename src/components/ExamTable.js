@@ -3,7 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle';
 import { Button, Badge, DropdownButton, Dropdown } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPencilAlt, faTrash, faUserCircle, faCopy } from '@fortawesome/free-solid-svg-icons';
+import { faPencilAlt, faTrashCan, faUserCircle, faCopy } from '@fortawesome/free-solid-svg-icons';
 import db from '../firebase';
 import {
     collection,
@@ -15,16 +15,19 @@ import {
     deleteDoc,
     getDoc,
     setDoc,
-    addDoc
+    arrayUnion,
 } from 'firebase/firestore';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ExitAlert from './ExitAlert';
 import Pagination from './Pagination';
 import AppContext from './AppContext';
+import WindowConfirm from './WindowConfirm';
 
-const ExamTable = () => {
+const ExamTable = ({ refreshKey, onExamCreated }) => {
     const [exams, setExams] = useState([]);
+    const [sortField, setSortField] = useState(null);
+    const [sortDirection, setSortDirection] = useState('asc');
     const [editingExamId, setEditingExamId] = useState(null);
     const [editingAuthors, setEditingAuthors] = useState([]);
     const [editingField, setEditingField] = useState(null);
@@ -33,11 +36,14 @@ const ExamTable = () => {
     const [qualificationName, setQualificationName] = useState({});
     const [showAlert, setShowAlert] = useState(false);
     const [userRole, setUserRole] = useState('');
-    const [updateKey, setUpdateKey] = useState(0); // Declare updateKey here
+    const [updateKey, setUpdateKey] = useState(0);
+    const [newExamIds, setNewExamIds] = useState([]);
     const tableRef = useRef(null);
     const editingFieldRef = useRef(null);
     const isInsideEditingField = useRef(false);
     const { userName, currentUser } = useContext(AppContext);
+    const [modalIsOpen, setModalIsOpen] = useState(false);
+    const [selectedExam, setSelectedExam] = useState(null);
 
     const [currentPage, setCurrentPage] = useState(1);
     const [examsPerPage] = useState(10);
@@ -60,7 +66,6 @@ const ExamTable = () => {
             const examsData = querySnapshot.docs.map((doc) => ({
                 id: doc.id,
                 name: doc.id,
-                quizCode: doc.data().quizCode,
                 qualification: formatQualificationForDisplay(doc.data().Qualification),
                 profession: doc.data().Profession,
                 year: doc.data().Year,
@@ -125,7 +130,23 @@ const ExamTable = () => {
             fetchUsers();
             fetchProfessionsAndQualifications();
         }
-    }, [userRole, userName, updateKey]); // Add updateKey here
+    }, [userRole, userName, updateKey, refreshKey]);
+
+    useEffect(() => {
+        let sortedExams = [...exams];
+        if (sortField !== null) {
+            sortedExams.sort((a, b) => {
+                if (a[sortField] < b[sortField]) {
+                    return sortDirection === 'asc' ? -1 : 1;
+                }
+                if (a[sortField] > b[sortField]) {
+                    return sortDirection === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        setExams(sortedExams);
+    }, [sortField, sortDirection]);
 
     const handleFieldClick = async (examId, authors, field) => {
         if (editingExamId !== null) {
@@ -205,12 +226,80 @@ const ExamTable = () => {
 
     const handleDuplicate = async (exam) => {
         try {
-            const examCopy = { ...exam, name: `${exam.name}_copy` };
-            delete examCopy.id;
-            await addDoc(collection(db, 'quizCode'), examCopy);
+            const generateCode = () => {
+                let code = '';
+                const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                for (let i = 0; i < 8; i++) {
+                    code += characters.charAt(Math.floor(Math.random() * characters.length));
+                }
+                return code;
+            };
+
+            const newCode = generateCode();
+            const sessionsDocRef = doc(db, 'sessions', 'all');
+            let sessionsDocSnap = await getDoc(sessionsDocRef);
+
+            if (!sessionsDocSnap.exists()) {
+                await setDoc(sessionsDocRef, { sessions: [] });
+                sessionsDocSnap = await getDoc(sessionsDocRef);
+            }
+
+            let existingSessions = sessionsDocSnap.data().sessions || [];
+            let newSession = 'A1';
+            let i = 0, j = 1, k = 1, l = 1;
+
+            while (existingSessions.includes(newSession)) {
+                j++;
+                if (j > 9) {
+                    j = 1;
+                    i++;
+                    if (i > 25) {
+                        i = 0;
+                        k++;
+                        if (k > 9) {
+                            k = 1;
+                            l++;
+                        }
+                    }
+                }
+                newSession = `${String.fromCharCode(65 + i)}${j}`;
+                if (l > 1) {
+                    newSession = `${String.fromCharCode(65 + l - 2)}${k}${newSession}`;
+                }
+            }
+
+            await updateDoc(sessionsDocRef, { sessions: arrayUnion(newSession) });
+
+            const examCopy = {
+                Qualification: exam.qualification.toLowerCase().replace('.', ''),
+                Session: newSession,
+                Year: exam.year,
+                Profession: exam.profession,
+                Autors: exam.autors
+            };
+
+            await setDoc(doc(db, 'quizCode', newCode), examCopy);
+
+            const oldCollectionName = `${exam.qualification.toLowerCase().replace('.', '')}${exam.year}${exam.session}`;
+            const newCollectionName = `${exam.qualification.toLowerCase().replace('.', '')}${exam.year}${newSession}`;
+
+            const oldCollectionRef = collection(db, oldCollectionName);
+            const newCollectionRef = collection(db, newCollectionName);
+
+            const oldDocsSnapshot = await getDocs(oldCollectionRef);
+
+            const duplicateDocsPromises = oldDocsSnapshot.docs.map(async (docSnapshot) => {
+                await setDoc(doc(newCollectionRef, docSnapshot.id), docSnapshot.data());
+            });
+
+            await Promise.all(duplicateDocsPromises);
+
+            setNewExamIds((prevIds) => [...prevIds, newCode]);
             fetchExams(); // Re-fetch the exams to update the list
+            toast.success(`Egzamin został pomyślnie zduplikowany: ${newCode}`);
         } catch (error) {
             console.error('Error duplicating exam: ', error);
+            toast.error('Błąd podczas duplikowania egzaminu');
         }
     };
 
@@ -223,7 +312,6 @@ const ExamTable = () => {
 
             const oldDocsSnapshot = await getDocs(oldCollectionRef);
 
-            // Przeniesienie dokumentów ze starej kolekcji do nowej kolekcji
             const moveDocPromises = oldDocsSnapshot.docs.map(async (docSnapshot) => {
                 await setDoc(doc(newCollectionRef, docSnapshot.id), docSnapshot.data());
                 await deleteDoc(docSnapshot.ref);
@@ -250,19 +338,14 @@ const ExamTable = () => {
             Profession: newProfession
         });
 
-        // Force re-render
         setUpdateKey(prevKey => prevKey + 1);
 
-        toast.success(`Egzamin został pomyślnie zaktualizowany ${newCollectionName}`, {
-            autoClose: 2000,
-        });
     };
 
     const handleQualificationChange = async (examId, newQualification) => {
         const exam = exams.find(e => e.id === examId);
         const formattedQualification = formatQualificationForStorage(newQualification);
 
-        // Optimistically update the state
         const updatedExams = exams.map((exam) =>
             exam.id === examId ? { ...exam, qualification: formattedQualification } : exam
         );
@@ -271,7 +354,6 @@ const ExamTable = () => {
         try {
             await renameCollectionAndUpdateDoc(examId, exam, newQualification, exam.profession);
         } catch (error) {
-            // Revert state if the async operation fails
             const revertedExams = exams.map((exam) =>
                 exam.id === examId ? { ...exam, qualification: formatQualificationForStorage(exam.qualification) } : exam
             );
@@ -290,7 +372,6 @@ const ExamTable = () => {
         );
         const formattedQualification = newQualifications[0];
 
-        // Optimistically update the state
         const updatedExams = exams.map((exam) =>
             exam.id === examId ? { ...exam, profession: newProfession, qualification: formattedQualification } : exam
         );
@@ -299,7 +380,6 @@ const ExamTable = () => {
         try {
             await renameCollectionAndUpdateDoc(examId, exam, formattedQualification, newProfession);
         } catch (error) {
-            // Revert state if the async operation fails
             const revertedExams = exams.map((exam) =>
                 exam.id === examId ? { ...exam, profession: exam.profession, qualification: formatQualificationForStorage(exam.qualification) } : exam
             );
@@ -328,14 +408,11 @@ const ExamTable = () => {
         const formattedQualification = formatQualificationForDeletion(exam.qualification);
         const examCollectionName = `${formattedQualification}${exam.year}${exam.session}`;
         try {
-            // Delete the exam document
             await deleteDoc(doc(db, 'quizCode', exam.name));
 
-            // Get the documents in the associated collection
             const examCollectionRef = collection(db, examCollectionName);
             const examDocsSnapshot = await getDocs(examCollectionRef);
 
-            // Usunięcie dokumentów w kolekcji egzaminu
             const docDeletionPromises = [];
             examDocsSnapshot.forEach((doc) => {
                 docDeletionPromises.push(deleteDoc(doc.ref));
@@ -343,7 +420,6 @@ const ExamTable = () => {
 
             await Promise.all(docDeletionPromises);
 
-            // Attempt to delete the collection itself (not directly supported by Firestore)
             try {
                 const collectionDocs = await getDocs(examCollectionRef);
                 collectionDocs.forEach(async (doc) => {
@@ -359,6 +435,9 @@ const ExamTable = () => {
 
             toast.success(`Egzamin został pomyślnie usunięty ${examCollectionName}`, {
                 autoClose: 2000,
+                 onClose: () => {
+                    onExamCreated(); // Wywołanie funkcji odświeżającej
+                },
             });
         } catch (error) {
             toast.error('Błąd podczas usuwania egzaminu: ' + error.message, {
@@ -368,7 +447,17 @@ const ExamTable = () => {
     };
 
     const handleDeleteClick = (exam) => {
-        deleteExam(exam);
+        setSelectedExam(exam);
+        setModalIsOpen(true);
+    };
+
+    const handleSort = (field) => {
+        let direction = 'asc';
+        if (sortField === field && sortDirection === 'asc') {
+            direction = 'desc';
+        }
+        setSortField(field);
+        setSortDirection(direction);
     };
 
     const indexOfLastExam = currentPage * examsPerPage;
@@ -381,10 +470,10 @@ const ExamTable = () => {
             <table className='table table-striped'>
                 <thead>
                     <tr>
-                        <th>lp</th>
-                        <th>Kod egzaminu</th>
-                        <th>Kwalifikacja</th>
-                        <th>Zawód</th>
+                        <th onClick={() => handleSort('id')}>lp</th>
+                        <th onClick={() => handleSort('name')}>Kod egzaminu</th>
+                        <th onClick={() => handleSort('qualification')}>Kwalifikacja</th>
+                        <th onClick={() => handleSort('profession')}>Zawód</th>
                         <th>Osoby z prawem edycji</th>
                         <th>Actions</th>
                     </tr>
@@ -392,8 +481,9 @@ const ExamTable = () => {
                 <tbody>
                     {currentExams.map((exam, index) => {
                         const isTestQualification = exam.qualification.toLowerCase().includes('test');
+                        const isNewExam = newExamIds.includes(exam.id);
                         return (
-                            <tr key={exam.id} className={`align-middle ${isTestQualification ? 'table-warning' : ''}`}>
+                            <tr key={exam.id} className={`align-middle ${isTestQualification ? 'table-warning' : ''} ${isNewExam ? 'table-success' : ''}`}>
                                 <td className='align-middle'>{index + 1}</td>
                                 <td className='align-middle'>{exam.name}</td>
                                 <td className='align-middle' style={{ width: '20%' }}
@@ -514,9 +604,11 @@ const ExamTable = () => {
                                     <Button variant='primary' className='me-2'>
                                         <FontAwesomeIcon icon={faPencilAlt} />
                                     </Button>
-                                    <Button variant='danger' className='me-2' onClick={() => handleDeleteClick(exam)}>
-                                        <FontAwesomeIcon icon={faTrash} />
-                                    </Button>
+                                    {!isTestQualification && (
+                                        <Button variant='danger' className='me-2' onClick={() => handleDeleteClick(exam)}>
+                                            <FontAwesomeIcon icon={faTrashCan} />
+                                        </Button>
+                                    )}
                                     <Button variant='warning' onClick={() => handleDuplicate(exam)}>
                                         <FontAwesomeIcon icon={faCopy} />
                                     </Button>
@@ -538,6 +630,16 @@ const ExamTable = () => {
                 show={showAlert}
                 onClose={() => setShowAlert(false)}
                 buttons='Ok'
+            />
+            <WindowConfirm
+                isOpen={modalIsOpen}
+                onClose={() => setModalIsOpen(false)}
+                title='Usuwanie egzaminu'
+                windowText={selectedExam ? `Czy napewno chcesz usunąć egzamin: ${selectedExam.name}?` : ''}
+                onConfirm={() => {
+                    setModalIsOpen(false);
+                    if (selectedExam) deleteExam(selectedExam);
+                }}
             />
         </div>
     );
