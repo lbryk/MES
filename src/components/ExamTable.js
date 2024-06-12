@@ -12,12 +12,16 @@ import {
     where,
     doc,
     updateDoc,
-    addDoc,
-    getDoc
+    deleteDoc,
+    getDoc,
+    setDoc,
+    addDoc
 } from 'firebase/firestore';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import ExitAlert from './ExitAlert';
 import Pagination from './Pagination';
-import AppContext from './AppContext';  // Import kontekstu aplikacji
+import AppContext from './AppContext';
 
 const ExamTable = () => {
     const [exams, setExams] = useState([]);
@@ -29,10 +33,11 @@ const ExamTable = () => {
     const [qualificationName, setQualificationName] = useState({});
     const [showAlert, setShowAlert] = useState(false);
     const [userRole, setUserRole] = useState('');
+    const [updateKey, setUpdateKey] = useState(0); // Declare updateKey here
     const tableRef = useRef(null);
     const editingFieldRef = useRef(null);
     const isInsideEditingField = useRef(false);
-    const { userName, currentUser } = useContext(AppContext);  // Pobierz nazwę zalogowanego użytkownika z kontekstu
+    const { userName, currentUser } = useContext(AppContext);
 
     const [currentPage, setCurrentPage] = useState(1);
     const [examsPerPage] = useState(10);
@@ -58,6 +63,8 @@ const ExamTable = () => {
                 quizCode: doc.data().quizCode,
                 qualification: formatQualificationForDisplay(doc.data().Qualification),
                 profession: doc.data().Profession,
+                year: doc.data().Year,
+                session: doc.data().Session,
                 autors: doc.data().Autors || [],
             }));
 
@@ -118,7 +125,7 @@ const ExamTable = () => {
             fetchUsers();
             fetchProfessionsAndQualifications();
         }
-    }, [userRole, userName]);  // Dodanie zależności od userRole i userName
+    }, [userRole, userName, updateKey]); // Add updateKey here
 
     const handleFieldClick = async (examId, authors, field) => {
         if (editingExamId !== null) {
@@ -209,26 +216,99 @@ const ExamTable = () => {
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-    const handleProfessionChange = async (examId, newProfession) => {
-        const newQualifications = Object.keys(qualificationName).filter(
-            (qualification) =>
-                qualificationName[qualification].professions.includes(newProfession)
-        );
-        const formattedQualification = newQualifications[0];
-        await updateDoc(doc(db, 'quizCode', examId), { Profession: newProfession, Qualification: formattedQualification });
-        const updatedExams = exams.map((exam) =>
-            exam.id === examId ? { ...exam, profession: newProfession, qualification: formattedQualification } : exam
-        );
-        setExams(updatedExams);
+    const renameCollection = async (oldCollectionName, newCollectionName) => {
+        try {
+            const oldCollectionRef = collection(db, oldCollectionName);
+            const newCollectionRef = collection(db, newCollectionName);
+
+            const oldDocsSnapshot = await getDocs(oldCollectionRef);
+
+            // Przeniesienie dokumentów ze starej kolekcji do nowej kolekcji
+            const moveDocPromises = oldDocsSnapshot.docs.map(async (docSnapshot) => {
+                await setDoc(doc(newCollectionRef, docSnapshot.id), docSnapshot.data());
+                await deleteDoc(docSnapshot.ref);
+            });
+
+            await Promise.all(moveDocPromises);
+        } catch (error) {
+            console.error('Error renaming collection: ', error);
+        }
+    };
+
+    const renameCollectionAndUpdateDoc = async (examId, exam, newQualification, newProfession) => {
+        const formattedOldQualification = formatQualificationForStorage(exam.qualification);
+        const formattedNewQualification = formatQualificationForStorage(newQualification);
+        const oldCollectionName = `${formattedOldQualification}${exam.year}${exam.session}`;
+        const newCollectionName = `${formattedNewQualification}${exam.year}${exam.session}`;
+
+        if (oldCollectionName !== newCollectionName) {
+            await renameCollection(oldCollectionName, newCollectionName);
+        }
+
+        await updateDoc(doc(db, 'quizCode', examId), {
+            Qualification: formattedNewQualification,
+            Profession: newProfession
+        });
+
+        // Force re-render
+        setUpdateKey(prevKey => prevKey + 1);
+
+        toast.success(`Egzamin został pomyślnie zaktualizowany ${newCollectionName}`, {
+            autoClose: 2000,
+        });
     };
 
     const handleQualificationChange = async (examId, newQualification) => {
+        const exam = exams.find(e => e.id === examId);
         const formattedQualification = formatQualificationForStorage(newQualification);
-        await updateDoc(doc(db, 'quizCode', examId), { Qualification: formattedQualification });
+
+        // Optimistically update the state
         const updatedExams = exams.map((exam) =>
             exam.id === examId ? { ...exam, qualification: formattedQualification } : exam
         );
         setExams(updatedExams);
+
+        try {
+            await renameCollectionAndUpdateDoc(examId, exam, newQualification, exam.profession);
+        } catch (error) {
+            // Revert state if the async operation fails
+            const revertedExams = exams.map((exam) =>
+                exam.id === examId ? { ...exam, qualification: formatQualificationForStorage(exam.qualification) } : exam
+            );
+            setExams(revertedExams);
+
+            toast.error('Błąd podczas aktualizacji egzaminu', {
+                autoClose: 5000,
+            });
+        }
+    };
+
+    const handleProfessionChange = async (examId, newProfession) => {
+        const exam = exams.find(e => e.id === examId);
+        const newQualifications = Object.keys(qualificationName).filter(
+            (qualification) => qualificationName[qualification].professions.includes(newProfession)
+        );
+        const formattedQualification = newQualifications[0];
+
+        // Optimistically update the state
+        const updatedExams = exams.map((exam) =>
+            exam.id === examId ? { ...exam, profession: newProfession, qualification: formattedQualification } : exam
+        );
+        setExams(updatedExams);
+
+        try {
+            await renameCollectionAndUpdateDoc(examId, exam, formattedQualification, newProfession);
+        } catch (error) {
+            // Revert state if the async operation fails
+            const revertedExams = exams.map((exam) =>
+                exam.id === examId ? { ...exam, profession: exam.profession, qualification: formatQualificationForStorage(exam.qualification) } : exam
+            );
+            setExams(revertedExams);
+
+            toast.error('Błąd podczas aktualizacji egzaminu', {
+                autoClose: 5000,
+            });
+        }
     };
 
     const formatQualificationForDisplay = (qualification) => {
@@ -240,12 +320,64 @@ const ExamTable = () => {
         return qualification.toLowerCase().replace('.', '');
     };
 
+    const formatQualificationForDeletion = (qualification) => {
+        return qualification.toLowerCase().replace('.', '');
+    };
+
+    const deleteExam = async (exam) => {
+        const formattedQualification = formatQualificationForDeletion(exam.qualification);
+        const examCollectionName = `${formattedQualification}${exam.year}${exam.session}`;
+        try {
+            // Delete the exam document
+            await deleteDoc(doc(db, 'quizCode', exam.name));
+
+            // Get the documents in the associated collection
+            const examCollectionRef = collection(db, examCollectionName);
+            const examDocsSnapshot = await getDocs(examCollectionRef);
+
+            // Usunięcie dokumentów w kolekcji egzaminu
+            const docDeletionPromises = [];
+            examDocsSnapshot.forEach((doc) => {
+                docDeletionPromises.push(deleteDoc(doc.ref));
+            });
+
+            await Promise.all(docDeletionPromises);
+
+            // Attempt to delete the collection itself (not directly supported by Firestore)
+            try {
+                const collectionDocs = await getDocs(examCollectionRef);
+                collectionDocs.forEach(async (doc) => {
+                    await deleteDoc(doc.ref);
+                });
+                console.log(`Collection ${examCollectionName} cleared.`);
+            } catch (error) {
+                console.error(`Error clearing collection ${examCollectionName}: `, error);
+            }
+
+            const updatedExams = exams.filter((e) => e.id !== exam.id);
+            setExams(updatedExams);
+
+            toast.success(`Egzamin został pomyślnie usunięty ${examCollectionName}`, {
+                autoClose: 2000,
+            });
+        } catch (error) {
+            toast.error('Błąd podczas usuwania egzaminu: ' + error.message, {
+                autoClose: 5000,
+            });
+        }
+    };
+
+    const handleDeleteClick = (exam) => {
+        deleteExam(exam);
+    };
+
     const indexOfLastExam = currentPage * examsPerPage;
     const indexOfFirstExam = indexOfLastExam - examsPerPage;
     const currentExams = exams.slice(indexOfFirstExam, indexOfLastExam);
 
     return (
         <div className='mt-4' ref={tableRef}>
+            <ToastContainer />
             <table className='table table-striped'>
                 <thead>
                     <tr>
@@ -382,7 +514,7 @@ const ExamTable = () => {
                                     <Button variant='primary' className='me-2'>
                                         <FontAwesomeIcon icon={faPencilAlt} />
                                     </Button>
-                                    <Button variant='danger' className='me-2'>
+                                    <Button variant='danger' className='me-2' onClick={() => handleDeleteClick(exam)}>
                                         <FontAwesomeIcon icon={faTrash} />
                                     </Button>
                                     <Button variant='warning' onClick={() => handleDuplicate(exam)}>
