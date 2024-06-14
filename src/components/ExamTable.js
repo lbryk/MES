@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle';
-import { Button, Badge, DropdownButton, Dropdown } from 'react-bootstrap';
+import { Button, Badge, DropdownButton, Dropdown, Collapse } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPencilAlt, faTrashCan, faUserCircle, faCopy } from '@fortawesome/free-solid-svg-icons';
 import db from '../firebase';
@@ -38,6 +38,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
     const [userRole, setUserRole] = useState('');
     const [updateKey, setUpdateKey] = useState(0);
     const [newExamIds, setNewExamIds] = useState([]);
+    const [expandedExams, setExpandedExams] = useState({}); // Dodano stan dla rozwiniętych egzaminów
     const tableRef = useRef(null);
     const editingFieldRef = useRef(null);
     const isInsideEditingField = useRef(false);
@@ -460,6 +461,19 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
         setSortDirection(direction);
     };
 
+    const handleExamClick = async (exam) => {
+        const expandedState = { ...expandedExams };
+        if (expandedState[exam.id]) {
+            expandedState[exam.id] = false;
+        } else {
+            const collectionName = `${exam.qualification.toLowerCase().replace('.', '')}${exam.year}${exam.session}`;
+            const docsSnapshot = await getDocs(collection(db, collectionName));
+            const docsData = docsSnapshot.docs.map(doc => doc.data());
+            expandedState[exam.id] = docsData;
+        }
+        setExpandedExams(expandedState);
+    };
+
     const indexOfLastExam = currentPage * examsPerPage;
     const indexOfFirstExam = indexOfLastExam - examsPerPage;
     const currentExams = exams.slice(indexOfFirstExam, indexOfLastExam);
@@ -483,137 +497,173 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                         const isTestQualification = exam.qualification.toLowerCase().includes('test');
                         const isNewExam = newExamIds.includes(exam.id);
                         return (
-                            <tr key={exam.id} className={`align-middle ${isTestQualification ? 'table-warning' : ''} ${isNewExam ? 'table-success' : ''}`}>
-                                <td className='align-middle'>{index + 1}</td>
-                                <td className='align-middle'>{exam.name}</td>
-                                <td className='align-middle' style={{ width: '20%' }}
-                                    onClick={(e) => {
-                                        if (!isInsideEditingField.current && !isTestQualification) {
-                                            handleFieldClick(exam.id, exam.autors, 'qualification');
-                                        }
-                                    }}
-                                    ref={editingExamId === exam.id && editingField === 'qualification' ? editingFieldRef : null}
-                                >
-                                    {editingExamId === exam.id && editingField === 'qualification' ? (
-                                        <div>
-                                            <DropdownButton
-                                                title={formatQualificationForDisplay(exam.qualification)}
-                                                onSelect={(e) => handleQualificationChange(exam.id, e)}
-                                                onMouseEnter={() => isInsideEditingField.current = true}
-                                                onMouseLeave={() => isInsideEditingField.current = false}
-                                            >
-                                                {Object.keys(qualificationName)
-                                                    .filter(
-                                                        (key) =>
-                                                            qualificationName[key].professions.includes(exam.profession)
-                                                    )
-                                                    .map((key) => (
-                                                        <Dropdown.Item key={key} eventKey={key}>
-                                                            {formatQualificationForDisplay(key)}
-                                                        </Dropdown.Item>
-                                                    ))}
-                                            </DropdownButton>
-                                        </div>
-                                    ) : (
-                                        formatQualificationForDisplay(exam.qualification)
-                                    )}
-                                </td>
-                                <td className='align-middle' style={{ width: '20%' }}
-                                    onClick={(e) => {
-                                        if (!isInsideEditingField.current && !isTestQualification) {
-                                            handleFieldClick(exam.id, exam.autors, 'profession');
-                                        }
-                                    }}
-                                    ref={editingExamId === exam.id && editingField === 'profession' ? editingFieldRef : null}
-                                >
-                                    {editingExamId === exam.id && editingField === 'profession' ? (
-                                        <div>
-                                            <DropdownButton
-                                                title={exam.profession}
-                                                onSelect={(e) => handleProfessionChange(exam.id, e)}
-                                                onMouseEnter={() => isInsideEditingField.current = true}
-                                                onMouseLeave={() => isInsideEditingField.current = false}
-                                            >
-                                                {Object.keys(professionsData).map((profession) => (
-                                                    <Dropdown.Item key={profession} eventKey={profession}>
-                                                        {profession}
-                                                    </Dropdown.Item>
-                                                ))}
-                                            </DropdownButton>
-                                        </div>
-                                    ) : (
-                                        exam.profession
-                                    )}
-                                </td>
-                                <td
-                                    className='align-middle'
-                                    onClick={(e) => {
-                                        if (!isInsideEditingField.current) {
-                                            handleFieldClick(exam.id, exam.autors, 'authors');
-                                        }
-                                    }}
-                                    ref={editingExamId === exam.id && editingField === 'authors' ? editingFieldRef : null}
-                                >
-                                    {editingExamId === exam.id && editingField === 'authors' ? (
-                                        <div>
+                            <React.Fragment key={exam.id}>
+                                <tr key={exam.id} className={`align-middle ${isTestQualification ? 'table-warning' : ''} ${isNewExam ? 'table-success' : ''}`}>
+                                    <td className='align-middle'>{index + 1}</td>
+                                    <td className='align-middle' onDoubleClick={() => handleExamClick(exam)}>
+                                        {exam.name}
+                                    </td>
+                                    <td className='align-middle' style={{ width: '20%' }}
+                                        onClick={(e) => {
+                                            if (!isInsideEditingField.current && !isTestQualification) {
+                                                handleFieldClick(exam.id, exam.autors, 'qualification');
+                                            }
+                                        }}
+                                        ref={editingExamId === exam.id && editingField === 'qualification' ? editingFieldRef : null}
+                                    >
+                                        {editingExamId === exam.id && editingField === 'qualification' ? (
                                             <div>
-                                                {editingAuthors.map((user, index) => (
-                                                    <Badge
-                                                        key={index}
-                                                        pill
-                                                        bg='primary'
-                                                        className='me-2'
-                                                        onClick={() => handleBadgeClick(user)}
-                                                        style={{ cursor: 'pointer' }}
-                                                        onMouseEnter={() => isInsideEditingField.current = true}
-                                                        onMouseLeave={() => isInsideEditingField.current = false}
-                                                    >
-                                                        <FontAwesomeIcon icon={faUserCircle} /> {user.firstname} {user.lastname}
-                                                    </Badge>
-                                                ))}
-                                            </div><br />
-                                            <DropdownButton
-                                                title="Wybierz użytkownika"
-                                                onSelect={(e) => handleSelectUser(e)}
-                                                onMouseEnter={() => isInsideEditingField.current = true}
-                                                onMouseLeave={() => isInsideEditingField.current = false}
-                                            >
-                                                {availableUsers
-                                                    .filter((user) =>
-                                                        !editingAuthors.some(
-                                                            (author) => `${author.firstname} ${author.lastname}` === `${user.firstname} ${user.lastname}`
+                                                <DropdownButton
+                                                    title={formatQualificationForDisplay(exam.qualification)}
+                                                    onSelect={(e) => handleQualificationChange(exam.id, e)}
+                                                    onMouseEnter={() => isInsideEditingField.current = true}
+                                                    onMouseLeave={() => isInsideEditingField.current = false}
+                                                >
+                                                    {Object.keys(qualificationName)
+                                                        .filter(
+                                                            (key) =>
+                                                                qualificationName[key].professions.includes(exam.profession)
                                                         )
-                                                    )
-                                                    .map((user) => (
-                                                        <Dropdown.Item key={user.id} eventKey={user.id}>
-                                                            {`${user.firstname} ${user.lastname}`}
+                                                        .map((key) => (
+                                                            <Dropdown.Item key={key} eventKey={key}>
+                                                                {formatQualificationForDisplay(key)}
+                                                            </Dropdown.Item>
+                                                        ))}
+                                                </DropdownButton>
+                                            </div>
+                                        ) : (
+                                            formatQualificationForDisplay(exam.qualification)
+                                        )}
+                                    </td>
+                                    <td className='align-middle' style={{ width: '20%' }}
+                                        onClick={(e) => {
+                                            if (!isInsideEditingField.current && !isTestQualification) {
+                                                handleFieldClick(exam.id, exam.autors, 'profession');
+                                            }
+                                        }}
+                                        ref={editingExamId === exam.id && editingField === 'profession' ? editingFieldRef : null}
+                                    >
+                                        {editingExamId === exam.id && editingField === 'profession' ? (
+                                            <div>
+                                                <DropdownButton
+                                                    title={exam.profession}
+                                                    onSelect={(e) => handleProfessionChange(exam.id, e)}
+                                                    onMouseEnter={() => isInsideEditingField.current = true}
+                                                    onMouseLeave={() => isInsideEditingField.current = false}
+                                                >
+                                                    {Object.keys(professionsData).map((profession) => (
+                                                        <Dropdown.Item key={profession} eventKey={profession}>
+                                                            {profession}
                                                         </Dropdown.Item>
                                                     ))}
-                                            </DropdownButton>
-                                        </div>
-                                    ) : (
-                                        exam.autors.map((author, index) => (
-                                            <div key={index}>
-                                                {author}
-                                                <br />
+                                                </DropdownButton>
                                             </div>
-                                        ))
-                                    )}
-                                </td>
-                                <td className='align-middle'>
-                                    <Button variant='primary' className='me-2'>
-                                        <FontAwesomeIcon icon={faPencilAlt} />
-                                    </Button>
-                                    {!isTestQualification && (
-                                        <Button variant='danger' className='me-2' onClick={() => handleDeleteClick(exam)}>
-                                            <FontAwesomeIcon icon={faTrashCan} />
+                                        ) : (
+                                            exam.profession
+                                        )}
+                                    </td>
+                                    <td
+                                        className='align-middle'
+                                        onClick={(e) => {
+                                            if (!isInsideEditingField.current) {
+                                                handleFieldClick(exam.id, exam.autors, 'authors');
+                                            }
+                                        }}
+                                        ref={editingExamId === exam.id && editingField === 'authors' ? editingFieldRef : null}
+                                    >
+                                        {editingExamId === exam.id && editingField === 'authors' ? (
+                                            <div>
+                                                <div>
+                                                    {editingAuthors.map((user, index) => (
+                                                        <Badge
+                                                            key={index}
+                                                            pill
+                                                            bg='primary'
+                                                            className='me-2'
+                                                            onClick={() => handleBadgeClick(user)}
+                                                            style={{ cursor: 'pointer' }}
+                                                            onMouseEnter={() => isInsideEditingField.current = true}
+                                                            onMouseLeave={() => isInsideEditingField.current = false}
+                                                        >
+                                                            <FontAwesomeIcon icon={faUserCircle} /> {user.firstname} {user.lastname}
+                                                        </Badge>
+                                                    ))}
+                                                </div><br />
+                                                <DropdownButton
+                                                    title="Wybierz użytkownika"
+                                                    onSelect={(e) => handleSelectUser(e)}
+                                                    onMouseEnter={() => isInsideEditingField.current = true}
+                                                    onMouseLeave={() => isInsideEditingField.current = false}
+                                                >
+                                                    {availableUsers
+                                                        .filter((user) =>
+                                                            !editingAuthors.some(
+                                                                (author) => `${author.firstname} ${author.lastname}` === `${user.firstname} ${user.lastname}`
+                                                            )
+                                                        )
+                                                        .map((user) => (
+                                                            <Dropdown.Item key={user.id} eventKey={user.id}>
+                                                                {`${user.firstname} ${user.lastname}`}
+                                                            </Dropdown.Item>
+                                                        ))}
+                                                </DropdownButton>
+                                            </div>
+                                        ) : (
+                                            exam.autors.map((author, index) => (
+                                                <div key={index}>
+                                                    {author}
+                                                    <br />
+                                                </div>
+                                            ))
+                                        )}
+                                    </td>
+                                    <td className='align-middle'>
+                                        <Button variant='primary' className='me-2' onClick={() => handleExamClick(exam)}>
+                                            <FontAwesomeIcon icon={faPencilAlt} />
                                         </Button>
-                                    )}
-                                    <Button variant='warning' onClick={() => handleDuplicate(exam)}>
-                                        <FontAwesomeIcon icon={faCopy} />
-                                    </Button>
-                                </td>
-                            </tr>
+                                        {!isTestQualification && (
+                                            <Button variant='danger' className='me-2' onClick={() => handleDeleteClick(exam)}>
+                                                <FontAwesomeIcon icon={faTrashCan} />
+                                            </Button>
+                                        )}
+                                        <Button variant='warning' onClick={() => handleDuplicate(exam)}>
+                                            <FontAwesomeIcon icon={faCopy} />
+                                        </Button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colSpan={6}>
+                                        <Collapse in={expandedExams[exam.id]}>
+                                            <div className='container-fluid'>
+                                                {expandedExams[exam.id] && expandedExams[exam.id].map((doc, idx) => (
+                                                    <div key={idx} className='alert alert-info'>
+                                                        <strong>Pytanie {idx + 1}</strong><hr />
+                                                        <div className='p-3 mb-2 bg-light text-dark rounded'>
+                                                            <p><strong>Treść:</strong></p>
+                                                            <p>{doc.question}</p>
+                                                        </div>
+                                                        <p><strong>a: </strong>
+                                                            {doc.a}</p>
+                                                        <p><strong>b: </strong>
+                                                            {doc.b}</p>
+                                                        <p><strong>c: </strong>
+                                                            {doc.c}</p>
+                                                        <p><strong>d: </strong>
+                                                            {doc.d}</p>
+                                                        <div className='p-3 mb-2 bg-dark text-white rounded'>
+                                                            <p><strong>Poprawna odpowiedź: </strong>
+                                                                {doc.answer}</p>
+                                                        </div>
+                                                        <Button variant='primary'>
+                                                            <FontAwesomeIcon icon={faPencilAlt} />
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </Collapse>
+                                    </td>
+                                </tr>
+                            </React.Fragment>
                         );
                     })}
                 </tbody>
