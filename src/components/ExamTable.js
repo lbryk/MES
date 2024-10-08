@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle';
 import { Button, Badge, DropdownButton, Dropdown, Collapse } from 'react-bootstrap';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPencilAlt, faTrashCan, faUserCircle, faCopy } from '@fortawesome/free-solid-svg-icons';
 import db from '../firebase';
@@ -16,6 +17,7 @@ import {
     getDoc,
     setDoc,
     arrayUnion,
+    writeBatch,
 } from 'firebase/firestore';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -39,6 +41,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
     const [updateKey, setUpdateKey] = useState(0);
     const [newExamIds, setNewExamIds] = useState([]);
     const [expandedExams, setExpandedExams] = useState({}); // Dodano stan dla rozwiniętych egzaminów
+    const [expandedAnswers, setExpandedAnswers] = useState({});
     const tableRef = useRef(null);
     const editingFieldRef = useRef(null);
     const isInsideEditingField = useRef(false);
@@ -474,13 +477,61 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
         setExpandedExams(expandedState);
     };
 
+   const toggleAnswerVisibility = (examId, questionIdx) => {
+        const key = `${examId}-${questionIdx}`;
+        setExpandedAnswers(prev => ({ ...prev, [key]: !prev[key] }));
+    };
+
+const onDragEnd = async (result) => {
+    const { source, destination } = result;
+    if (!destination || (source.droppableId === destination.droppableId && source.index === destination.index)) {
+        return; // Nie wykonuj żadnej operacji, jeśli nie ma przesunięcia
+    }
+
+    const sourceExams = Array.from(expandedExams[source.droppableId]);
+    const movedItem = sourceExams[source.index]; // Zapisujemy przesunięty element
+    sourceExams.splice(source.index, 1); // Usuwamy element z oryginalnego miejsca
+    sourceExams.splice(destination.index, 0, movedItem); // Wstawiamy element na nowe miejsce
+
+    setExpandedExams({
+        ...expandedExams,
+        [source.droppableId]: sourceExams
+    });
+
+    const exam = exams.find(exam => exam.id === source.droppableId);
+    const collectionName = `${exam.qualification.toLowerCase().replace('.', '')}${exam.year}${exam.session}`;
+    const batch = writeBatch(db);
+
+    // Ustawianie nowej kolejności z zastosowaniem metody set z opcją merge
+    sourceExams.forEach((docData, index) => {
+        const docRef = doc(db, collectionName, `${index + 1}`);
+        batch.set(docRef, { ...docData, order: index + 1 }, { merge: true });
+    });
+
+    try {
+        await batch.commit();
+        toast.success('Kolejność pytań została pomyślnie zaktualizowana!');
+    } catch (error) {
+        console.error('Błąd podczas aktualizacji kolejności pytań:', error);
+        toast.error('Aktualizacja kolejności pytań nie powiodła się.');
+    }
+};
+
+
+
+
+
+
+
     const indexOfLastExam = currentPage * examsPerPage;
     const indexOfFirstExam = indexOfLastExam - examsPerPage;
     const currentExams = exams.slice(indexOfFirstExam, indexOfLastExam);
+    
 
     return (
         <div className='mt-4' ref={tableRef}>
             <ToastContainer />
+            <DragDropContext onDragEnd={onDragEnd}>
             <table className='table table-striped'>
                 <thead>
                     <tr>
@@ -632,34 +683,46 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td colSpan={6}>
+                                 <td colSpan={6}>
                                         <Collapse in={expandedExams[exam.id]}>
-                                            <div className='container-fluid'>
-                                                {expandedExams[exam.id] && expandedExams[exam.id].map((doc, idx) => (
-                                                    <div key={idx} className='alert alert-info'>
-                                                        <strong>Pytanie {idx + 1}</strong><hr />
-                                                        <div className='p-3 mb-2 bg-light text-dark rounded'>
-                                                            <p><strong>Treść:</strong></p>
-                                                            <p>{doc.question}</p>
-                                                        </div>
-                                                        <p><strong>a: </strong>
-                                                            {doc.a}</p>
-                                                        <p><strong>b: </strong>
-                                                            {doc.b}</p>
-                                                        <p><strong>c: </strong>
-                                                            {doc.c}</p>
-                                                        <p><strong>d: </strong>
-                                                            {doc.d}</p>
-                                                        <div className='p-3 mb-2 bg-dark text-white rounded'>
-                                                            <p><strong>Poprawna odpowiedź: </strong>
-                                                                {doc.answer}</p>
-                                                        </div>
-                                                        <Button variant='primary'>
-                                                            <FontAwesomeIcon icon={faPencilAlt} />
-                                                        </Button>
+                                            <Droppable droppableId={String(exam.id)}>
+                                                {(provided) => (
+                                                    <div ref={provided.innerRef} {...provided.droppableProps} className='container-fluid'>
+                                                        {expandedExams[exam.id] && expandedExams[exam.id].map((doc, idx) => (
+                                                            <Draggable key={idx} draggableId={`drag-${exam.id}-${idx}`} index={idx}>
+                                                                {(provided) => (
+                                                                    <div
+                                                                        ref={provided.innerRef}
+                                                                        {...provided.draggableProps}
+                                                                        {...provided.dragHandleProps}
+                                                                        className='alert alert-info'
+                                                                        onDoubleClick={() => toggleAnswerVisibility(exam.id, idx)}
+                                                                    >
+                                                                        <strong>Pytanie {idx + 1}</strong><hr />
+                                                                        <div className='p-3 mb-2 bg-light text-dark rounded' dangerouslySetInnerHTML={{ __html: `<p><strong>Treść:</strong></p><p>${doc.question}</p>` }}></div>
+                                                                        <Collapse in={expandedAnswers[`${exam.id}-${idx}`]}>
+                                                                            <div>
+                                                                                <div className='p-3 mb-2 bg-light text-dark rounded' dangerouslySetInnerHTML={{ __html: `<p><strong>a:</strong></p><p>${doc.a}</p>` }}></div>
+                                                                                <div className='p-3 mb-2 bg-light text-dark rounded' dangerouslySetInnerHTML={{ __html: `<p><strong>b:</strong></p><p>${doc.b}</p>` }}></div>
+                                                                                <div className='p-3 mb-2 bg-light text-dark rounded' dangerouslySetInnerHTML={{ __html: `<p><strong>c:</strong></p><p>${doc.c}</p>` }}></div>
+                                                                                <div className='p-3 mb-2 bg-light text-dark rounded' dangerouslySetInnerHTML={{ __html: `<p><strong>d:</strong></p><p>${doc.d}</p>` }}></div>
+                                                                                <div className='p-3 mb-2 bg-dark text-white rounded'>
+                                                                                    <p><strong>Poprawna odpowiedź:</strong></p>
+                                                                                    <p>{doc.answer}</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </Collapse>
+                                                                        <Button variant='primary'>
+                                                                            <FontAwesomeIcon icon={faPencilAlt} />
+                                                                        </Button>
+                                                                    </div>
+                                                                )}
+                                                            </Draggable>
+                                                        ))}
+                                                        {provided.placeholder}
                                                     </div>
-                                                ))}
-                                            </div>
+                                                )}
+                                            </Droppable>
                                         </Collapse>
                                     </td>
                                 </tr>
@@ -668,6 +731,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                     })}
                 </tbody>
             </table>
+            </DragDropContext>
             <Pagination
                 usersPerPage={examsPerPage}
                 totalUsers={exams.length}
