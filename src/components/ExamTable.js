@@ -4,7 +4,7 @@ import 'bootstrap/dist/js/bootstrap.bundle';
 import { Button, Badge, DropdownButton, Dropdown, Collapse } from 'react-bootstrap';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPencilAlt, faTrashCan, faUserCircle, faCopy } from '@fortawesome/free-solid-svg-icons';
+import { faPencilAlt, faTrashCan, faUserCircle, faCopy, faArrowDown } from '@fortawesome/free-solid-svg-icons';
 import db from '../firebase';
 import {
     collection,
@@ -25,6 +25,7 @@ import ExitAlert from './ExitAlert';
 import Pagination from './Pagination';
 import AppContext from './AppContext';
 import WindowConfirm from './WindowConfirm';
+import { Editor } from '@tinymce/tinymce-react';
 
 const ExamTable = ({ refreshKey, onExamCreated }) => {
     const [exams, setExams] = useState([]);
@@ -669,8 +670,8 @@ const onDragEnd = async (result) => {
                                         )}
                                     </td>
                                     <td className='align-middle'>
-                                        <Button variant='primary' className='me-2' onClick={() => handleExamClick(exam)}>
-                                            <FontAwesomeIcon icon={faPencilAlt} />
+                                        <Button variant='info' className='me-2' onClick={() => handleExamClick(exam)}>
+                                            <FontAwesomeIcon title="Pokaż / ukryj zadania" icon={faArrowDown} />
                                         </Button>
                                         {!isTestQualification && (
                                             <Button variant='danger' className='me-2' onClick={() => handleDeleteClick(exam)}>
@@ -712,8 +713,8 @@ const onDragEnd = async (result) => {
                                                                                 </div>
                                                                             </div>
                                                                         </Collapse>
-                                                                        <Button variant='primary'>
-                                                                            <FontAwesomeIcon icon={faPencilAlt} />
+                                                                        <Button title="Pokaż / ukryj odpowiedzi" variant='info' onClick={() => toggleAnswerVisibility(exam.id, idx)}>
+                                                                            <FontAwesomeIcon icon={faArrowDown} />
                                                                         </Button>
                                                                     </div>
                                                                 )}
