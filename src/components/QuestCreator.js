@@ -113,7 +113,7 @@ const QuestCreator = ({ examName }) => {
 					<div className='pb-3 h4'>Pytanie {questNumber}</div>
 					{
 						<Editor
-							apiKey='gv5fnyynnu54nbfl7gqe2noc7l3i4w7uq8ra8c9iglkcz2lh'
+							apiKey='lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5'
 							onInit={(evt, editor) => (editorRef.current = editor)}
 							initialValue='<p>Tu twórz pytanie.</p>'
 							name='questEdit'
