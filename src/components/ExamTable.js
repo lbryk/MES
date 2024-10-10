@@ -72,6 +72,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [examsPerPage] = useState(10);
   const [editing, setEditing] = useState({ examId: null, questionIndex: null });
+  const editorRef = useRef(null);
 
   const fetchUserRole = async () => {
     try {
@@ -612,27 +613,66 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
     }
   };
 
-  const handleEditorChange = useCallback(
-    (content, examId, questionId) => {
-      const updatedExams = { ...expandedExams };
-      const updatedQuestions = updatedExams[examId].map((question) =>
-        question.id === questionId
-          ? { ...question, question: content }
-          : question
-      );
-      updatedExams[examId] = updatedQuestions;
-      setExpandedExams(updatedExams);
-    },
-    [expandedExams]
-  );
-
   const handleDoubleClick = (examId, questionIndex) => {
     setEditing({ examId, questionIndex });
   };
 
+  const updateQuestionInDatabase = async (
+    examId,
+    questionId,
+    updatedQuestion
+  ) => {
+    try {
+      const exam = exams.find((e) => e.id === examId);
+      const collectionName = `${exam.qualification
+        .toLowerCase()
+        .replace(".", "")}${exam.year}${exam.session}`;
+      const questionDocRef = doc(db, collectionName, `${questionId + 1}`);
+      await updateDoc(questionDocRef, { question: updatedQuestion });
+      toast.success("Pytanie zostało pomyślnie zaktualizowane!", {
+        autoClose: 2000,
+      });
+    } catch (error) {
+      console.error("Błąd podczas aktualizacji pytania:", error);
+      toast.error("Aktualizacja pytania nie powiodła się.");
+    }
+  };
+
+  const handleEditorChange = (content, examId, questionId) => {
+    setExpandedExams((prevExams) => {
+      const updatedExams = { ...prevExams };
+      updatedExams[examId] = updatedExams[examId].map((question, index) =>
+        index === questionId ? { ...question, question: content } : question
+      );
+      return updatedExams;
+    });
+  };
+
   const handleBlurEgzam = () => {
+    if (editing.examId !== null && editing.questionIndex !== null) {
+      const { examId, questionIndex } = editing;
+      const updatedQuestion = expandedExams[examId][questionIndex].question;
+      updateQuestionInDatabase(examId, questionIndex, updatedQuestion);
+    }
     setEditing({ examId: null, questionIndex: null });
   };
+
+  const handleClickOutsideEditor = (event) => {
+    if (editorRef.current && !editorRef.current.contains(event.target)) {
+      handleBlurEgzam();
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener("mousedown", (event) => {
+      if (editorRef.current && !editorRef.current.contains(event.target)) {
+        handleBlurEgzam();
+      }
+    });
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [editing]);
 
   const indexOfLastExam = currentPage * examsPerPage;
   const indexOfFirstExam = indexOfLastExam - examsPerPage;
@@ -845,7 +885,9 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                         onClick={() => handleExamClick(exam)}>
                         <FontAwesomeIcon
                           title={
-                            expandedExams[exam.id] ? "Ukryj zadania" : "Pokaż zadania"
+                            expandedExams[exam.id]
+                              ? "Ukryj zadania"
+                              : "Pokaż zadania"
                           }
                           icon={
                             expandedExams[exam.id] ? faArrowUp : faArrowDown
@@ -898,22 +940,24 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                           onDoubleClick={() =>
                                             handleDoubleClick(exam.id, idx)
                                           }>
-                                          {editing.examId === exam.id &&
-                                          editing.questionIndex === idx ? (
+                                          {editing.examId !== null &&
+                                          editing.questionIndex !== null ? (
                                             <Editor
                                               apiKey="lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5"
-                                              value={doc.question}
-                                              name="questEdit"
+                                              value={
+                                                expandedExams[editing.examId][
+                                                  editing.questionIndex
+                                                ].question
+                                              }
+                                              onEditorChange={(content) =>
+                                                handleEditorChange(
+                                                  content,
+                                                  editing.examId,
+                                                  editing.questionIndex
+                                                )
+                                              } // Kontrola tekstu w czasie rzeczywistym
+                                              onBlur={handleBlurEgzam}
                                               init={{
-                                                selector: "textarea",
-                                                toolbar: "language",
-                                                language: "pl",
-                                                content_langs: [
-                                                  {
-                                                    title: "Polish",
-                                                    code: "pl",
-                                                  },
-                                                ],
                                                 height: 400,
                                                 menubar: false,
                                                 plugins: [
@@ -940,26 +984,24 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                                 ],
                                                 toolbar:
                                                   "undo redo blocks | media image link table charmap codesample | " +
-                                                  "bold italic forecolor backcolor | alignleft aligncenter " +
+                                                  "bold italic underline forecolor backcolor | alignleft aligncenter " +
                                                   "alignright alignjustify | bullist numlist outdent indent | " +
                                                   "removeformat | help",
                                                 content_style:
                                                   "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
                                               }}
-                                              onEditorChange={(content) =>
-                                                handleEditorChange(
-                                                  content,
-                                                  exam.id,
-                                                  idx
-                                                )
-                                              }
-                                              onBlur={handleBlurEgzam}
                                             />
                                           ) : (
                                             <p
+                                              onDoubleClick={() =>
+                                                handleDoubleClick(exam.id, idx)
+                                              }
                                               dangerouslySetInnerHTML={{
-                                                __html: doc.question,
-                                              }}></p>
+                                                __html:
+                                                  expandedExams[exam.id][idx]
+                                                    .question,
+                                              }}
+                                            />
                                           )}
                                         </div>
 
