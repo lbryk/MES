@@ -561,7 +561,9 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
         .toLowerCase()
         .replace(".", "")}${exam.year}${exam.session}`;
       const docsSnapshot = await getDocs(collection(db, collectionName));
-      const docsData = docsSnapshot.docs.map((doc) => doc.data());
+      const docsData = docsSnapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => a.order - b.order); // Sortowanie według `order`
       expandedState[exam.id] = docsData;
     }
     setExpandedExams(expandedState);
@@ -613,14 +615,17 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
     }
   };
 
-  const handleDoubleClick = (examId, questionIndex) => {
-    setEditing({ examId, questionIndex });
+  const handleDoubleClick = (examId, questionIndex, field) => {
+    setEditing({ examId, questionIndex, field });
+    document.removeEventListener("mousedown", handleClickOutsideEditor);
+    document.addEventListener("mousedown", handleClickOutsideEditor);
   };
 
   const updateQuestionInDatabase = async (
     examId,
     questionId,
-    updatedQuestion
+    updatedContent,
+    field
   ) => {
     try {
       const exam = exams.find((e) => e.id === examId);
@@ -628,55 +633,81 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
         .toLowerCase()
         .replace(".", "")}${exam.year}${exam.session}`;
       const questionDocRef = doc(db, collectionName, `${questionId + 1}`);
-      await updateDoc(questionDocRef, { question: updatedQuestion });
-      toast.success("Pytanie zostało pomyślnie zaktualizowane!", {
+
+      await updateDoc(questionDocRef, { [field]: updatedContent });
+      setIsSaved(true);
+      toast.success("Odpowiedź została pomyślnie zaktualizowana!", {
         autoClose: 2000,
       });
     } catch (error) {
-      console.error("Błąd podczas aktualizacji pytania:", error);
-      toast.error("Aktualizacja pytania nie powiodła się.");
+      console.error("Błąd podczas aktualizacji odpowiedzi:", error);
+      toast.error("Aktualizacja odpowiedzi nie powiodła się.", {
+        autoClose: 5000,
+      });
     }
   };
 
-  const handleEditorChange = (content, examId, questionId) => {
-    setExpandedExams((prevExams) => {
-      const updatedExams = { ...prevExams };
-      updatedExams[examId] = updatedExams[examId].map((question, index) =>
-        index === questionId ? { ...question, question: content } : question
-      );
-      return updatedExams;
-    });
+  const handleEditorChange = (content, examId, questionId, field) => {
+    if (
+      editing.examId === examId &&
+      editing.questionIndex === questionId &&
+      editing.field === field
+    ) {
+      setExpandedExams((prevExams) => {
+        const updatedExams = { ...prevExams };
+        updatedExams[examId] = updatedExams[examId].map((question, index) =>
+          index === questionId ? { ...question, [field]: content } : question
+        );
+        return updatedExams;
+      });
+    }
+    setIsSaved(false); // Zresetuj stan po każdej zmianie
   };
+
+  const [isSaved, setIsSaved] = useState(false);
 
   const handleBlurEgzam = () => {
-    if (editing.examId !== null && editing.questionIndex !== null) {
-      const { examId, questionIndex } = editing;
-      const updatedQuestion = expandedExams[examId][questionIndex].question;
-      updateQuestionInDatabase(examId, questionIndex, updatedQuestion);
+    if (
+      !isSaved &&
+      editing.examId !== null &&
+      editing.questionIndex !== null &&
+      editing.field
+    ) {
+      const { examId, questionIndex, field } = editing;
+      const updatedContent = expandedExams[examId][questionIndex][field];
+      updateQuestionInDatabase(examId, questionIndex, updatedContent, field);
     }
-    setEditing({ examId: null, questionIndex: null });
+    setEditing({ examId: null, questionIndex: null, field: null });
+    document.removeEventListener("mousedown", handleClickOutsideEditor);
   };
 
+  // Funkcja do zamykania edytora po kliknięciu poza jego obszar
   const handleClickOutsideEditor = (event) => {
-    if (editorRef.current && !editorRef.current.contains(event.target)) {
+    if (
+      editorRef.current &&
+      !editorRef.current.editorContainer.contains(event.target)
+    ) {
       handleBlurEgzam();
     }
   };
 
+  // Nasłuchiwacz kliknięć uruchamiany tylko wtedy, gdy edytor jest otwarty
   useEffect(() => {
-    document.addEventListener("mousedown", (event) => {
-      if (editorRef.current && !editorRef.current.contains(event.target)) {
-        handleBlurEgzam();
-      }
-    });
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    if (editing.examId !== null && editing.questionIndex !== null) {
+      document.addEventListener("mousedown", handleClickOutsideEditor);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutsideEditor);
+    }
+
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutsideEditor);
   }, [editing]);
 
   const indexOfLastExam = currentPage * examsPerPage;
   const indexOfFirstExam = indexOfLastExam - examsPerPage;
   const currentExams = exams.slice(indexOfFirstExam, indexOfLastExam);
+
+  const [hoverField, setHoverField] = useState(null);
 
   return (
     <div className="mt-4" ref={tableRef}>
@@ -936,30 +967,68 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                         <strong>Pytanie {idx + 1}</strong>
                                         <hr />
                                         <div
-                                          className="p-3 mb-2 bg-light text-dark rounded"
+                                          className="p-3 mb-2 bg-light text-dark rounded position-relative"
                                           onDoubleClick={() =>
-                                            handleDoubleClick(exam.id, idx)
+                                            handleDoubleClick(
+                                              exam.id,
+                                              idx,
+                                              "question"
+                                            )
+                                          }
+                                          onMouseEnter={() =>
+                                            setHoverField(
+                                              `${exam.id}-${idx}-question`
+                                            )
+                                          }
+                                          onMouseLeave={() =>
+                                            setHoverField(null)
                                           }>
-                                          {editing.examId !== null &&
-                                          editing.questionIndex !== null ? (
+                                          {editing.examId === exam.id &&
+                                          editing.questionIndex === idx &&
+                                          editing.field === "question" ? (
                                             <Editor
                                               apiKey="lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5"
                                               value={
-                                                expandedExams[editing.examId][
-                                                  editing.questionIndex
-                                                ].question
+                                                expandedExams[exam.id][idx]
+                                                  .question
                                               }
                                               onEditorChange={(content) =>
                                                 handleEditorChange(
                                                   content,
-                                                  editing.examId,
-                                                  editing.questionIndex
+                                                  exam.id,
+                                                  idx,
+                                                  "question"
                                                 )
-                                              } // Kontrola tekstu w czasie rzeczywistym
+                                              }
                                               onBlur={handleBlurEgzam}
                                               init={{
                                                 height: 400,
                                                 menubar: false,
+                                                save_onsavecallback: async (
+                                                  editor
+                                                ) => {
+                                                  const content =
+                                                    editor.getContent(); // Pobiera najnowszą zawartość
+                                                  const {
+                                                    examId,
+                                                    questionIndex,
+                                                    field,
+                                                  } = editing;
+
+                                                  if (
+                                                    examId !== null &&
+                                                    questionIndex !== null &&
+                                                    field
+                                                  ) {
+                                                    await updateQuestionInDatabase(
+                                                      examId,
+                                                      questionIndex,
+                                                      content,
+                                                      field
+                                                    );
+                                                  }
+                                                  setIsSaved(true);
+                                                },
                                                 plugins: [
                                                   "advlist",
                                                   "autolink",
@@ -981,27 +1050,52 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                                   "codesample",
                                                   "hilitecolor",
                                                   "charmap",
+                                                  "save",
                                                 ],
                                                 toolbar:
-                                                  "undo redo blocks | media image link table charmap codesample | " +
+                                                  "save | undo redo blocks | media image link table charmap codesample | " +
                                                   "bold italic underline forecolor backcolor | alignleft aligncenter " +
                                                   "alignright alignjustify | bullist numlist outdent indent | " +
                                                   "removeformat | help",
                                                 content_style:
                                                   "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
                                               }}
+                                              ref={editorRef} // Ustawienie referencji na edytor
                                             />
                                           ) : (
-                                            <p
-                                              onDoubleClick={() =>
-                                                handleDoubleClick(exam.id, idx)
-                                              }
-                                              dangerouslySetInnerHTML={{
-                                                __html:
-                                                  expandedExams[exam.id][idx]
-                                                    .question,
-                                              }}
-                                            />
+                                            <div className="position-relative">
+                                              <p
+                                                onDoubleClick={() =>
+                                                  handleDoubleClick(
+                                                    exam.id,
+                                                    idx
+                                                  )
+                                                }
+                                                dangerouslySetInnerHTML={{
+                                                  __html:
+                                                    expandedExams[exam.id][idx]
+                                                      .question,
+                                                }}
+                                              />
+                                              {hoverField ===
+                                                `${exam.id}-${idx}-question` && (
+                                                <div
+                                                  className="position-absolute top-0 end-0 p-2"
+                                                  onClick={() =>
+                                                    handleDoubleClick(
+                                                      exam.id,
+                                                      idx,
+                                                      "question"
+                                                    )
+                                                  }
+                                                  style={{ cursor: "pointer" }}>
+                                                  <FontAwesomeIcon
+                                                    icon={faPencilAlt}
+                                                    className="text-secondary"
+                                                  />
+                                                </div>
+                                              )}
+                                            </div>
                                           )}
                                         </div>
 
@@ -1010,34 +1104,131 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                             expandedAnswers[`${exam.id}-${idx}`]
                                           }>
                                           <div>
-                                            <div
-                                              className="p-3 mb-2 bg-light text-dark rounded"
-                                              dangerouslySetInnerHTML={{
-                                                __html: `<p><strong>a:</strong></p><p>${doc.a}</p>`,
-                                              }}></div>
-                                            <div
-                                              className="p-3 mb-2 bg-light text-dark rounded"
-                                              dangerouslySetInnerHTML={{
-                                                __html: `<p><strong>b:</strong></p><p>${doc.b}</p>`,
-                                              }}></div>
-                                            <div
-                                              className="p-3 mb-2 bg-light text-dark rounded"
-                                              dangerouslySetInnerHTML={{
-                                                __html: `<p><strong>c:</strong></p><p>${doc.c}</p>`,
-                                              }}></div>
-                                            <div
-                                              className="p-3 mb-2 bg-light text-dark rounded"
-                                              dangerouslySetInnerHTML={{
-                                                __html: `<p><strong>d:</strong></p><p>${doc.d}</p>`,
-                                              }}></div>
-                                            <div className="p-3 mb-2 bg-dark text-white rounded">
-                                              <p>
-                                                <strong>
-                                                  Poprawna odpowiedź:
-                                                </strong>
-                                              </p>
-                                              <p>{doc.answer}</p>
-                                            </div>
+                                            {["a", "b", "c", "d", "answer"].map(
+                                              (field) => (
+                                                <div
+                                                  key={field}
+                                                  className={`p-3 mb-2 bg-${
+                                                    field === "answer"
+                                                      ? "dark text-white"
+                                                      : "light text-dark"
+                                                  } rounded`}
+                                                  onMouseEnter={() =>
+                                                    setHoverField(
+                                                      `${exam.id}-${idx}-${field}`
+                                                    )
+                                                  }
+                                                  onMouseLeave={() =>
+                                                    setHoverField(null)
+                                                  }>
+                                                  <p>
+                                                    <strong>
+                                                      {field === "answer"
+                                                        ? "Poprawna odpowiedź:"
+                                                        : `${field}:`}
+                                                    </strong>
+                                                  </p>
+                                                  {editing.examId === exam.id &&
+                                                  editing.questionIndex ===
+                                                    idx &&
+                                                  editing.field === field ? (
+                                                    <Editor
+                                                      apiKey="lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5"
+                                                      value={
+                                                        expandedExams[exam.id][
+                                                          idx
+                                                        ][field]
+                                                      }
+                                                      onEditorChange={(
+                                                        content
+                                                      ) =>
+                                                        handleEditorChange(
+                                                          content,
+                                                          exam.id,
+                                                          idx,
+                                                          field
+                                                        )
+                                                      }
+                                                      init={{
+                                                        height: 200,
+                                                        menubar: false,
+                                                        save_onsavecallback:
+                                                          async (editor) => {
+                                                            const content =
+                                                              editor.getContent(); // Pobiera najnowszą zawartość
+                                                            const {
+                                                              examId,
+                                                              questionIndex,
+                                                              field,
+                                                            } = editing;
+
+                                                            if (
+                                                              examId !== null &&
+                                                              questionIndex !==
+                                                                null &&
+                                                              field
+                                                            ) {
+                                                              await updateQuestionInDatabase(
+                                                                examId,
+                                                                questionIndex,
+                                                                content,
+                                                                field
+                                                              );
+                                                            }
+                                                            setIsSaved(true);
+                                                          },
+                                                        plugins: ["save"],
+                                                        toolbar:
+                                                          "save | undo redo | bold italic",
+                                                      }}
+                                                      onBlur={handleBlurEgzam}
+                                                    />
+                                                  ) : (
+                                                    <div
+                                                      onClick={() =>
+                                                        handleDoubleClick(
+                                                          exam.id,
+                                                          idx,
+                                                          field
+                                                        )
+                                                      }
+                                                      className="position-relative"
+                                                      style={{
+                                                        cursor: "pointer",
+                                                      }}>
+                                                      <p
+                                                        dangerouslySetInnerHTML={{
+                                                          __html:
+                                                            expandedExams[
+                                                              exam.id
+                                                            ][idx][field],
+                                                        }}
+                                                      />
+                                                      {hoverField ===
+                                                        `${exam.id}-${idx}-${field}` && (
+                                                        <div
+                                                          className="position-absolute top-0 end-0 p-2"
+                                                          onClick={() =>
+                                                            handleDoubleClick(
+                                                              exam.id,
+                                                              idx,
+                                                              field
+                                                            )
+                                                          }
+                                                          style={{
+                                                            cursor: "pointer",
+                                                          }}>
+                                                          <FontAwesomeIcon
+                                                            icon={faPencilAlt}
+                                                            className="text-secondary"
+                                                          />
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              )
+                                            )}
                                           </div>
                                         </Collapse>
                                         <Button

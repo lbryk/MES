@@ -95,350 +95,348 @@ const QuestCreator = ({ examName }) => {
 	};
 
 	return (
-		<div className='mt-4'>
-			<div className='line'></div>
-			<div className='d-flex justify-content-end'>
-				<button
-					type='submit'
-					onClick={handleFormSubmit}
-					className='mt-4 btn btn-success'
-					name='addQuestbutton1'
-				>
-					<FontAwesomeIcon icon={faAdd} />
-					&nbsp; Dodaj pytanie
-				</button>
-			</div>
-			<div className='mt-4'>
-				<form name='questAdd'>
-					<div className='pb-3 h4'>Pytanie {questNumber}</div>
-					{
-						<Editor
-							apiKey='lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5'
-							onInit={(evt, editor) => (editorRef.current = editor)}
-							initialValue='<p>Tu twórz pytanie.</p>'
-							name='questEdit'
-							onEditorChange={(content, editor) => {
-								setquestText(content);
-							}}
-							init={{
-								selector: 'textarea',
-								toolbar: 'language',
-								language: 'pl',
-								content_langs: [{ title: 'Polish', code: 'pl' }],
-								height: 400,
-								menubar: false,
-								plugins: [
-									'advlist',
-									'autolink',
-									'lists',
-									'link',
-									'image',
-									'charmap',
-									'preview',
-									'anchor',
-									'searchreplace',
-									'visualblocks',
-									'code',
-									'fullscreen',
-									'insertdatetime',
-									'media',
-									'table',
-									'help',
-									'wordcount',
-									'codesample',
-									'hilitecolor',
-									'charmap',
-								],
-								toolbar:
-									'undo redo blocks | media image link table charmap codesample | ' +
-									'bold italic forecolor backcolor | alignleft aligncenter ' +
-									'alignright alignjustify | bullist numlist outdent indent | ' +
-									'removeformat | help',
-								content_style:
-									'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-							}}
-						/>
-					}
-					<div className='mt-4'>
-						<strong className='h4'>Odpowiedzi</strong>
-						<div className='d-flex mt-3'>
-							<div className='col-1 d-flex justify-content-center'>
-								<input
-									type='radio'
-									className='form-check-input'
-									name='answer'
-									// value={ansA}
-									value='a'
-								/>
-								&nbsp;
-								<strong> A. </strong>
-							</div>
-							<div className='col-10'>
-								{
-									<Editor
-										apiKey='lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5'
-										onInit={(evt, editor) => (editorRef.current = editor)}
-										name='ansA'
-										onEditorChange={(content, editor) => {
-											setAnsA(content);
-										}}
-										init={{
-											selector: 'textarea',
-											toolbar: 'language',
-											language: 'pl',
-											content_langs: [{ title: 'Polish', code: 'pl' }],
-											height: 200,
-											width: 850,
-											menubar: false,
-											forced_root_block: '',
-											force_br_newlines: true,
-											force_p_newlines: false,
-											plugins: [
-												'advlist',
-												'autolink',
-												'lists',
-												'link',
-												'image',
-												'charmap',
-												'preview',
-												'anchor',
-												'searchreplace',
-												'visualblocks',
-												'code',
-												'fullscreen',
-												'insertdatetime',
-												'media',
-												'table',
-												'help',
-												'wordcount',
-												'codesample',
-												'hilitecolor',
-												'charmap',
-											],
-											toolbar:
-												'undo redo | media image link table charmap codesample | ' +
-												'bold italic forecolor backcolor | alignleft aligncenter ' +
-												'alignright alignjustify | bullist numlist outdent indent | ' +
-												'removeformat | help',
-											content_style:
-												'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-										}}
-									/>
-								}
-							</div>
-						</div>
-						<div className='d-flex mt-4'>
-							<div className='col-1 d-flex justify-content-center'>
-								<input
-									type='radio'
-									className='form-check-input'
-									name='answer'
-									// value={ansB}
-									value='b'
-								/>
-								&nbsp;
-								<strong> B. </strong>
-							</div>
-							<div className='col-10'>
-								{
-									<Editor
-										apiKey='lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5'
-										onInit={(evt, editor) => (editorRef.current = editor)}
-										name='ansB'
-										onEditorChange={(content, editor) => {
-											setAnsB(content);
-										}}
-										init={{
-											selector: 'textarea',
-											toolbar: 'language',
-											language: 'pl',
-											content_langs: [{ title: 'Polish', code: 'pl' }],
-											height: 200,
-											width: 850,
-											menubar: false,
-											forced_root_block: '',
-											force_br_newlines: true,
-											force_p_newlines: false,
-											plugins: [
-												'advlist',
-												'autolink',
-												'lists',
-												'link',
-												'image',
-												'charmap',
-												'preview',
-												'anchor',
-												'searchreplace',
-												'visualblocks',
-												'code',
-												'fullscreen',
-												'insertdatetime',
-												'media',
-												'table',
-												'help',
-												'wordcount',
-												'codesample',
-												'hilitecolor',
-												'charmap',
-											],
-											toolbar:
-												'undo redo | media image link table charmap codesample | ' +
-												'bold italic forecolor backcolor | alignleft aligncenter ' +
-												'alignright alignjustify | bullist numlist outdent indent | ' +
-												'removeformat | help',
-											content_style:
-												'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-										}}
-									/>
-								}
-							</div>
-						</div>
-						<div className='d-flex mt-4'>
-							<div className='col-1 d-flex justify-content-center'>
-								<input
-									type='radio'
-									className='form-check-input'
-									name='answer'
-									// value={ansC}
-									value='c'
-								/>
-								&nbsp;
-								<strong> C. </strong>
-							</div>
-							<div className='col-10'>
-								{
-									<Editor
-										apiKey='lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5'
-										onInit={(evt, editor) => (editorRef.current = editor)}
-										name='ansC'
-										onEditorChange={(content, editor) => {
-											setAnsC(content);
-										}}
-										init={{
-											selector: 'textarea',
-											toolbar: 'language',
-											language: 'pl',
-											content_langs: [{ title: 'Polish', code: 'pl' }],
-											height: 200,
-											width: 850,
-											menubar: false,
-											plugins: [
-												'advlist',
-												'autolink',
-												'lists',
-												'link',
-												'image',
-												'charmap',
-												'preview',
-												'anchor',
-												'searchreplace',
-												'visualblocks',
-												'code',
-												'fullscreen',
-												'insertdatetime',
-												'media',
-												'table',
-												'help',
-												'wordcount',
-												'codesample',
-												'hilitecolor',
-												'charmap',
-											],
-											toolbar:
-												'undo redo | media image link table charmap codesample | ' +
-												'bold italic forecolor backcolor | alignleft aligncenter ' +
-												'alignright alignjustify | bullist numlist outdent indent | ' +
-												'removeformat | help',
-											content_style:
-												'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-										}}
-									/>
-								}
-							</div>
-						</div>
-						<div className='d-flex mt-4'>
-							<div className='col-1 d-flex justify-content-center'>
-								<input
-									type='radio'
-									className='form-check-input'
-									name='answer'
-									// value={ansD}
-									value='d'
-								/>
-								&nbsp;
-								<strong> D. </strong>
-							</div>
-							<div className='col-10'>
-								{
-									<Editor
-										apiKey='lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5'
-										onInit={(evt, editor) => (editorRef.current = editor)}
-										name='ansD'
-										onEditorChange={(content, editor) => {
-											setAnsD(content);
-										}}
-										init={{
-											selector: 'textarea',
-											toolbar: 'language',
-											language: 'pl',
-											content_langs: [{ title: 'Polish', code: 'pl' }],
-											height: 200,
-											width: 850,
-											menubar: false,
-											forced_root_block: '',
-											force_br_newlines: true,
-											force_p_newlines: false,
-											plugins: [
-												'advlist',
-												'autolink',
-												'lists',
-												'link',
-												'image',
-												'charmap',
-												'preview',
-												'anchor',
-												'searchreplace',
-												'visualblocks',
-												'code',
-												'fullscreen',
-												'insertdatetime',
-												'media',
-												'table',
-												'help',
-												'wordcount',
-												'codesample',
-												'hilitecolor',
-												'charmap',
-											],
-											toolbar:
-												'undo redo | media image link table charmap codesample | ' +
-												'bold italic forecolor backcolor | alignleft aligncenter ' +
-												'alignright alignjustify | bullist numlist outdent indent | ' +
-												'removeformat | help',
-											content_style:
-												'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-										}}
-									/>
-								}
-							</div>
-						</div>
-						<div className='d-flex justify-content-end'>
-							<button
-								type='submit'
-								onClick={handleFormSubmit}
-								className='mt-4 btn btn-success'
-								name='addQuestbutton2'
-							>
-								<FontAwesomeIcon icon={faAdd} />
-								&nbsp; Dodaj pytanie
-							</button>
-						</div>
-					</div>
-				</form>
-				<div style={{ height: 50 }}></div>
-			</div>
-		</div>
-	);
+    <div className="mt-4">
+      <div className="line"></div>
+      <div className="d-flex justify-content-end">
+        <button
+          type="submit"
+          onClick={handleFormSubmit}
+          className="mt-4 btn btn-success"
+          name="addQuestbutton1">
+          <FontAwesomeIcon icon={faAdd} />
+          &nbsp; Dodaj pytanie
+        </button>
+      </div>
+      <div className="mt-4">
+        <form name="questAdd">
+          <div className="pb-3 h4">Pytanie {questNumber}</div>
+          {
+            <Editor
+              apiKey="lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5"
+              onInit={(evt, editor) => (editorRef.current = editor)}
+              initialValue="<p>Tu twórz pytanie.</p>"
+              name="questEdit"
+              onEditorChange={(content, editor) => {
+                setquestText(content);
+              }}
+              init={{
+                selector: "textarea",
+                toolbar: "language",
+                language: "pl",
+                content_langs: [{ title: "Polish", code: "pl" }],
+                height: 400,
+                menubar: false,
+                plugins: [
+                  "advlist",
+                  "autolink",
+                  "lists",
+                  "link",
+                  "image",
+                  "charmap",
+                  "preview",
+                  "anchor",
+                  "searchreplace",
+                  "visualblocks",
+                  "code",
+                  "fullscreen",
+                  "insertdatetime",
+                  "media",
+                  "table",
+                  "help",
+                  "wordcount",
+                  "codesample",
+                  "hilitecolor",
+                  "charmap",
+                ],
+                toolbar:
+                  "undo redo blocks | media image link table charmap codesample | " +
+                  "bold italic underline forecolor backcolor | alignleft aligncenter " +
+                  "alignright alignjustify | bullist numlist outdent indent | " +
+                  "removeformat | help",
+                content_style:
+                  "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+              }}
+            />
+          }
+          <div className="mt-4">
+            <strong className="h4">Odpowiedzi</strong>
+            <div className="d-flex mt-3">
+              <div className="col-1 d-flex justify-content-center">
+                <input
+                  type="radio"
+                  className="form-check-input"
+                  name="answer"
+                  // value={ansA}
+                  value="a"
+                />
+                &nbsp;
+                <strong> A. </strong>
+              </div>
+              <div className="col-10">
+                {
+                  <Editor
+                    apiKey="lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5"
+                    onInit={(evt, editor) => (editorRef.current = editor)}
+                    name="ansA"
+                    onEditorChange={(content, editor) => {
+                      setAnsA(content);
+                    }}
+                    init={{
+                      selector: "textarea",
+                      toolbar: "language",
+                      language: "pl",
+                      content_langs: [{ title: "Polish", code: "pl" }],
+                      height: 200,
+                      width: 850,
+                      menubar: false,
+                      forced_root_block: "",
+                      force_br_newlines: true,
+                      force_p_newlines: false,
+                      plugins: [
+                        "advlist",
+                        "autolink",
+                        "lists",
+                        "link",
+                        "image",
+                        "charmap",
+                        "preview",
+                        "anchor",
+                        "searchreplace",
+                        "visualblocks",
+                        "code",
+                        "fullscreen",
+                        "insertdatetime",
+                        "media",
+                        "table",
+                        "help",
+                        "wordcount",
+                        "codesample",
+                        "hilitecolor",
+                        "charmap",
+                      ],
+                      toolbar:
+                        "undo redo | media image link table charmap codesample | " +
+                        "bold italic underline forecolor backcolor | alignleft aligncenter " +
+                        "alignright alignjustify | bullist numlist outdent indent | " +
+                        "removeformat | help",
+                      content_style:
+                        "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+                    }}
+                  />
+                }
+              </div>
+            </div>
+            <div className="d-flex mt-4">
+              <div className="col-1 d-flex justify-content-center">
+                <input
+                  type="radio"
+                  className="form-check-input"
+                  name="answer"
+                  // value={ansB}
+                  value="b"
+                />
+                &nbsp;
+                <strong> B. </strong>
+              </div>
+              <div className="col-10">
+                {
+                  <Editor
+                    apiKey="lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5"
+                    onInit={(evt, editor) => (editorRef.current = editor)}
+                    name="ansB"
+                    onEditorChange={(content, editor) => {
+                      setAnsB(content);
+                    }}
+                    init={{
+                      selector: "textarea",
+                      toolbar: "language",
+                      language: "pl",
+                      content_langs: [{ title: "Polish", code: "pl" }],
+                      height: 200,
+                      width: 850,
+                      menubar: false,
+                      forced_root_block: "",
+                      force_br_newlines: true,
+                      force_p_newlines: false,
+                      plugins: [
+                        "advlist",
+                        "autolink",
+                        "lists",
+                        "link",
+                        "image",
+                        "charmap",
+                        "preview",
+                        "anchor",
+                        "searchreplace",
+                        "visualblocks",
+                        "code",
+                        "fullscreen",
+                        "insertdatetime",
+                        "media",
+                        "table",
+                        "help",
+                        "wordcount",
+                        "codesample",
+                        "hilitecolor",
+                        "charmap",
+                      ],
+                      toolbar:
+                        "undo redo | media image link table charmap codesample | " +
+                        "bold italic underline forecolor backcolor | alignleft aligncenter " +
+                        "alignright alignjustify | bullist numlist outdent indent | " +
+                        "removeformat | help",
+                      content_style:
+                        "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+                    }}
+                  />
+                }
+              </div>
+            </div>
+            <div className="d-flex mt-4">
+              <div className="col-1 d-flex justify-content-center">
+                <input
+                  type="radio"
+                  className="form-check-input"
+                  name="answer"
+                  // value={ansC}
+                  value="c"
+                />
+                &nbsp;
+                <strong> C. </strong>
+              </div>
+              <div className="col-10">
+                {
+                  <Editor
+                    apiKey="lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5"
+                    onInit={(evt, editor) => (editorRef.current = editor)}
+                    name="ansC"
+                    onEditorChange={(content, editor) => {
+                      setAnsC(content);
+                    }}
+                    init={{
+                      selector: "textarea",
+                      toolbar: "language",
+                      language: "pl",
+                      content_langs: [{ title: "Polish", code: "pl" }],
+                      height: 200,
+                      width: 850,
+                      menubar: false,
+                      plugins: [
+                        "advlist",
+                        "autolink",
+                        "lists",
+                        "link",
+                        "image",
+                        "charmap",
+                        "preview",
+                        "anchor",
+                        "searchreplace",
+                        "visualblocks",
+                        "code",
+                        "fullscreen",
+                        "insertdatetime",
+                        "media",
+                        "table",
+                        "help",
+                        "wordcount",
+                        "codesample",
+                        "hilitecolor",
+                        "charmap",
+                      ],
+                      toolbar:
+                        "undo redo | media image link table charmap codesample | " +
+                        "bold italic underline forecolor backcolor | alignleft aligncenter " +
+                        "alignright alignjustify | bullist numlist outdent indent | " +
+                        "removeformat | help",
+                      content_style:
+                        "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+                    }}
+                  />
+                }
+              </div>
+            </div>
+            <div className="d-flex mt-4">
+              <div className="col-1 d-flex justify-content-center">
+                <input
+                  type="radio"
+                  className="form-check-input"
+                  name="answer"
+                  // value={ansD}
+                  value="d"
+                />
+                &nbsp;
+                <strong> D. </strong>
+              </div>
+              <div className="col-10">
+                {
+                  <Editor
+                    apiKey="lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5"
+                    onInit={(evt, editor) => (editorRef.current = editor)}
+                    name="ansD"
+                    onEditorChange={(content, editor) => {
+                      setAnsD(content);
+                    }}
+                    init={{
+                      selector: "textarea",
+                      toolbar: "language",
+                      language: "pl",
+                      content_langs: [{ title: "Polish", code: "pl" }],
+                      height: 200,
+                      width: 850,
+                      menubar: false,
+                      forced_root_block: "",
+                      force_br_newlines: true,
+                      force_p_newlines: false,
+                      plugins: [
+                        "advlist",
+                        "autolink",
+                        "lists",
+                        "link",
+                        "image",
+                        "charmap",
+                        "preview",
+                        "anchor",
+                        "searchreplace",
+                        "visualblocks",
+                        "code",
+                        "fullscreen",
+                        "insertdatetime",
+                        "media",
+                        "table",
+                        "help",
+                        "wordcount",
+                        "codesample",
+                        "hilitecolor",
+                        "charmap",
+                      ],
+                      toolbar:
+                        "undo redo | media image link table charmap codesample | " +
+                        "bold italic underline forecolor backcolor | alignleft aligncenter " +
+                        "alignright alignjustify | bullist numlist outdent indent | " +
+                        "removeformat | help",
+                      content_style:
+                        "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+                    }}
+                  />
+                }
+              </div>
+            </div>
+            <div className="d-flex justify-content-end">
+              <button
+                type="submit"
+                onClick={handleFormSubmit}
+                className="mt-4 btn btn-success"
+                name="addQuestbutton2">
+                <FontAwesomeIcon icon={faAdd} />
+                &nbsp; Dodaj pytanie
+              </button>
+            </div>
+          </div>
+        </form>
+        <div style={{ height: 50 }}></div>
+      </div>
+    </div>
+  );
 };
 
 export default QuestCreator;
