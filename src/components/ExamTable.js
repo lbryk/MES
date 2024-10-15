@@ -1132,57 +1132,99 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                                   editing.questionIndex ===
                                                     idx &&
                                                   editing.field === field ? (
-                                                    <Editor
-                                                      apiKey="lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5"
-                                                      value={
-                                                        expandedExams[exam.id][
-                                                          idx
-                                                        ][field]
-                                                      }
-                                                      onEditorChange={(
-                                                        content
-                                                      ) =>
-                                                        handleEditorChange(
-                                                          content,
-                                                          exam.id,
-                                                          idx,
-                                                          field
-                                                        )
-                                                      }
-                                                      init={{
-                                                        height: 200,
-                                                        menubar: false,
-                                                        save_onsavecallback:
-                                                          async (editor) => {
-                                                            const content =
-                                                              editor.getContent(); // Pobiera najnowszą zawartość
-                                                            const {
-                                                              examId,
-                                                              questionIndex,
-                                                              field,
-                                                            } = editing;
-
-                                                            if (
-                                                              examId !== null &&
-                                                              questionIndex !==
-                                                                null &&
-                                                              field
-                                                            ) {
-                                                              await updateQuestionInDatabase(
+                                                    field === "answer" ? (
+                                                      <DropdownButton
+                                                        title={
+                                                          expandedExams[
+                                                            exam.id
+                                                          ][idx].answer ||
+                                                          "Wybierz odpowiedź"
+                                                        }
+                                                        onSelect={(
+                                                          selectedAnswer
+                                                        ) => {
+                                                          handleEditorChange(
+                                                            selectedAnswer,
+                                                            exam.id,
+                                                            idx,
+                                                            field
+                                                          );
+                                                          updateQuestionInDatabase(
+                                                            exam.id,
+                                                            idx,
+                                                            selectedAnswer,
+                                                            field
+                                                          );
+                                                          setIsSaved(true);
+                                                        }}
+                                                        variant="dark">
+                                                        <Dropdown.Item eventKey="a">
+                                                          A
+                                                        </Dropdown.Item>
+                                                        <Dropdown.Item eventKey="b">
+                                                          B
+                                                        </Dropdown.Item>
+                                                        <Dropdown.Item eventKey="c">
+                                                          C
+                                                        </Dropdown.Item>
+                                                        <Dropdown.Item eventKey="d">
+                                                          D
+                                                        </Dropdown.Item>
+                                                      </DropdownButton>
+                                                    ) : (
+                                                      <Editor
+                                                        apiKey="lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5"
+                                                        value={
+                                                          expandedExams[
+                                                            exam.id
+                                                          ][idx][field]
+                                                        }
+                                                        onEditorChange={(
+                                                          content
+                                                        ) =>
+                                                          handleEditorChange(
+                                                            content,
+                                                            exam.id,
+                                                            idx,
+                                                            field
+                                                          )
+                                                        }
+                                                        init={{
+                                                          height: 200,
+                                                          menubar: false,
+                                                          save_onsavecallback:
+                                                            async (editor) => {
+                                                              const content =
+                                                                editor.getContent();
+                                                              const {
                                                                 examId,
                                                                 questionIndex,
-                                                                content,
+                                                                field,
+                                                              } = editing;
+
+                                                              if (
+                                                                examId !==
+                                                                  null &&
+                                                                questionIndex !==
+                                                                  null &&
                                                                 field
-                                                              );
-                                                            }
-                                                            setIsSaved(true);
-                                                          },
-                                                        plugins: ["save"],
-                                                        toolbar:
-                                                          "save | undo redo | bold italic",
-                                                      }}
-                                                      onBlur={handleBlurEgzam}
-                                                    />
+                                                              ) {
+                                                                await updateQuestionInDatabase(
+                                                                  examId,
+                                                                  questionIndex,
+                                                                  content,
+                                                                  field
+                                                                );
+                                                              }
+                                                              setIsSaved(true);
+                                                            },
+                                                          plugins: ["save"],
+                                                          toolbar:
+                                                            "save | undo redo | bold italic",
+                                                        }}
+                                                        onBlur={handleBlurEgzam}
+                                                      />
+                                                    )
                                                   ) : (
                                                     <div
                                                       onClick={() =>
