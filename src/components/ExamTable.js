@@ -23,6 +23,7 @@ import {
   faCopy,
   faArrowDown,
   faArrowUp,
+  faPlus,
 } from "@fortawesome/free-solid-svg-icons";
 import db from "../firebase";
 import {
@@ -47,6 +48,7 @@ import WindowConfirm from "./WindowConfirm";
 import { Editor } from "@tinymce/tinymce-react";
 
 const ExamTable = ({ refreshKey, onExamCreated }) => {
+  const [docCounts, setDocCounts] = useState(0);
   const [exams, setExams] = useState([]);
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState("asc");
@@ -110,6 +112,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
         );
       }
       setExams(filteredExams);
+      fetchExamDocCounts(filteredExams);
     } catch (error) {
       console.error("Error fetching exams: ", error);
     }
@@ -709,6 +712,96 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
 
   const [hoverField, setHoverField] = useState(null);
 
+  const fetchExamDocCounts = async (exams) => {
+    const counts = {};
+    // Iterujemy przez każdy egzamin, aby pobrać liczbę dokumentów w jego kolekcji
+    for (const exam of exams) {
+      const collectionName = `${exam.qualification
+        .toLowerCase()
+        .replace(".", "")}${exam.year}${exam.session}`;
+      const examCollectionRef = collection(db, collectionName);
+      const examDocsSnapshot = await getDocs(examCollectionRef);
+      counts[exam.id] = examDocsSnapshot.size; // Przypisujemy liczbę dokumentów do danego egzaminu
+    }
+    setDocCounts(counts); // Aktualizujemy stan docCounts dla wszystkich egzaminów
+  };
+
+  useEffect(() => {
+    fetchUserRole();
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (userRole) {
+      fetchExams();
+      fetchUsers();
+      fetchProfessionsAndQualifications();
+    }
+  }, [userRole, userName, updateKey, refreshKey]);
+
+  const addQuestion = async (exam) => {
+    try {
+      // Nazwa kolekcji na podstawie pola Qualification, Year i Session egzaminu
+      const collectionName = `${exam.qualification
+        .toLowerCase()
+        .replace(".", "")}${exam.year}${exam.session}`;
+
+      // Kolejny numer pytania - docCounts[exam.id] przechowuje liczbę pytań
+      const nextQuestionNumber = docCounts[exam.id] + 1;
+
+      // Referencja do nowego dokumentu w Firebase
+      const newQuestionRef = doc(
+        db,
+        collectionName,
+        nextQuestionNumber.toString()
+      );
+
+      // Dane nowego pytania z pustymi polami oraz odpowiednimi wartościami pól `id` i `order`
+      const newQuestionData = {
+        a: "<em>dodaj odpowiedź A</em>",
+        b: "<em>dodaj odpowiedź B</em>",
+        c: "<em>dodaj odpowiedź C</em>",
+        d: "<em>dodaj odpowiedź D</em>",
+        answer: "A",
+        question:
+          "<em>W tym miejscu wprowadź pytanie do testu. Dwukrotnie kliknij we mnie lub raz w ikonę ołówka z prawej strony a następnie usuń ten tekst</em>",
+        id: nextQuestionNumber.toString(),
+        order: nextQuestionNumber,
+      };
+
+      // Tworzenie nowego dokumentu z odpowiednim numerem pytania
+      await setDoc(newQuestionRef, newQuestionData);
+
+      // Aktualizacja stanu docCounts - zwiększenie liczby pytań o 1
+      setDocCounts((prevCounts) => ({
+        ...prevCounts,
+        [exam.id]: nextQuestionNumber,
+      }));
+
+      // Aktualizacja stanu expandedExams
+      setExpandedExams((prevExams) => {
+        const updatedExams = { ...prevExams };
+        if (updatedExams[exam.id]) {
+          updatedExams[exam.id] = [
+            ...updatedExams[exam.id],
+            newQuestionData,
+          ].sort((a, b) => a.order - b.order);
+        }
+        return updatedExams;
+      });
+
+      toast.success(
+        <div>
+          <b>Pytanie {docCounts[exam.id] + 1}</b>
+          <br />
+          zostało pomyślnie dodane!
+        </div>
+      );
+    } catch (error) {
+      console.error(`Błąd podczas dodawania nowego pytania:`, error);
+      toast.error("Dodawanie nowego pytania nie powiodło się.");
+    }
+  };
+
   return (
     <div className="mt-4" ref={tableRef}>
       <ToastContainer />
@@ -910,21 +1003,23 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                       )}
                     </td>
                     <td className="align-middle">
-                      <Button
-                        variant="info"
-                        className="me-2"
-                        onClick={() => handleExamClick(exam)}>
-                        <FontAwesomeIcon
-                          title={
-                            expandedExams[exam.id]
-                              ? "Ukryj zadania"
-                              : "Pokaż zadania"
-                          }
-                          icon={
-                            expandedExams[exam.id] ? faArrowUp : faArrowDown
-                          }
-                        />
-                      </Button>
+                      {!isTestQualification && (
+                        <Button
+                          variant="info"
+                          className="me-2"
+                          onClick={() => handleExamClick(exam)}>
+                          <FontAwesomeIcon
+                            title={
+                              expandedExams[exam.id]
+                                ? "Ukryj zadania"
+                                : "Pokaż zadania"
+                            }
+                            icon={
+                              expandedExams[exam.id] ? faArrowUp : faArrowDown
+                            }
+                          />
+                        </Button>
+                      )}
                       {!isTestQualification && (
                         <Button
                           variant="danger"
@@ -933,11 +1028,23 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                           <FontAwesomeIcon icon={faTrashCan} />
                         </Button>
                       )}
-                      <Button
-                        variant="warning"
-                        onClick={() => handleDuplicate(exam)}>
-                        <FontAwesomeIcon icon={faCopy} />
-                      </Button>
+                      {!isTestQualification && (
+                        <Button
+                          variant="warning"
+                          onClick={() => handleDuplicate(exam)}>
+                          <FontAwesomeIcon icon={faCopy} />
+                        </Button>
+                      )}
+                      {docCounts[exam.id] < 40 &&
+                        !exam.qualification.startsWith("TEST") && (
+                          <Button
+                            variant="success"
+                            title="Dodaj pytanie do arkusza"
+                            className="ms-2"
+                            onClick={() => addQuestion(exam)}>
+                            <FontAwesomeIcon icon={faPlus} />
+                          </Button>
+                        )}
                     </td>
                   </tr>
                   <tr>
@@ -1218,9 +1325,34 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                                               }
                                                               setIsSaved(true);
                                                             },
-                                                          plugins: ["save"],
+                                                          plugins: [
+                                                            "save",
+                                                            "advlist",
+                                                            "autolink",
+                                                            "lists",
+                                                            "link",
+                                                            "image",
+                                                            "charmap",
+                                                            "preview",
+                                                            "anchor",
+                                                            "searchreplace",
+                                                            "visualblocks",
+                                                            "code",
+                                                            "fullscreen",
+                                                            "insertdatetime",
+                                                            "media",
+                                                            "table",
+                                                            "help",
+                                                            "wordcount",
+                                                            "codesample",
+                                                            "hilitecolor",
+                                                            "charmap",
+                                                          ],
                                                           toolbar:
-                                                            "save | undo redo | bold italic",
+                                                            "save | undo redo | media image link table charmap codesample | " +
+                                                            "bold italic underline forecolor backcolor | alignleft aligncenter " +
+                                                            "alignright alignjustify | bullist numlist outdent indent | " +
+                                                            "removeformat | help",
                                                         }}
                                                         onBlur={handleBlurEgzam}
                                                       />
