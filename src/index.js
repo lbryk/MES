@@ -43,6 +43,7 @@ function Index() {
 	const [qi, setQi] = useState(1);
 	const [currentUser, setCurrentUser] = useState('');
 	const [userName, setUserName] = useState('');
+	const [userRole, setUserRole] = useState('');
 	const sumOfRightAnswers = rightAnswers.reduce((accumulator, currentValue) => {
 		return accumulator + currentValue;
 	}, 0);
@@ -172,7 +173,9 @@ function Index() {
 					showExitAlert,
 					setShowExitAlert,
 					currentUser,
-					setCurrentUser
+					setCurrentUser,
+					setUserRole,
+					userRole
 				}}
 			>
 				<TimerProvider>

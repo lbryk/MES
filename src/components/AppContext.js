@@ -1,8 +1,10 @@
 import { createContext } from 'react';
 
 const AppContext = createContext({
-	userName: '',
-	setUserName: () => {},
+  userName: "",
+  setUserName: () => {},
+  userRole: "",
+  setUserRole: () => {},
 });
 
 export default AppContext;

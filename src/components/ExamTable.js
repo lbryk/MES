@@ -761,7 +761,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
         b: "<em>dodaj odpowiedź B</em>",
         c: "<em>dodaj odpowiedź C</em>",
         d: "<em>dodaj odpowiedź D</em>",
-        answer: "A",
+        answer: "a",
         question:
           "<em>W tym miejscu wprowadź pytanie do testu. Dwukrotnie kliknij we mnie lub raz w ikonę ołówka z prawej strony a następnie usuń ten tekst</em>",
         id: nextQuestionNumber.toString(),
@@ -814,7 +814,8 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
               <th onClick={() => handleSort("qualification")}>Kwalifikacja</th>
               <th onClick={() => handleSort("profession")}>Zawód</th>
               <th>Osoby z prawem edycji</th>
-              <th>Actions</th>
+              <th>Pytań w arkuszu</th>
+              <th>Akcje</th>
             </tr>
           </thead>
           <tbody>
@@ -1002,6 +1003,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                         ))
                       )}
                     </td>
+                    <td>{docCounts[exam.id]} / 40</td>
                     <td className="align-middle">
                       {!isTestQualification && (
                         <Button
@@ -1266,16 +1268,16 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                                         }}
                                                         variant="dark">
                                                         <Dropdown.Item eventKey="a">
-                                                          A
+                                                          a
                                                         </Dropdown.Item>
                                                         <Dropdown.Item eventKey="b">
-                                                          B
+                                                          b
                                                         </Dropdown.Item>
                                                         <Dropdown.Item eventKey="c">
-                                                          C
+                                                          c
                                                         </Dropdown.Item>
                                                         <Dropdown.Item eventKey="d">
-                                                          D
+                                                          d
                                                         </Dropdown.Item>
                                                       </DropdownButton>
                                                     ) : (

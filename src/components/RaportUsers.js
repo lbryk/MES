@@ -114,21 +114,6 @@ const RaportExam = ({ quizCodesData }) => {
 		setSortDirection(direction);
 	};
 
-	// useEffect(() => {
-	// 	let sortedUsers = [...filteredUsers];
-	// 	if (sortField !== null) {
-	// 		sortedUsers.sort((a, b) => {
-	// 			if (a[sortField] < b[sortField]) {
-	// 				return sortDirection === 'asc' ? -1 : 1;
-	// 			}
-	// 			if (a[sortField] > b[sortField]) {
-	// 				return sortDirection === 'asc' ? 1 : -1;
-	// 			}
-	// 			return 0;
-	// 		});
-	// 	}
-	// 	setUsers(sortedUsers);
-	// }, [sortField, sortDirection, filteredUsers]);
 	useEffect(() => {
 		const filteredUsers = originalUsers.filter(
 			(user) =>
