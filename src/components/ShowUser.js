@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/js/bootstrap.bundle";
 import TextField from "@mui/material/TextField";
+import Autocomplete from "@mui/material/Autocomplete";
 import {
   collection,
   getDocs,
@@ -67,37 +68,52 @@ const ShowUser = ({ refreshKey }) => {
     fetchProfession();
   }, []);
 
-   const [filterFirstName, setFilterFirstName] = useState("");
-   const [filterLastName, setFilterLastName] = useState("");
-   const [filterClass, setFilterClass] = useState("");
-   const [filterProfession, setFilterProfession] = useState("");
+  const [suggestionsFirstName, setSuggestionsFirstName] = useState([]);
+  const [suggestionsLastName, setSuggestionsLastName] = useState([]);
+  const [suggestionsClass, setSuggestionsClass] = useState([]);
+  const [suggestionsProfession, setSuggestionsProfession] = useState([]);
 
-   const handleFilterChange = (event, setFilter) => {
-     setFilter(event.target.value);
-   };
+  useEffect(() => {
+    // Generowanie unikalnych wartości dla sugestii
+    setSuggestionsFirstName([...new Set(users.map((user) => user.firstname))]);
+    setSuggestionsLastName([...new Set(users.map((user) => user.lastname))]);
+    setSuggestionsClass([...new Set(users.map((user) => user.class))]);
+    setSuggestionsProfession([
+      ...new Set(users.map((user) => user.profession)),
+    ]);
+  }, [users]);
 
- const filteredUsers = users
-   .filter((user) => user.role === "s")
-   .filter((user) =>
-     filterFirstName
-       ? user.firstname.toLowerCase().includes(filterFirstName.toLowerCase())
-       : true
-   )
-   .filter((user) =>
-     filterLastName
-       ? user.lastname.toLowerCase().includes(filterLastName.toLowerCase())
-       : true
-   )
-   .filter((user) =>
-     filterClass
-       ? user.class.toLowerCase().includes(filterClass.toLowerCase())
-       : true
-   )
-   .filter((user) =>
-     filterProfession
-       ? user.profession.toLowerCase().includes(filterProfession.toLowerCase())
-       : true
-   );
+  const [filterFirstName, setFilterFirstName] = useState("");
+  const [filterLastName, setFilterLastName] = useState("");
+  const [filterClass, setFilterClass] = useState("");
+  const [filterProfession, setFilterProfession] = useState("");
+
+  const handleFilterChange = (event, setFilter) => {
+    setFilter(event.target.value);
+  };
+
+  const filteredUsers = users
+    .filter((user) => user.role === "s")
+    .filter((user) =>
+      filterFirstName
+        ? user.firstname.toLowerCase().includes(filterFirstName.toLowerCase())
+        : true
+    )
+    .filter((user) =>
+      filterLastName
+        ? user.lastname.toLowerCase().includes(filterLastName.toLowerCase())
+        : true
+    )
+    .filter((user) =>
+      filterClass
+        ? user.class.toLowerCase().includes(filterClass.toLowerCase())
+        : true
+    )
+    .filter((user) =>
+      filterProfession
+        ? user.profession.toLowerCase().includes(filterProfession.toLowerCase())
+        : true
+    );
 
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
@@ -325,8 +341,6 @@ const ShowUser = ({ refreshKey }) => {
     setFormVisible(false);
   };
 
- 
-
   return (
     <div className="mt-4">
       <div className="mb-3 container-sm">
@@ -334,38 +348,81 @@ const ShowUser = ({ refreshKey }) => {
           <legend className="float-none w-auto p-2 fs-6">Filtry</legend>
           <div className="row">
             <div className="col-md-6 mb-3">
-              <TextField
-                label="Imię zdającego"
-                className="w-100"
-                size="small"
-                onChange={(e) => handleFilterChange(e, setFilterFirstName)}
+              <Autocomplete
+                freeSolo
+                options={suggestionsFirstName}
+                inputValue={filterFirstName}
+                getOptionLabel={(option) => option || ""}
+                onInputChange={(event, newInputValue) => {
+                  setFilterFirstName(newInputValue);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Imię zdającego"
+                    className="w-100"
+                    size="small"
+                  />
+                )}
               />
             </div>
-
             <div className="col-md-6 mb-3">
-              <TextField
-                label="Nazwisko zdającego"
-                className="w-100"
-                size="small"
-                onChange={(e) => handleFilterChange(e, setFilterLastName)}
+              <Autocomplete
+                freeSolo
+                options={suggestionsLastName}
+                inputValue={filterLastName}
+                getOptionLabel={(option) => option || ""}
+                onInputChange={(event, newInputValue) => {
+                  setFilterLastName(newInputValue);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Nazwisko zdającego"
+                    className="w-100"
+                    size="small"
+                  />
+                )}
               />
             </div>
           </div>
           <div className="row">
             <div className="col-md-3 mb-3">
-              <TextField
-                label="Klasa"
-                className="w-100"
-                size="small"
-                onChange={(e) => handleFilterChange(e, setFilterClass)}
+              <Autocomplete
+                freeSolo
+                options={suggestionsClass}
+                getOptionLabel={(option) => option || ""}
+                inputValue={filterClass}
+                onInputChange={(event, newInputValue) => {
+                  setFilterClass(newInputValue);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Klasa"
+                    className="w-100"
+                    size="small"
+                  />
+                )}
               />
             </div>
             <div className="col-md-9 mb-3">
-              <TextField
-                label="Zawód"
-                className="w-100"
-                size="small"
-                onChange={(e) => handleFilterChange(e, setFilterProfession)}
+              <Autocomplete
+                freeSolo
+                options={suggestionsProfession}
+                getOptionLabel={(option) => option || ""}
+                inputValue={filterProfession}
+                onInputChange={(event, newInputValue) => {
+                  setFilterProfession(newInputValue);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Zawód"
+                    className="w-100"
+                    size="small"
+                  />
+                )}
               />
             </div>
           </div>
