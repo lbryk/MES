@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/js/bootstrap.bundle";
 import TextField from "@mui/material/TextField";
 import Autocomplete from "@mui/material/Autocomplete";
+import Collapse from "@mui/material/Collapse";
 import {
   collection,
   getDocs,
@@ -22,6 +23,7 @@ import {
   faFile,
   faUserPlus,
   faUserMinus,
+  faFilter,
 } from "@fortawesome/free-solid-svg-icons";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -341,93 +343,108 @@ const ShowUser = ({ refreshKey }) => {
     setFormVisible(false);
   };
 
+  const [isFiltersVisible, setFiltersVisible] = useState(false);
+   const toggleFiltersVisibility = () => {
+     setFiltersVisible(!isFiltersVisible);
+   };
+
   return (
     <div className="mt-4">
-      <div className="mb-3 container-sm">
-        <fieldset className="border p-2 mt-4">
-          <legend className="float-none w-auto p-2 fs-6">Filtry</legend>
-          <div className="row">
-            <div className="col-md-6 mb-3">
-              <Autocomplete
-                freeSolo
-                options={suggestionsFirstName}
-                inputValue={filterFirstName}
-                getOptionLabel={(option) => option || ""}
-                onInputChange={(event, newInputValue) => {
-                  setFilterFirstName(newInputValue);
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Imię zdającego"
-                    className="w-100"
-                    size="small"
-                  />
-                )}
-              />
+      <button
+        className="btn btn-outline-secondary mb-3"
+        onClick={toggleFiltersVisibility}>
+        <FontAwesomeIcon icon={faFilter} />{" "}
+        {isFiltersVisible
+          ? "Ukryj pola wyszukiwania"
+          : "Pokaż pola wyszukiwania"}
+      </button>
+      <Collapse in={isFiltersVisible}>
+        <div className="mb-3 container-sm">
+          <fieldset className="border p-2 mt-4">
+            <legend className="float-none w-auto p-2 fs-6">Filtry</legend>
+            <div className="row">
+              <div className="col-md-6 mb-3">
+                <Autocomplete
+                  freeSolo
+                  options={suggestionsFirstName}
+                  inputValue={filterFirstName}
+                  getOptionLabel={(option) => option || ""}
+                  onInputChange={(event, newInputValue) => {
+                    setFilterFirstName(newInputValue);
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Imię zdającego"
+                      className="w-100"
+                      size="small"
+                    />
+                  )}
+                />
+              </div>
+              <div className="col-md-6 mb-3">
+                <Autocomplete
+                  freeSolo
+                  options={suggestionsLastName}
+                  inputValue={filterLastName}
+                  getOptionLabel={(option) => option || ""}
+                  onInputChange={(event, newInputValue) => {
+                    setFilterLastName(newInputValue);
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Nazwisko zdającego"
+                      className="w-100"
+                      size="small"
+                    />
+                  )}
+                />
+              </div>
             </div>
-            <div className="col-md-6 mb-3">
-              <Autocomplete
-                freeSolo
-                options={suggestionsLastName}
-                inputValue={filterLastName}
-                getOptionLabel={(option) => option || ""}
-                onInputChange={(event, newInputValue) => {
-                  setFilterLastName(newInputValue);
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Nazwisko zdającego"
-                    className="w-100"
-                    size="small"
-                  />
-                )}
-              />
+            <div className="row">
+              <div className="col-md-3 mb-3">
+                <Autocomplete
+                  freeSolo
+                  options={suggestionsClass}
+                  getOptionLabel={(option) => option || ""}
+                  inputValue={filterClass}
+                  onInputChange={(event, newInputValue) => {
+                    setFilterClass(newInputValue);
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Klasa"
+                      className="w-100"
+                      size="small"
+                    />
+                  )}
+                />
+              </div>
+              <div className="col-md-9 mb-3">
+                <Autocomplete
+                  freeSolo
+                  options={suggestionsProfession}
+                  getOptionLabel={(option) => option || ""}
+                  inputValue={filterProfession}
+                  onInputChange={(event, newInputValue) => {
+                    setFilterProfession(newInputValue);
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Zawód"
+                      className="w-100"
+                      size="small"
+                    />
+                  )}
+                />
+              </div>
             </div>
-          </div>
-          <div className="row">
-            <div className="col-md-3 mb-3">
-              <Autocomplete
-                freeSolo
-                options={suggestionsClass}
-                getOptionLabel={(option) => option || ""}
-                inputValue={filterClass}
-                onInputChange={(event, newInputValue) => {
-                  setFilterClass(newInputValue);
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Klasa"
-                    className="w-100"
-                    size="small"
-                  />
-                )}
-              />
-            </div>
-            <div className="col-md-9 mb-3">
-              <Autocomplete
-                freeSolo
-                options={suggestionsProfession}
-                getOptionLabel={(option) => option || ""}
-                inputValue={filterProfession}
-                onInputChange={(event, newInputValue) => {
-                  setFilterProfession(newInputValue);
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Zawód"
-                    className="w-100"
-                    size="small"
-                  />
-                )}
-              />
-            </div>
-          </div>
-        </fieldset>
-      </div>
+          </fieldset>
+        </div>
+      </Collapse>
       <table className="table table-striped">
         <thead>
           <tr>
