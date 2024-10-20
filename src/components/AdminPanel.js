@@ -4,6 +4,7 @@ import ExamCreator from "./ExamCreator";
 import ExamTable from "./ExamTable";
 import Footer from "./Footer";
 import ShowUser from "./ShowUser";
+import ExamList from "./EgzamList";
 import RaportExam from "./RaportExam";
 import AdminHeader from "./AdminHeader";
 import AppContext from "./AppContext";
@@ -153,7 +154,7 @@ const AdminPanel = () => {
             role="tabpanel"
             aria-labelledby="nav-exam-list-tab"
             tabindex="0">
-            Componet 2
+            <ExamList />
           </div>
           <div
             className="tab-pane fade"
