@@ -105,9 +105,18 @@ const ExitExam = () => {
 	useEffect(() => {
 		const docRef = doc(db, 'users', `user${login}`);
 		const updateUserData = async () => {
+			const currentDate = new Date();
+      const formattedDate = `${String(currentDate.getDate()).padStart(
+        2,
+        "0"
+      )}.${String(currentDate.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}.${currentDate.getFullYear()}`;
 			await setDoc(docRef, { quizResult: sumOfRightAnswers }, { merge: true });
 			await setDoc(docRef, { percentResult: percentResult }, { merge: true });
 			await setDoc(docRef, { attemptToSolve: 1 }, { merge: true });
+			await setDoc(docRef, { examDate: formattedDate }, { merge: true });
 		};
 		updateUserData();
 	}, [db, login, sumOfRightAnswers, percentResult]);
