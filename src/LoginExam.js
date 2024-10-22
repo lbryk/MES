@@ -32,7 +32,7 @@ const LoginExam = () => {
   const { setTimerStarted } = useTimer();
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const { userRole, setUserRole } = useContext(AppContext);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const handleAlert = () => {
     setShowAlert(true);
@@ -46,6 +46,32 @@ const LoginExam = () => {
     const timeInSeconds = timeUser ? parseInt(timeUser.slice(1)) * 60 : 0;
     setTimeLeft(timeInSeconds);
   }, [timeUser]);
+
+   useEffect(() => {
+     if (user && user.userName) {
+       // Check that we have a valid user and userName
+       const userSessionRef = doc(db, "userSessions", user.userName); // Ensure userName is used for sessions
+       console.log("Listening for session changes for:", user.userName);
+
+       const unsubscribe = onSnapshot(userSessionRef, (doc) => {
+         if (doc.exists()) {
+           const data = doc.data();
+           console.log("Session data:", data);
+           if (data.isActive === false) {
+             alert("Egzamin został przerwany przez administratora.");
+             logout(); // Log the user out
+             navigate("/exitExam", { replace: true }); // Navigate to ExitExam component
+           }
+         } else {
+           console.error("Session document does not exist.");
+         }
+       });
+
+       return () => unsubscribe();
+     } else {
+       console.error("User not found or userName missing.");
+     }
+   }, [user, logout, navigate]);
 
   const handleButtonClick = async (event) => {
     event.preventDefault();
@@ -73,7 +99,6 @@ const LoginExam = () => {
         setTimerInitialized(true);
         setTimerStarted(true);
         await createUserSession(userNameFromDoc, quizIDFromDoc);
-        console.log("Zalogowany użytkownik:", user);
         navigate(`/${docSnap.data().quizID}`);
       } else if (docSnap.data().role == "sa" || docSnap.data().role == "a") {
         setUserName(`${docSnap.data().firstname} ${docSnap.data().lastname}`);
@@ -121,6 +146,30 @@ const LoginExam = () => {
       console.error("Brak userName lub quizID. Nie można utworzyć sesji.");
     }
   };
+
+// useEffect(() => {
+//   if (user) {
+//     console.log("Nasłuchiwanie sesji użytkownika:", user.uid);
+
+//     const userSessionRef = doc(db, "userSessions", user.uid);
+//     const unsubscribe = onSnapshot(userSessionRef, (doc) => {
+//       if (doc.exists()) {
+//         const data = doc.data();
+//         if (data.isActive === false) {
+//           alert("Egzamin został przerwany przez administratora.");
+//           navigate("/login");
+//         }
+//       }
+//     });
+
+//     return () => unsubscribe();
+//   } else {
+//     console.log("Brak zalogowanego użytkownika.");
+//   }
+// }, [user, navigate]);
+
+
+
 
   return (
     <div className="bodyLog">

@@ -10,7 +10,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { Table } from "react-bootstrap";
+import { Table, Button } from "react-bootstrap";
 import { useAuth } from "../AuthContext";
 
 const LiveUser = () => {
@@ -43,6 +43,7 @@ const LiveUser = () => {
           userID: user.uid,
           firstName: user.firstName, // Zakładam, że masz takie pole w użytkowniku
           lastName: user.lastName, // Dodajemy dane użytkownika
+          quizID: user.quizID, // Zakładamy, że quizID jest częścią danych
           isActive: true,
           lastActive: serverTimestamp(),
         });
@@ -54,18 +55,16 @@ const LiveUser = () => {
   };
 
   // Zakończenie sesji użytkownika
-  const endSession = async () => {
-    if (user) {
-      const sessionRef = doc(db, "userSessions", user.uid);
-      try {
-        await updateDoc(sessionRef, {
-          isActive: false,
-          lastActive: serverTimestamp(),
-        });
-        console.log("Zakończono sesję użytkownika:", user.uid);
-      } catch (error) {
-        console.error("Błąd przy zakończeniu sesji:", error);
-      }
+  const endSessionForUser = async (userID) => {
+    const sessionRef = doc(db, "userSessions", userID);
+    try {
+      await updateDoc(sessionRef, {
+        isActive: false,
+        lastActive: serverTimestamp(),
+      });
+      console.log(`Przerwano egzamin dla użytkownika: ${userID}`);
+    } catch (error) {
+      console.error("Błąd przy przerwaniu egzaminu:", error);
     }
   };
 
@@ -98,6 +97,18 @@ const LiveUser = () => {
     return unsubscribe;
   };
 
+  // Grupa użytkowników według `quizID`
+  const groupUsersByQuizID = () => {
+    const groupedUsers = {};
+    loggedUsers.forEach((user) => {
+      if (!groupedUsers[user.quizID]) {
+        groupedUsers[user.quizID] = [];
+      }
+      groupedUsers[user.quizID].push(user);
+    });
+    return groupedUsers;
+  };
+
   useEffect(() => {
     const unsubscribe = listenToActiveSessions();
     return () => {
@@ -110,43 +121,58 @@ const LiveUser = () => {
       createSession();
       const heartbeatInterval = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
 
-      window.addEventListener("beforeunload", endSession);
+      window.addEventListener("beforeunload", () =>
+        endSessionForUser(user.uid)
+      );
 
       return () => {
         clearInterval(heartbeatInterval);
-        endSession(); // zakończ sesję przy unmount komponentu
-        window.removeEventListener("beforeunload", endSession);
+        endSessionForUser(user.uid); // zakończ sesję przy unmount komponentu
+        window.removeEventListener("beforeunload", () =>
+          endSessionForUser(user.uid)
+        );
       };
     }
   }, [user]);
 
+  const groupedUsers = groupUsersByQuizID();
+
   return (
-    <div className="admin-panel">
-      <h2>Lista aktywnych użytkowników</h2>
-      <Table striped bordered hover>
-        <thead>
-          <tr>
-            <th>Imię i Nazwisko</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loggedUsers.length > 0 ? (
-            loggedUsers.map((user) => (
-              <tr key={user.id}>
-                <td>
-                  {user.id} 
-                </td>
-                <td>Aktywny</td>
+    <div className="admin-panel mt-4">
+      <h2>Użytkownicy pracujący nad arkuszami</h2>
+      {Object.keys(groupedUsers).map((quizID) => (
+        <div key={quizID} className="mt-4">
+          <h3>Kod egzaminu: {quizID}</h3>
+          <Table striped bordered hover>
+            <thead>
+              <tr>
+                <th>Imię i Nazwisko</th>
+                <th>Kod egzaminu</th>
+                <th>Status</th>
+                <th>Akcja</th> {/* Kolumna dla przycisku */}
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="2">Brak zalogowanych użytkowników.</td>
-            </tr>
-          )}
-        </tbody>
-      </Table>
+            </thead>
+            <tbody>
+              {groupedUsers[quizID].map((user) => (
+                <tr key={user.id}>
+                  <td>
+                    {user.firstName} {user.lastName}
+                  </td>
+                  <td>{user.quizID}</td>
+                  <td>Aktywny</td>
+                  <td>
+                    <Button
+                      variant="danger"
+                      onClick={() => endSessionForUser(user.id)}>
+                      Przerwij egzamin
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </div>
+      ))}
     </div>
   );
 };

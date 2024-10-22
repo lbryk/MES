@@ -103,6 +103,7 @@ const ExitExam = () => {
       return answer !== "null" ? count + 1 : count;
     }, 0);
   };
+  
   const countNull = countNullsInSelectedAnswers();
   const countUserAnswers = countAnswersInSelectedAnswers();
   const percentResult = Math.round((sumOfRightAnswers / 40) * 100 * 100) / 100;

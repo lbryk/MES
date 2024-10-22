@@ -12,14 +12,8 @@ import LiveUser from "./LiveUser";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import {
-  collection,
-  getDocs,
-  doc,
-  updateDoc,
-  deleteDoc,
-} from "firebase/firestore";
-import {db} from "../firebase";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
 
 const AdminPanel = () => {
   const checkLogin = useNavigate();
@@ -27,7 +21,8 @@ const AdminPanel = () => {
   const [quizCodesData, setQuizCodesData] = useState({});
   const { userName, setUserName } = useContext(AppContext);
   const [refreshExams, setRefreshExams] = useState(0);
-  if (userName == "") {
+
+  if (userName === "") {
     checkLogin(`/login`);
   }
 
@@ -94,6 +89,17 @@ const AdminPanel = () => {
             </button>
             <button
               className="nav-link"
+              id="nav-live-users-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#nav-live-users"
+              type="button"
+              role="tab"
+              aria-controls="nav-live-users"
+              aria-selected="false">
+              Podgląd zdających na żywo
+            </button>
+            <button
+              className="nav-link"
               id="nav-exam-list-tab"
               data-bs-toggle="tab"
               data-bs-target="#nav-exam-list"
@@ -123,7 +129,7 @@ const AdminPanel = () => {
               role="tab"
               aria-controls="nav-exam-maker"
               aria-selected="false">
-              Kreator egzaminów 
+              Kreator egzaminów
             </button>
             {userRole === "sa" && (
               <button
@@ -151,6 +157,14 @@ const AdminPanel = () => {
           </div>
           <div
             className="tab-pane fade"
+            id="nav-live-users"
+            role="tabpanel"
+            aria-labelledby="nav-live-users-tab"
+            tabindex="0">
+            <LiveUser />
+          </div>
+          <div
+            className="tab-pane fade"
             id="nav-exam-list"
             role="tabpanel"
             aria-labelledby="nav-exam-list-tab"
@@ -172,7 +186,7 @@ const AdminPanel = () => {
             className="tab-pane fade"
             id="nav-exam-maker"
             role="tabpanel"
-            aria-labelledby="nav-exam-maker"
+            aria-labelledby="nav-exam-maker-tab"
             tabindex="0">
             <div className="mt-4">
               <ul className="nav nav-pills mb-3" id="pills-tab" role="tablist">
@@ -226,13 +240,6 @@ const AdminPanel = () => {
                     refreshKey={refreshExams}
                   />
                 </div>
-                <div
-                  className="tab-pane fade"
-                  id="pills-contact"
-                  role="tabpanel"
-                  aria-labelledby="pills-contact-tab">
-                  ...
-                </div>
               </div>
             </div>
           </div>
@@ -243,12 +250,9 @@ const AdminPanel = () => {
             aria-labelledby="nav-settings-tab"
             tabindex="0">
             Autor programu: Łukasz Bryk
-            <LiveUser />
           </div>
         </div>
-        <div>
-          <ToastContainer />
-        </div>
+        <ToastContainer />
       </div>
       <Footer />
     </div>
