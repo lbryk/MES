@@ -5,9 +5,14 @@ import { useTimer } from "./components/TimerContext";
 import AppContext from "./components/AppContext";
 import { useNavigate } from "react-router-dom";
 import { Form, Button } from "react-bootstrap";
-import db from "./firebase";
-import { doc, getDoc } from "firebase/firestore";
-import { collection, query, getDocs } from "firebase/firestore";
+import {db} from "./firebase";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+  onSnapshot,
+} from "firebase/firestore";
 import ExitAlert from "./components/ExitAlert";
 import AdminPanel from "./components/AdminPanel";
 import { useAuth } from "./AuthContext";
@@ -26,8 +31,8 @@ const LoginExam = () => {
   const { setTimerInitialized } = useTimer();
   const { setTimerStarted } = useTimer();
   const [showAdminPanel, setShowAdminPanel] = useState(false);
-    const {userRole, setUserRole} = useContext(AppContext);
-//   const [userRole, setUserRole] = useState(null);
+  const { userRole, setUserRole } = useContext(AppContext);
+  const { user } = useAuth();
 
   const handleAlert = () => {
     setShowAlert(true);
@@ -41,15 +46,6 @@ const LoginExam = () => {
     const timeInSeconds = timeUser ? parseInt(timeUser.slice(1)) * 60 : 0;
     setTimeLeft(timeInSeconds);
   }, [timeUser]);
-
-  // useEffect(() => {
-  // 	const timeInSeconds = timeUser ? parseInt(timeUser) * 60 : 0;
-  // 	setTimeLeft(timeInSeconds);
-  // 	if (timeInSeconds > 0) {
-  // 		setTimerInitialized(true);
-  // 		setTimerStarted(true);
-  // 	}
-  // }, [timeUser, setTimeLeft, setTimerInitialized, setTimerStarted]);
 
   const handleButtonClick = async (event) => {
     event.preventDefault();
@@ -65,13 +61,19 @@ const LoginExam = () => {
       });
 
       if (docSnap.data().role == "s" && docSnap.data().attemptToSolve == "0") {
+        const userNameFromDoc = `${docSnap.data().firstname} ${
+          docSnap.data().lastname
+        }`;
+        const quizIDFromDoc = `${docSnap.data().quizID}`;
+        
         setUserName(`${docSnap.data().firstname} ${docSnap.data().lastname}`);
         setId(`${docSnap.data().quizID}`);
         setTimeUser(`/${docSnap.data().quizTime}`);
         setTimeLeft(`/${docSnap.data().quizTime}`);
         setTimerInitialized(true);
         setTimerStarted(true);
-        // setUserId(`user${login}`);
+        await createUserSession(userNameFromDoc, quizIDFromDoc);
+        console.log("Zalogowany użytkownik:", user);
         navigate(`/${docSnap.data().quizID}`);
       } else if (docSnap.data().role == "sa" || docSnap.data().role == "a") {
         setUserName(`${docSnap.data().firstname} ${docSnap.data().lastname}`);
@@ -97,6 +99,26 @@ const LoginExam = () => {
         onClose={closeAlert}
         buttons="Ok"
       />;
+    }
+  };
+
+  // Funkcja tworząca sesję użytkownika
+  const createUserSession = async (userName, quizID) => {
+    if (userName && quizID) {
+      const sessionRef = doc(db, "userSessions", userName); // Używamy `userName` jako identyfikatora dokumentu
+      try {
+        await setDoc(sessionRef, {
+          userID: userName, // Używamy `userName` zamiast `user.uid`
+          quizID: quizID, // Identyfikator egzaminu
+          isActive: true, // Ustawiamy użytkownika jako aktywnego
+          lastActive: serverTimestamp(), // Czas rozpoczęcia sesji
+        });
+        console.log("Utworzono sesję użytkownika w 'userSessions':", userName);
+      } catch (error) {
+        console.error("Błąd przy tworzeniu sesji użytkownika:", error);
+      }
+    } else {
+      console.error("Brak userName lub quizID. Nie można utworzyć sesji.");
     }
   };
 

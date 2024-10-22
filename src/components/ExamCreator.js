@@ -11,7 +11,7 @@ import {
 	query,
 	where,
 } from 'firebase/firestore';
-import db from '../firebase';
+import {db} from '../firebase';
 import { Editor } from '@tinymce/tinymce-react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { library } from '@fortawesome/fontawesome-svg-core';

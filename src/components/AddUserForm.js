@@ -5,7 +5,7 @@ import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
 // import { Unstable_NumberInput as NumberInput } from '@mui/base/Unstable_NumberInput';
 import { doc, setDoc, getDoc, collection, addDoc } from 'firebase/firestore';
-import db from '../firebase';
+import {db} from '../firebase';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 

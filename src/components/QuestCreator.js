@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import 'bootstrap/dist/js/bootstrap.bundle';
 import { Editor } from '@tinymce/tinymce-react';
 import { doc, setDoc } from 'firebase/firestore';
-import db from '../firebase';
+import {db} from '../firebase';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAdd } from '@fortawesome/free-solid-svg-icons';
 import { library } from '@fortawesome/fontawesome-svg-core';

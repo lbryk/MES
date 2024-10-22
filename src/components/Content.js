@@ -7,6 +7,9 @@ import Quest from './Qeust';
 import AppContext from './AppContext';
 import { useTimer } from './TimerContext';
 
+import { doc, updateDoc, setDoc, getDoc } from "firebase/firestore"; // Poprawny import Firebase
+import {db} from "../firebase";
+
 library.add(faRightFromBracket);
 
 const Content = () => {
@@ -24,6 +27,60 @@ const Content = () => {
 	const { id, setId } = useContext(AppContext);
 	// setId(useState(window.location.href.split('/').pop()));
 	
+	 const { userName, keyExam, role } = useContext(AppContext);
+
+     useEffect(() => {
+       // Logowanie wszystkich wartości w celu debugowania
+       console.log("userName:", userName);
+       console.log("keyExam:", keyExam);
+       console.log("role:", role);
+
+       const registerUserActivity = async () => {
+         // Rejestruj tylko, jeśli użytkownik jest zdającym
+         if (role === "zdający" && userName && keyExam) {
+           const userRef = doc(db, "users", userName);
+           try {
+             const userSnap = await getDoc(userRef);
+
+             // Jeśli dokument użytkownika nie istnieje, tworzymy go
+             if (!userSnap.exists()) {
+               await setDoc(userRef, {
+                 firstname: "Imię", // dynamicznie ustaw właściwe dane użytkownika
+                 lastname: "Nazwisko",
+                 role: "zdający",
+                 isActive: true,
+                 quizID: keyExam,
+               });
+               console.log(
+                 `Utworzono nowy dokument dla użytkownika: ${userName}`
+               );
+             } else {
+               // Jeśli dokument istnieje, aktualizujemy isActive i quizID
+               await updateDoc(userRef, {
+                 isActive: true,
+                 quizID: keyExam,
+               });
+               console.log(
+                 `Zarejestrowano aktywność użytkownika: ${userName} dla quizu: ${keyExam}`
+               );
+             }
+           } catch (error) {
+             console.error(
+               "Błąd podczas rejestrowania aktywności użytkownika",
+               error
+             );
+           }
+         } else {
+           console.log(
+             "Brak userName, keyExam albo użytkownik nie jest zdającym"
+           );
+         }
+       };
+
+       registerUserActivity();
+     }, [userName, keyExam, role]);
+
+
 	const { timeLeft, timerInitialized, setTimerInitialized } = useTimer();
 	const [showError, setShowError] = useState(false);
 

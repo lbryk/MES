@@ -8,6 +8,7 @@ import ExamList from "./EgzamList";
 import RaportExam from "./RaportExam";
 import AdminHeader from "./AdminHeader";
 import AppContext from "./AppContext";
+import LiveUser from "./LiveUser";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -18,7 +19,7 @@ import {
   updateDoc,
   deleteDoc,
 } from "firebase/firestore";
-import db from "../firebase";
+import {db} from "../firebase";
 
 const AdminPanel = () => {
   const checkLogin = useNavigate();
@@ -242,6 +243,7 @@ const AdminPanel = () => {
             aria-labelledby="nav-settings-tab"
             tabindex="0">
             Autor programu: Łukasz Bryk
+            <LiveUser />
           </div>
         </div>
         <div>

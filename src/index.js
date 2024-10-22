@@ -12,7 +12,7 @@ import Quest from './components/Qeust';
 import { TimerProvider } from './components/TimerContext';
 import AppContext from './components/AppContext';
 import { collection, query, getDocs } from 'firebase/firestore';
-import db from './firebase';
+import {db} from './firebase';
 import Widget from './components/Widget';
 import ExitExam from './components/ExitExam';
 import LoginExam from './LoginExam';

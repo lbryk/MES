@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, query, getDocs } from 'firebase/firestore';
-import db from '../firebase';
+import {db} from '../firebase';
 
 const QuizLoader = ({ keyExam }) => {
 	const [quizData, setQuizData] = useState([]);

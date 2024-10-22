@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle";
 import { Button, Badge, Collapse } from "react-bootstrap";
-import db from "../firebase";
+import {db} from "../firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import AppContext from "./AppContext";
 import Pagination from "./Pagination";
@@ -143,12 +143,11 @@ const handlePreviewClick = async (collectionName, qualification) => {
     const questionsRef = collection(db, collectionName); // "collectionName" to nazwa kolekcji pytań
     const querySnapshot = await getDocs(questionsRef);
 
-    // Pobieramy wszystkie pytania i ich pola (a, b, c, d, questions)
+    // Pobieramy wszystkie pytania i ich pola (a, b, c, d, question, answer)
     const questions = querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     }));
-
 
     // Określenie koloru w zależności od liczby pytań
     const questionCount = questions.length;
@@ -204,6 +203,10 @@ const handlePreviewClick = async (collectionName, qualification) => {
               word-wrap: break-word; 
               max-width: 100%; 
             }
+            .correct-answer {
+              color: green;
+              font-weight: bold;
+            }
           </style>
         </head>
         <body>
@@ -215,20 +218,24 @@ const handlePreviewClick = async (collectionName, qualification) => {
               <td class="content">
                 <h2>Egzamin Lista Zadań</h2>
                 ${questions
-                  .map(
-                    (q, index) =>
-                      `<div class="task">
+                  .map((q, index) => {
+                    // Sprawdzamy, która odpowiedź jest poprawna na podstawie pola "answer"
+                    const correctAnswer = q.answer.toLowerCase();
+                    const getAnswerClass = (option) =>
+                      option === correctAnswer ? "correct-answer" : "";
+
+                    return `<div class="task">
                           <p class="question-text"><strong>Zadanie ${
                             index + 1
                           }:</strong> ${q.question}</p>
                           <ul>
-                            <li>A: ${q.a}</li>
-                            <li>B: ${q.b}</li>
-                            <li>C: ${q.c}</li>
-                            <li>D: ${q.d}</li>
+                            <li class="${getAnswerClass("a")}">A: ${q.a}</li>
+                            <li class="${getAnswerClass("b")}">B: ${q.b}</li>
+                            <li class="${getAnswerClass("c")}">C: ${q.c}</li>
+                            <li class="${getAnswerClass("d")}">D: ${q.d}</li>
                           </ul>
-                       </div>`
-                  )
+                       </div>`;
+                  })
                   .join("")}
               </td>
               <td class="widget">
@@ -268,6 +275,7 @@ const handlePreviewClick = async (collectionName, qualification) => {
     console.error("Błąd podczas pobierania danych egzaminu: ", error);
   }
 };
+
 
 
 

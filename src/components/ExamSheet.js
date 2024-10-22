@@ -8,7 +8,7 @@ import {
 	updateDoc,
 	deleteDoc,
 } from 'firebase/firestore';
-import db from '../firebase';
+import {db} from '../firebase';
 import Pagination from './Pagination';
 import AddUserForm from './AddUserForm';
 import WindowConfirm from './WindowConfirm';

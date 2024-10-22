@@ -25,7 +25,7 @@ import {
   faArrowUp,
   faPlus,
 } from "@fortawesome/free-solid-svg-icons";
-import db from "../firebase";
+import {db} from "../firebase";
 import {
   collection,
   getDocs,
