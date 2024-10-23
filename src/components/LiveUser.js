@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap/dist/js/bootstrap.bundle";
 import {
   collection,
   query,
@@ -8,15 +10,25 @@ import {
   updateDoc,
   setDoc,
   serverTimestamp,
+  getDoc,
+  getDocs,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { Table, Button } from "react-bootstrap";
 import { useAuth } from "../AuthContext";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { library } from "@fortawesome/fontawesome-svg-core";
+import { faDoorClosed, faDoorOpen } from "@fortawesome/free-solid-svg-icons";
+
+library.add(faDoorClosed, faDoorOpen);
 
 const LiveUser = () => {
   const [loggedUsers, setLoggedUsers] = useState([]);
+  const [qualifications, setQualifications] = useState({});
   const { user } = useAuth();
   const HEARTBEAT_INTERVAL = 5000; // 5 sekund
+
+  const [users, setUsers] = useState([]);
 
   // Aktualizacja statusu użytkownika co 5 sekund (heartbeat)
   const sendHeartbeat = async () => {
@@ -41,9 +53,11 @@ const LiveUser = () => {
       try {
         await setDoc(sessionRef, {
           userID: user.uid,
-          firstName: user.firstName, // Zakładam, że masz takie pole w użytkowniku
-          lastName: user.lastName, // Dodajemy dane użytkownika
-          quizID: user.quizID, // Zakładamy, że quizID jest częścią danych
+          firstName: user.firstName,
+          lastName: user.lastName,
+          login: user.login,
+          quizID: user.quizID,
+          class: user.class, // Dodajemy pole klasy
           isActive: true,
           lastActive: serverTimestamp(),
         });
@@ -62,10 +76,7 @@ const LiveUser = () => {
         isActive: false,
         lastActive: serverTimestamp(),
       });
-      console.log(`Przerwano egzamin dla użytkownika: ${userID}`);
-    } catch (error) {
-      console.error("Błąd przy przerwaniu egzaminu:", error);
-    }
+    } catch (error) {}
   };
 
   // Nasłuchiwanie aktywnych użytkowników (dla wszystkich sesji)
@@ -75,8 +86,6 @@ const LiveUser = () => {
       sessionsCollection,
       where("isActive", "==", true) // Nasłuchuj wszystkich aktywnych sesji, bez filtrowania po quizID
     );
-
-    console.log("Nasłuchiwanie wszystkich aktywnych sesji...");
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (snapshot.empty) {
@@ -92,6 +101,7 @@ const LiveUser = () => {
       }));
 
       setLoggedUsers(usersData);
+      fetchQualificationsForUsers(usersData);
     });
 
     return unsubscribe;
@@ -137,17 +147,57 @@ const LiveUser = () => {
 
   const groupedUsers = groupUsersByQuizID();
 
+  // Function to format qualification (e.g., "inf03" -> "INF-03")
+  const formatQualification = (qualification) => {
+    return qualification.replace(
+      /([a-zA-Z]+)(\d+)/,
+      (match, letters, digits) => {
+        return `${letters.toUpperCase()}-${digits}`;
+      }
+    );
+  };
+
+  // Function to fetch qualification for a given quizID
+  const fetchQualification = async (quizID) => {
+    if (!quizID) return "";
+    const quizDoc = doc(db, "quizCode", quizID);
+    const quizSnap = await getDoc(quizDoc);
+    if (quizSnap.exists()) {
+      const qualification = quizSnap.data().Qualification;
+      return formatQualification(qualification);
+    }
+    return "";
+  };
+
+  const fetchQualificationsForUsers = async (users) => {
+    const qualificationsMap = {};
+    for (const user of users) {
+      const qualification = await fetchQualification(user.quizID);
+      qualificationsMap[user.quizID] = qualification;
+    }
+    setQualifications(qualificationsMap);
+  };
+
+   const getUniqueClasses = (users) => {
+     const classes = users.map((user) => user.class);
+     return [...new Set(classes)]; // Usuwamy duplikaty
+   };
+
   return (
     <div className="admin-panel mt-4">
-      <h2>Użytkownicy pracujący nad arkuszami</h2>
+      <h4>Aktualnie trwające egzaminy</h4>
       {Object.keys(groupedUsers).map((quizID) => (
         <div key={quizID} className="mt-4">
           <h3>Kod egzaminu: {quizID}</h3>
-          <Table striped bordered hover>
+          <h5>Klasy zdające: {getUniqueClasses(groupedUsers[quizID]).join(", ")}</h5>
+          <Table className="table table-striped" striped bordered hover>
             <thead>
               <tr>
                 <th>Imię i Nazwisko</th>
+                <th>Login zdającego</th>
+                <th>Klasa</th>
                 <th>Kod egzaminu</th>
+                <th>Kwalifikacja</th>
                 <th>Status</th>
                 <th>Akcja</th> {/* Kolumna dla przycisku */}
               </tr>
@@ -155,15 +205,17 @@ const LiveUser = () => {
             <tbody>
               {groupedUsers[quizID].map((user) => (
                 <tr key={user.id}>
-                  <td>
-                    {user.firstName} {user.lastName}
-                  </td>
+                  <td>{user.id}</td>
+                  <td>{user.login}</td>
+                  <td>{user.class}</td>
                   <td>{user.quizID}</td>
+                  <td>{qualifications[user.quizID]}</td>
                   <td>Aktywny</td>
                   <td>
                     <Button
                       variant="danger"
                       onClick={() => endSessionForUser(user.id)}>
+                      <FontAwesomeIcon icon="fa-solid fa-door-open" /> {}
                       Przerwij egzamin
                     </Button>
                   </td>
@@ -173,6 +225,7 @@ const LiveUser = () => {
           </Table>
         </div>
       ))}
+      <div style={{ height: 50 }}></div>
     </div>
   );
 };

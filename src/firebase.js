@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 import firebase from '@firebase/app';
 import { getAuth } from "firebase/auth"; 
 import 'firebase/firestore';
@@ -26,6 +26,13 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+enableIndexedDbPersistence(db).catch((err) => {
+  if (err.code === "failed-precondition") {
+    console.error("Tylko jedna karta może korzystać z trybu offline naraz.");
+  } else if (err.code === "unimplemented") {
+    console.error("Tryb offline nie jest obsługiwany w tej przeglądarce.");
+  }
+});
 
 export { db, auth };
 //export default firebaseConfig;

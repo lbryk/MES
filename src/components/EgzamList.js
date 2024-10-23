@@ -2,14 +2,12 @@ import React, { useState, useEffect, useContext } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle";
 import { Button, Badge, Collapse } from "react-bootstrap";
-import {db} from "../firebase";
+import { db } from "../firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import AppContext from "./AppContext";
 import Pagination from "./Pagination";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
- faEye,
-} from "@fortawesome/free-solid-svg-icons";
+import { faEye } from "@fortawesome/free-solid-svg-icons";
 import { library } from "@fortawesome/fontawesome-svg-core";
 library.add(faEye);
 
@@ -79,82 +77,82 @@ const ExamList = ({ refreshKey }) => {
       [examId]: !prev[examId],
     }));
   };
-  
-// const handlePreviewClick = async (collectionName) => {
-//   // Otwórz nowe okno dla podglądu
-//   const previewWindow = window.open("", "_blank", "width=1000,height=800");
 
-//   // Pobierz pytania z Firebase
-//   const q = query(collection(db, collectionName));
-//   const querySnapshot = await getDocs(q);
-//   const questions = querySnapshot.docs.map((doc) => ({
-//     id: doc.id,
-//     ...doc.data(),
-//   }));
+  // const handlePreviewClick = async (collectionName) => {
+  //   // Otwórz nowe okno dla podglądu
+  //   const previewWindow = window.open("", "_blank", "width=1000,height=800");
 
-//   // Tworzenie struktury HTML w nowym oknie
-//   previewWindow.document.write(`
-//     <html>
-//       <head>
-//         <title>Podgląd - ${collectionName}</title>
-//         <style>
-//           body { font-family: Arial, sans-serif; margin: 20px; }
-//           .header, .footer { background: #f5f5f5; padding: 10px; text-align: center; }
-//           .content { margin-top: 20px; }
-//           .task { margin-bottom: 15px; }
-//         </style>
-//       </head>
-//       <body>
-//         <div id="headerPreview"></div>
-//         <div id="widgetPreview"></div>
-//         <div class="content">
-//           ${questions
-//             .map(
-//               (q) =>
-//                 `<div class="task"><strong>Pytanie ${q.id}:</strong> ${q.questions}</div>`
-//             )
-//             .join("")}
-//         </div>
-//         <div id="widgetClose"></div>
-//       </body>
-//     </html>
-//   `);
+  //   // Pobierz pytania z Firebase
+  //   const q = query(collection(db, collectionName));
+  //   const querySnapshot = await getDocs(q);
+  //   const questions = querySnapshot.docs.map((doc) => ({
+  //     id: doc.id,
+  //     ...doc.data(),
+  //   }));
 
-//   // Dodaj przycisk zamykania w widgetcie
-//   previewWindow.document.getElementById("widgetClose").innerHTML = `
-//     <button onclick="window.close()">Zamknij podgląd</button>
-//   `;
-// };
-const formatQualification = (qualification) => {
-  // Konwertuje wszystkie litery na wielkie i dodaje "-" przed pierwszą cyfrą
-  return qualification
-    .toUpperCase() // Zamienia wszystkie litery na wielkie
-    .replace(/(\D+)(\d+)/, "$1-$2"); // Dodaje "-" przed cyframi
-};
+  //   // Tworzenie struktury HTML w nowym oknie
+  //   previewWindow.document.write(`
+  //     <html>
+  //       <head>
+  //         <title>Podgląd - ${collectionName}</title>
+  //         <style>
+  //           body { font-family: Arial, sans-serif; margin: 20px; }
+  //           .header, .footer { background: #f5f5f5; padding: 10px; text-align: center; }
+  //           .content { margin-top: 20px; }
+  //           .task { margin-bottom: 15px; }
+  //         </style>
+  //       </head>
+  //       <body>
+  //         <div id="headerPreview"></div>
+  //         <div id="widgetPreview"></div>
+  //         <div class="content">
+  //           ${questions
+  //             .map(
+  //               (q) =>
+  //                 `<div class="task"><strong>Pytanie ${q.id}:</strong> ${q.questions}</div>`
+  //             )
+  //             .join("")}
+  //         </div>
+  //         <div id="widgetClose"></div>
+  //       </body>
+  //     </html>
+  //   `);
 
-const handlePreviewClick = async (collectionName, qualification) => {
-  // Otwórz nowe okno dla podglądu
-  const previewWindow = window.open("", "_blank", "width=1000,height=800");
+  //   // Dodaj przycisk zamykania w widgetcie
+  //   previewWindow.document.getElementById("widgetClose").innerHTML = `
+  //     <button onclick="window.close()">Zamknij podgląd</button>
+  //   `;
+  // };
+  const formatQualification = (qualification) => {
+    // Konwertuje wszystkie litery na wielkie i dodaje "-" przed pierwszą cyfrą
+    return qualification
+      .toUpperCase() // Zamienia wszystkie litery na wielkie
+      .replace(/(\D+)(\d+)/, "$1-$2"); // Dodaje "-" przed cyframi
+  };
 
-  try {
-    console.log("Rozpoczęcie zapytania o kolekcję pytań:", collectionName);
+  const handlePreviewClick = async (collectionName, qualification) => {
+    // Otwórz nowe okno dla podglądu
+    const previewWindow = window.open("", "_blank", "width=1000,height=800");
 
-    // Pobierz pytania z kolekcji o nazwie exam.collectionName
-    const questionsRef = collection(db, collectionName); // "collectionName" to nazwa kolekcji pytań
-    const querySnapshot = await getDocs(questionsRef);
+    try {
+      console.log("Rozpoczęcie zapytania o kolekcję pytań:", collectionName);
 
-    // Pobieramy wszystkie pytania i ich pola (a, b, c, d, question, answer)
-    const questions = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+      // Pobierz pytania z kolekcji o nazwie exam.collectionName
+      const questionsRef = collection(db, collectionName); // "collectionName" to nazwa kolekcji pytań
+      const querySnapshot = await getDocs(questionsRef);
 
-    // Określenie koloru w zależności od liczby pytań
-    const questionCount = questions.length;
-    const countColor = questionCount < 40 ? "red" : "green";
+      // Pobieramy wszystkie pytania i ich pola (a, b, c, d, question, answer)
+      const questions = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
 
-    // Tworzenie struktury HTML w nowym oknie, które odzwierciedla layout z obrazka
-    previewWindow.document.write(`
+      // Określenie koloru w zależności od liczby pytań
+      const questionCount = questions.length;
+      const countColor = questionCount < 40 ? "red" : "green";
+
+      // Tworzenie struktury HTML w nowym oknie, które odzwierciedla layout z obrazka
+      previewWindow.document.write(`
       <html>
         <head>
           <title>Podgląd - ${collectionName}</title>
@@ -271,22 +269,10 @@ const handlePreviewClick = async (collectionName, qualification) => {
         </body>
       </html>
     `);
-  } catch (error) {
-    console.error("Błąd podczas pobierania danych egzaminu: ", error);
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
-
+    } catch (error) {
+      console.error("Błąd podczas pobierania danych egzaminu: ", error);
+    }
+  };
 
   return (
     <div className="mt-4">

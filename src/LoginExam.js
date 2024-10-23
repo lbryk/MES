@@ -80,6 +80,12 @@ const LoginExam = () => {
     const usernameWithPrefix = `user${login}`;
 
     if (docSnap.exists() && docSnap.data().password === password) {
+      const userNameFromDoc = `${docSnap.data().firstname} ${
+        docSnap.data().lastname
+      }`;
+      const quizIDFromDoc = `${docSnap.data().quizID}`;
+      const userClassFromDoc = `${docSnap.data().class}`; // Pobierz klasę użytkownika
+      const quizTimeFromDoc = `${docSnap.data().quizTime}`; // Pobierz czas egzaminu
       setCurrentUser(usernameWithPrefix);
       auth.login({
         userName: `${docSnap.data().firstname} ${docSnap.data().lastname}`,
@@ -91,14 +97,20 @@ const LoginExam = () => {
           docSnap.data().lastname
         }`;
         const quizIDFromDoc = `${docSnap.data().quizID}`;
-        
+
         setUserName(`${docSnap.data().firstname} ${docSnap.data().lastname}`);
         setId(`${docSnap.data().quizID}`);
         setTimeUser(`/${docSnap.data().quizTime}`);
         setTimeLeft(`/${docSnap.data().quizTime}`);
         setTimerInitialized(true);
         setTimerStarted(true);
-        await createUserSession(userNameFromDoc, quizIDFromDoc);
+        await createUserSession(
+          userNameFromDoc,
+          quizIDFromDoc,
+          login,
+          userClassFromDoc,
+          quizTimeFromDoc
+        );
         navigate(`/${docSnap.data().quizID}`);
       } else if (docSnap.data().role == "sa" || docSnap.data().role == "a") {
         setUserName(`${docSnap.data().firstname} ${docSnap.data().lastname}`);
@@ -128,13 +140,22 @@ const LoginExam = () => {
   };
 
   // Funkcja tworząca sesję użytkownika
-  const createUserSession = async (userName, quizID) => {
-    if (userName && quizID) {
+  const createUserSession = async (
+    userName,
+    quizID,
+    login,
+    userClass,
+    quizTime
+  ) => {
+    if (userName && quizID && login && userClass && quizTime) {
       const sessionRef = doc(db, "userSessions", userName); // Używamy `userName` jako identyfikatora dokumentu
       try {
         await setDoc(sessionRef, {
           userID: userName, // Używamy `userName` zamiast `user.uid`
           quizID: quizID, // Identyfikator egzaminu
+          login: login, // Dodajemy login użytkownika
+          class: userClass, // Dodajemy klasę użytkownika
+          quizTime: quizTime, // Dodajemy czas egzaminu
           isActive: true, // Ustawiamy użytkownika jako aktywnego
           lastActive: serverTimestamp(), // Czas rozpoczęcia sesji
         });
@@ -143,7 +164,7 @@ const LoginExam = () => {
         console.error("Błąd przy tworzeniu sesji użytkownika:", error);
       }
     } else {
-      console.error("Brak userName lub quizID. Nie można utworzyć sesji.");
+      console.error("Brak wymaganych danych. Nie można utworzyć sesji.");
     }
   };
 
