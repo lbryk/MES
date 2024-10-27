@@ -34,44 +34,60 @@ const Content = () => {
   // setId(useState(window.location.href.split('/').pop()));
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const { userName, keyExam, role } = useContext(AppContext);
+  const { userName, keyExam, role, login } = useContext(AppContext);
   const { restartTimer, isPaused, setIsPaused } = useTimer(); // Timer controls
- 
 
   const deleteUserSession = async (userName) => {
     if (userName) {
       const sessionRef = doc(db, "userSessions", userName); // Reference to the session document
       try {
         await deleteDoc(sessionRef);
+      } catch (error) {}
+    }
+  };
+
+  const updateAttemptToSolve = async (login) => {
+    if (login) {
+      const userRef = doc(db, "users", 'user'+login); // Using login as document ID
+      try {
+        await updateDoc(userRef, { attemptToSolve: 1 });
+        console.log(`Zaktualizowano attemptToSolve dla użytkownika ${login}`);
       } catch (error) {
-        
+        console.error("Błąd podczas aktualizacji attemptToSolve:", error);
       }
     }
   };
 
-   const updateAttemptToSolve = async (userName) => {
-     if (userName) {
-       const userRef = doc(db, "users", userName); // Reference to the user document
-       try {
-         await updateDoc(userRef, { attemptToSolve: 1 });
-         console.log(
-           `Zaktualizowano attemptToSolve dla użytkownika ${userName}`
-         );
-       } catch (error) {
-         console.error("Błąd podczas aktualizacji attemptToSolve:", error);
-       }
-     }
-   };
+ const handleLogoutAndRedirect = async () => {
+   try {
+     // Step 1: Fetch the login field from userSessions collection
+     const sessionRef = doc(db, "userSessions", userName);
+     const sessionDoc = await getDoc(sessionRef);
 
-  const handleLogoutAndRedirect = async () => {
-    await deleteUserSession(userName);
-    await updateAttemptToSolve(userName);
-    setIsPaused(!isPaused); 
-    setIsDisabled(true); 
-    restartTimer(); 
-    logout(); 
-    navigate("/exitExam"); 
-  };
+     if (sessionDoc.exists()) {
+       const { login } = sessionDoc.data();
+
+       if (login) {
+         // Step 2: Use the retrieved login to update attemptToSolve
+         await updateAttemptToSolve(login);
+         await deleteUserSession(userName); // Delete the user session
+       } else {
+         console.error("Nie znaleziono loginu w dokumencie userSessions.");
+       }
+     } else {
+       console.error("Dokument session dla userName nie istnieje.");
+     }
+   } catch (error) {
+     console.error("Błąd podczas obsługi wylogowania i przekierowania:", error);
+   }
+
+   setIsPaused(!isPaused);
+   setIsDisabled(true);
+   restartTimer();
+   logout();
+   navigate("/exitExam");
+ };
+
 
   useEffect(() => {
     if (userName) {

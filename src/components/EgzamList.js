@@ -142,10 +142,12 @@ const ExamList = ({ refreshKey }) => {
       const querySnapshot = await getDocs(questionsRef);
 
       // Pobieramy wszystkie pytania i ich pola (a, b, c, d, question, answer)
-      const questions = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const questions = querySnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .sort((a, b) => parseInt(a.id) - parseInt(b.id)); // Sortowanie pytań po ID
 
       // Określenie koloru w zależności od liczby pytań
       const questionCount = questions.length;
@@ -153,126 +155,138 @@ const ExamList = ({ refreshKey }) => {
 
       // Tworzenie struktury HTML w nowym oknie, które odzwierciedla layout z obrazka
       previewWindow.document.write(`
-      <html>
-        <head>
-          <title>Podgląd - ${collectionName}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            table { width: 100%; border-spacing: 20px; }
-            td { vertical-align: top; }
-            .content { 
-              width: 65%; /* Szerokość kolumny pytań */
-              word-wrap: break-word; /* Zawijanie tekstu */
-            }
-            .widget { 
-              width: 30%; /* Stała szerokość widgetu */
-              background: #f5f5f5; 
-              padding: 20px;
-              max-width: 300px; 
-              overflow: hidden; /* Ukrywa nadmiar treści */
-            }
-            .task { 
-              margin-bottom: 15px; 
-              padding: 10px; 
-              border-bottom: 1px solid #ddd; 
-              word-wrap: break-word;
-            }
-            .footer { 
-              background: #f5f5f5; 
-              padding: 10px; 
-              text-align: center; 
-            }
-            .btn-end { 
-              background-color: #e74c3c; 
-              color: white; 
-              padding: 10px 20px; 
-              border: none; 
-              cursor: pointer; 
-            }
-            .btn-end:hover { 
-              background-color: #c0392b; 
-            }
-            input { 
-              width: 100%; 
-              margin-bottom: 10px; 
-              padding: 5px; 
-            }
-            .question-text { 
-              word-wrap: break-word; 
-              max-width: 100%; 
-            }
-            .correct-answer {
-              color: green;
-              font-weight: bold;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Autonomiczny System Egzaminacyjny - Podgląd ${collectionName}</h1>
-          </div>
-          <table>
-            <tr>
-              <td class="content">
-                <h2>Egzamin Lista Zadań</h2>
-                ${questions
-                  .map((q, index) => {
-                    // Sprawdzamy, która odpowiedź jest poprawna na podstawie pola "answer"
-                    const correctAnswer = q.answer.toLowerCase();
-                    const getAnswerClass = (option) =>
-                      option === correctAnswer ? "correct-answer" : "";
+            <html>
+                <head>
+                    <title>Podgląd - ${collectionName}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        table { width: 100%; border-spacing: 20px; }
+                        td { vertical-align: top; }
+                        .content { 
+                            width: 65%; /* Szerokość kolumny pytań */
+                            word-wrap: break-word; /* Zawijanie tekstu */
+                        }
+                        .widget { 
+                            width: 30%; /* Stała szerokość widgetu */
+                            background: #f5f5f5; 
+                            padding: 20px;
+                            max-width: 300px; 
+                            overflow: hidden; /* Ukrywa nadmiar treści */
+                        }
+                        .task { 
+                            margin-bottom: 15px; 
+                            padding: 10px; 
+                            border-bottom: 1px solid #ddd; 
+                            word-wrap: break-word;
+                        }
+                        .footer { 
+                            background: #f5f5f5; 
+                            padding: 10px; 
+                            text-align: center; 
+                        }
+                        .btn-end { 
+                            background-color: #e74c3c; 
+                            color: white; 
+                            padding: 10px 20px; 
+                            border: none; 
+                            cursor: pointer; 
+                        }
+                        .btn-end:hover { 
+                            background-color: #c0392b; 
+                        }
+                        input { 
+                            width: 100%; 
+                            margin-bottom: 10px; 
+                            padding: 5px; 
+                        }
+                        .question-text { 
+                            word-wrap: break-word; 
+                            max-width: 100%; 
+                        }
+                        .correct-answer {
+                            color: green;
+                            font-weight: bold;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Autonomiczny System Egzaminacyjny - Podgląd ${collectionName}</h1>
+                    </div>
+                    <table>
+                        <tr>
+                            <td class="content">
+                                <h2>Egzamin Lista Zadań</h2>
+                                ${questions
+                                  .map((q, index) => {
+                                    // Sprawdzamy, która odpowiedź jest poprawna na podstawie pola "answer"
+                                    const correctAnswer =
+                                      q.answer.toLowerCase();
+                                    const getAnswerClass = (option) =>
+                                      option === correctAnswer
+                                        ? "correct-answer"
+                                        : "";
 
-                    return `<div class="task">
-                          <p class="question-text"><strong>Zadanie ${
-                            index + 1
-                          }:</strong> ${q.question}</p>
-                          <ul>
-                            <li class="${getAnswerClass("a")}">A: ${q.a}</li>
-                            <li class="${getAnswerClass("b")}">B: ${q.b}</li>
-                            <li class="${getAnswerClass("c")}">C: ${q.c}</li>
-                            <li class="${getAnswerClass("d")}">D: ${q.d}</li>
-                          </ul>
-                       </div>`;
-                  })
-                  .join("")}
-              </td>
-              <td class="widget">
-                <p>Kwalifikacja</p>
-                <input type="text" value="${formatQualification(
-                  qualification
-                )}" disabled />
+                                    return `<div class="task">
+                                                <p class="question-text"><strong>Zadanie ${
+                                                  index + 1
+                                                }:</strong> ${q.question}</p>
+                                                <ul>
+                                                    <li class="${getAnswerClass(
+                                                      "a"
+                                                    )}">A: ${q.a}</li>
+                                                    <li class="${getAnswerClass(
+                                                      "b"
+                                                    )}">B: ${q.b}</li>
+                                                    <li class="${getAnswerClass(
+                                                      "c"
+                                                    )}">C: ${q.c}</li>
+                                                    <li class="${getAnswerClass(
+                                                      "d"
+                                                    )}">D: ${q.d}</li>
+                                                </ul>
+                                            </div>`;
+                                  })
+                                  .join("")}
+                            </td>
+                            <td class="widget">
+                                <p>Kwalifikacja</p>
+                                <input type="text" value="${formatQualification(
+                                  qualification
+                                )}" disabled />
 
-                <p>Czas rozpoczęcia egzaminu (symulacja)</p>
-                <input type="text" value="${new Date().toLocaleString()}" disabled />
+                                <p>Czas rozpoczęcia egzaminu (symulacja)</p>
+                                <input type="text" value="${new Date().toLocaleString()}" disabled />
 
-                <p>Czas zakończenia egzaminu (symulacja)</p>
-                <input type="text" value="${new Date(
-                  Date.now() + 60 * 60 * 1000
-                ).toLocaleString()}" disabled />
+                                <p>Czas zakończenia egzaminu (symulacja)</p>
+                                <input type="text" value="${new Date(
+                                  Date.now() + 60 * 60 * 1000
+                                ).toLocaleString()}" disabled />
 
-                <p>Liczba pytań w bazie</p>
-                <input type="text" value="${questionCount}" style="color: ${countColor};" disabled />
+                                <p>Liczba pytań w bazie</p>
+                                <input type="text" value="${questionCount}" style="color: ${countColor};" disabled />
 
-                <p>Oczekiwana liczba pytań</p>
-                <input type="text" value="40" disabled />
+                                <p>Oczekiwana liczba pytań</p>
+                                <input type="text" value="40" disabled />
 
-                <p>Domyślny czas końca egzaminu:</p>
-                <input type="text" value="60:00" disabled />
+                                <p>Domyślny czas końca egzaminu:</p>
+                                <input type="text" value="60:00" disabled />
 
-                <button class="btn-end" onclick="window.close()">Zamknij podgląd</button>
-              </td>
-            </tr>
-          </table>
-          <div class="footer">
-            <small>System próbnych egzaminów zawodowych</small>
-          </div>
-        </body>
-      </html>
-    `);
+                                <button class="btn-end" onclick="window.close()">Zamknij podgląd</button>
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="footer">
+                        <small>System próbnych egzaminów zawodowych</small>
+                    </div>
+                </body>
+            </html>
+        `);
     } catch (error) {
       console.error("Błąd podczas pobierania danych egzaminu: ", error);
     }
   };
+
 
   return (
     <div className="mt-4">
