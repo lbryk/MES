@@ -178,53 +178,61 @@ const LiveUser = () => {
     setQualifications(qualificationsMap);
   };
 
-   const getUniqueClasses = (users) => {
-     const classes = users.map((user) => user.class);
-     return [...new Set(classes)]; // Usuwamy duplikaty
-   };
+  const getUniqueClasses = (users) => {
+    const classes = users.map((user) => user.class);
+    return [...new Set(classes)]; // Usuwamy duplikaty
+  };
 
   return (
     <div className="admin-panel mt-4">
       <h4>Aktualnie trwające egzaminy</h4>
-      {Object.keys(groupedUsers).map((quizID) => (
-        <div key={quizID} className="mt-4">
-          <h3>Kod egzaminu: {quizID}</h3>
-          <h5>Klasy zdające: {getUniqueClasses(groupedUsers[quizID]).join(", ")}</h5>
-          <Table className="table table-striped" striped bordered hover>
-            <thead>
-              <tr>
-                <th>Imię i Nazwisko</th>
-                <th>Login zdającego</th>
-                <th>Klasa</th>
-                <th>Kod egzaminu</th>
-                <th>Kwalifikacja</th>
-                <th>Status</th>
-                <th>Akcja</th> {/* Kolumna dla przycisku */}
-              </tr>
-            </thead>
-            <tbody>
-              {groupedUsers[quizID].map((user) => (
-                <tr key={user.id}>
-                  <td>{user.id}</td>
-                  <td>{user.login}</td>
-                  <td>{user.class}</td>
-                  <td>{user.quizID}</td>
-                  <td>{qualifications[user.quizID]}</td>
-                  <td>Aktywny</td>
-                  <td>
-                    <Button
-                      variant="danger"
-                      onClick={() => endSessionForUser(user.id)}>
-                      <FontAwesomeIcon icon="fa-solid fa-door-open" /> {}
-                      Przerwij egzamin
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+      {loggedUsers.length === 0 ? (
+        <div className="alert alert-info" role="alert">
+          Brak aktywnych zdających
         </div>
-      ))}
+      ) : (
+        Object.keys(groupedUsers).map((quizID) => (
+          <div key={quizID} className="mt-4">
+            <h3>Kod egzaminu: {quizID}</h3>
+            <h5>
+              Klasy zdające: {getUniqueClasses(groupedUsers[quizID]).join(", ")}
+            </h5>
+            <Table className="table table-striped" striped bordered hover>
+              <thead>
+                <tr>
+                  <th>Imię i Nazwisko</th>
+                  <th>Login zdającego</th>
+                  <th>Klasa</th>
+                  <th>Kod egzaminu</th>
+                  <th>Kwalifikacja</th>
+                  <th>Status</th>
+                  <th>Akcja</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groupedUsers[quizID].map((user) => (
+                  <tr key={user.id}>
+                    <td>{user.id}</td>
+                    <td>{user.login}</td>
+                    <td>{user.class}</td>
+                    <td>{user.quizID}</td>
+                    <td>{qualifications[user.quizID]}</td>
+                    <td>Aktywny</td>
+                    <td>
+                      <Button
+                        variant="danger"
+                        onClick={() => endSessionForUser(user.id)}>
+                        <FontAwesomeIcon icon="fa-solid fa-door-open" /> {}
+                        Przerwij egzamin
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
+        ))
+      )}
       <div style={{ height: 50 }}></div>
     </div>
   );

@@ -563,10 +563,13 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
       const collectionName = `${exam.qualification
         .toLowerCase()
         .replace(".", "")}${exam.year}${exam.session}`;
+
       const docsSnapshot = await getDocs(collection(db, collectionName));
+
       const docsData = docsSnapshot.docs
         .map((doc) => ({ id: doc.id, ...doc.data() }))
-        .sort((a, b) => a.order - b.order); // Sortowanie według `order`
+        .sort((a, b) => parseInt(a.id) - parseInt(b.id)); // Sort by document ID
+
       expandedState[exam.id] = docsData;
     }
     setExpandedExams(expandedState);

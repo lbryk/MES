@@ -28,7 +28,6 @@ const RaportExam = () => {
 	const [originalUsers, setOriginalUsers] = useState([]);
 	const fetchData = async () => {
 		const data = await getDocs(collection(db, 'users'));
-		// setUsers(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
 		const usersData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
 		setUsers(usersData);
 		setOriginalUsers(usersData);
@@ -174,43 +173,9 @@ const RaportExam = () => {
 		}
 	};
 
-	// const deleteUser = async () => {
-	// 	if (userIndex === null) return;
-	// 	const id = toast.loading('Trwa usuwanie profili zdającego...', {
-	// 		autoClose: false,
-	// 	});
-	// 	try {
-	// 		// Delete the user from your Firebase database
-
-	// 		const userRef = doc(db, 'users', users[userIndex].id);
-	// 		await deleteDoc(userRef);
-
-	// 		//do something else
-	// 		toast.update(id, {
-	// 			render: 'Usuwanie zakończono z powodzeniem',
-	// 			type: 'success',
-	// 			autoClose: 100,
-	// 		});
-	// 		// Fetch the updated list of users from Firebase
-	// 		fetchData();
-	// 	} catch (error) {
-	// 		toast.error('Error deleting document: ' + error.message);
-	// 	} finally {
-	// 		// Ensure the toast is closed if it's still open
-	// 		if (!toast.isActive(id)) {
-	// 			toast.dismiss(id);
-	// 		}
-	// 	}
-	// };
 
 	const handleInputChange = (event, index, field) => {
 		setEditingValue(event.target.value);
-		// let value = event.target.value;
-		// if (field === 'attemptToSolve') {
-		// 	value = parseInt(value, 10);
-		// }
-		// setEditingValue(value);
-		// Calculate the index of the user in the `users` array
 		const userIndex = usersPerPage * (currentPage - 1) + index;
 
 		const newUsers = [...users];

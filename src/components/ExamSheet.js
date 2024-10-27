@@ -53,11 +53,6 @@ const ExamSheet = ({ quizCodesData }) => {
 	const [usersPerPage] = useState(10);
 	const [selectedUser, setSelectedUser] = useState(null); // inicjalizacja z kodem testu
 
-	// const [users, setUsers] = useState([]);
-	// const [currentPage, setCurrentPage] = useState(1);
-	// const [usersPerPage] = useState(10);
-	// const [selectedUser, setSelectedUser] = useState(null);
-
 	const [quizCodes, setQuizCodes] = useState([]);
 
 	useEffect(() => {
@@ -612,206 +607,195 @@ const ExamSheet = ({ quizCodesData }) => {
 			});
 		}
 	};
-	// const passCount = group.users.filter(
-	// 	(user) => user.percentResult >= 50
-	// ).length;
-	// const failCount = group.users.filter(
-	// 	(user) => user.percentResult < 50
-	// ).length;
+
 	return (
-		<div className='mt-4'>
-			<div className='row d-flex align-items-center'>
-				<div className='col-12 d-flex justify-content-center text-primary fs-5 mt-4'>
-					Raporty według arkuszy
-				</div>
-			</div>
-			<div className='table-responsive mt-5'>
-				<table className='table table-striped caption-top'>
-					<thead>
-						<tr>
-							<th>lp</th>
-							<th>Numer arkusza</th>
-							<th>Kwalifikacja</th>
-							<th>Klasa</th>
-							<th>Data egzaminu</th>
-							<th>Zawód</th>
-							<th>
-								<div className='col-2'>Liczba zdających</div>
-							</th>
-							<th>
-								<div className='col-2'>Zaliczyli etap pisemny</div>
-							</th>
-							<th colSpan={2}>Wynik max</th>
-							<th colSpan={2}>Wynik min</th>
-							<th>Średni wynik</th>
-							<th></th>
-						</tr>
-					</thead>
-					<tbody>
-						{groupedUsersArray
-							.filter(
-								(group) =>
-									group.users.length > 0 && group.quizID && group.examDate
-							)
-							.map((group, index) => (
-								<React.Fragment key={index}>
-									<tr
-										onDoubleClick={() =>
-											setOpen((prevOpen) => ({
-												...prevOpen,
-												[`${group.quizID}-${group.examDate}-${group.class}`]:
-													!prevOpen[
-														`${group.quizID}-${group.examDate}-${group.class}`
-													],
-											}))
-										}
-										className='align-middle'
-									>
-										<td>
-											{lpSortDirection === 'asc'
-												? (currentPage - 1) * usersPerPage + index + 1
-												: filteredUsers.length -
-												  ((currentPage - 1) * usersPerPage + index)}
-										</td>
-										<td className='text-success font-weight-bold'>
-											{group.quizID}
-										</td>
-										<td>
-											{/* {quizCodesData[group.quizID]?.Qualification || 'N/A'} */}
-											{quizCodesData[group.quizID]?.Qualification.match(
-												/[a-zA-Z]+/g
-											)
-												.join('')
-												.toUpperCase()}
-											.
-											{quizCodesData[group.quizID]?.Qualification.match(/\d+/g)}
-										</td>
-										<td>{group.class}</td>
-										<td>{group.examTerm}</td>
-										<td className='font-weight-bold text-white bg-dark'>
-											{group.profession}
-										</td>
-										<td className='text-center'>{group.count}</td>
-										<td className='text-center'>{group.passed}</td>
+    <div className="mt-4">
+      <div className="row d-flex align-items-center">
+        <div className="col-12 d-flex justify-content-center text-primary fs-5 mt-4">
+          Raporty według arkuszy
+        </div>
+      </div>
+      <div className="table-responsive mt-5">
+        <table className="table table-striped caption-top">
+          <thead>
+            <tr>
+              <th onClick={() => handleSort("lp")}>lp</th>
+              <th onClick={() => handleSort("quizID")}>Numer arkusza</th>
+              <th onClick={() => handleSort("Qualification")}>Kwalifikacja</th>
+              <th onClick={() => handleSort("class")}>Klasa</th>
+              <th onClick={() => handleSort("examTerm")}>Data egzaminu</th>
+              <th onClick={() => handleSort("profession")}>Zawód</th>
+              <th>
+                <div className="col-2">Liczba zdających</div>
+              </th>
+              <th>
+                <div className="col-2">Zaliczyli etap pisemny</div>
+              </th>
+              <th colSpan={2}>Wynik max</th>
+              <th colSpan={2}>Wynik min</th>
+              <th onClick={() => handleSort("totalScore")}>Średni wynik</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {groupedUsersArray
+              .filter(
+                (group) =>
+                  group.users.length > 0 && group.quizID && group.examDate
+              )
+              .map((group, index) => (
+                <React.Fragment key={index}>
+                  <tr
+                    onDoubleClick={() =>
+                      setOpen((prevOpen) => ({
+                        ...prevOpen,
+                        [`${group.quizID}-${group.examDate}-${group.class}`]:
+                          !prevOpen[
+                            `${group.quizID}-${group.examDate}-${group.class}`
+                          ],
+                      }))
+                    }
+                    className="align-middle">
+                    <td>
+                      {lpSortDirection === "asc"
+                        ? (currentPage - 1) * usersPerPage + index + 1
+                        : filteredUsers.length -
+                          ((currentPage - 1) * usersPerPage + index)}
+                    </td>
+                    <td className="text-success font-weight-bold">
+                      {group.quizID}
+                    </td>
+                    <td>
+                      {/* {quizCodesData[group.quizID]?.Qualification || 'N/A'} */}
+                      {quizCodesData[group.quizID]?.Qualification.match(
+                        /[a-zA-Z]+/g
+                      )
+                        .join("")
+                        .toUpperCase()}
+                      .
+                      {quizCodesData[group.quizID]?.Qualification.match(/\d+/g)}
+                    </td>
+                    <td>{group.class}</td>
+                    <td>{group.examTerm}</td>
+                    <td className="font-weight-bold text-white bg-dark">
+                      {group.profession}
+                    </td>
+                    <td className="text-center">{group.count}</td>
+                    <td className="text-center">{group.passed}</td>
 
-										<td>{group.maxScore}</td>
-										<td>{group.maxPerCent}%</td>
-										<td>{group.minScore}</td>
-										<td>{group.minPerCent}%</td>
-										<td>{(group.totalScore / group.count).toFixed(2)}</td>
+                    <td>{group.maxScore}</td>
+                    <td>{group.maxPerCent}%</td>
+                    <td>{group.minScore}</td>
+                    <td>{group.minPerCent}%</td>
+                    <td>{(group.totalScore / group.count).toFixed(2)}</td>
 
-										<td className='col-2'>
-											<button
-												className='btn btn-light'
-												onClick={() => handleGroupPrint(group)}
-											>
-												<FontAwesomeIcon icon='fa-solid fa-print' />
-											</button>
-											&nbsp;
-											<button
-												className='btn btn-light'
-												onClick={() => handlePDFraport(group)}
-												// onClick={() => handlePDFraport(selectedUser)}
-											>
-												<FontAwesomeIcon icon='fa-solid fa-file-pdf' />
-											</button>
-										</td>
-									</tr>
-									<tr>
-										<td colSpan={10}>
-											<Collapse
-												in={
-													open[
-														`${group.quizID}-${group.examDate}-${group.class}`
-													]
-												}
-											>
-												<div className='container-fluid'>
-													<div className='row'>
-														<div className='col-10'>
-															<MyChart
-																data={group.users.map(
-																	(user) => user.quizResult
-																)}
-																labels={group.users.map(
-																	(user) => `${user.firstname} ${user.lastname}`
-																)}
-																label={`Wynik w punktach`}
-															/>
-														</div>
-													</div>
-													<div className='row'>
-														<div className='col-md-7 mt-5'>
-															{group.users.map((user, index) => (
-																<div
-																	className={`alert alert-${
-																		user.percentResult >= 50
-																			? 'success'
-																			: 'danger'
-																	} d-flex justify-content-between align-items-center`} // Add flexbox classes here
-																	key={index}
-																>
-																	<div className='listUserExam'>
-																		{' '}
-																		{/* Wrap the text in a div */}
-																		{index + 1}) {user.firstname}{' '}
-																		{user.lastname}
-																		{'  '}
-																		<div className='vr'></div> {user.quizResult}
-																		pkt
-																		{'  '}
-																		<div className='vr'></div>{' '}
-																		{user.percentResult}%
-																	</div>
-																	<div>
-																		{' '}
-																		{/* Wrap the buttons in a div */}
-																		<button
-																			className='btn btn-light'
-																			onClick={() => handlePrint(user)}
-																		>
-																			<FontAwesomeIcon icon='fa-solid fa-print' />
-																		</button>
-																		&nbsp;
-																		<button
-																			className='btn btn-light'
-																			onClick={() => handleUserPDFraport(user)}
-																		>
-																			<FontAwesomeIcon icon='fa-solid fa-file-pdf' />
-																		</button>
-																	</div>
-																</div>
-															))}
-														</div>
-														<div className='col-md-4 mt-5'>
-															<PieChart
-																data={[
-																	group.users.filter(
-																		(user) => user.percentResult >= 50
-																	).length,
-																	group.users.filter(
-																		(user) => user.percentResult < 50
-																	).length,
-																]}
-																labels={['Zdało', 'Oblało']}
-															/>
-														</div>
-													</div>
-												</div>
-											</Collapse>
-										</td>
-									</tr>
-								</React.Fragment>
-							))}
-					</tbody>
-				</table>
-				<Pagination
-					usersPerPage={usersPerPage}
-					totalUsers={filteredUsers.length}
-					paginate={paginate}
-				/>
-			</div>
-		</div>
-	);
+                    <td className="col-2">
+                      <button
+                        className="btn btn-light"
+                        onClick={() => handleGroupPrint(group)}>
+                        <FontAwesomeIcon icon="fa-solid fa-print" />
+                      </button>
+                      &nbsp;
+                      <button
+                        className="btn btn-light"
+                        onClick={() => handlePDFraport(group)}
+                        // onClick={() => handlePDFraport(selectedUser)}
+                      >
+                        <FontAwesomeIcon icon="fa-solid fa-file-pdf" />
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colSpan={10}>
+                      <Collapse
+                        in={
+                          open[
+                            `${group.quizID}-${group.examDate}-${group.class}`
+                          ]
+                        }>
+                        <div className="container-fluid">
+                          <div className="row">
+                            <div className="col-10">
+                              <MyChart
+                                data={group.users.map(
+                                  (user) => user.quizResult
+                                )}
+                                labels={group.users.map(
+                                  (user) => `${user.firstname} ${user.lastname}`
+                                )}
+                                label={`Wynik w punktach`}
+                              />
+                            </div>
+                          </div>
+                          <div className="row">
+                            <div className="col-md-7 mt-5">
+                              {group.users.map((user, index) => (
+                                <div
+                                  className={`alert alert-${
+                                    user.percentResult >= 50
+                                      ? "success"
+                                      : "danger"
+                                  } d-flex justify-content-between align-items-center`} // Add flexbox classes here
+                                  key={index}>
+                                  <div className="listUserExam">
+                                    {" "}
+                                    {/* Wrap the text in a div */}
+                                    {index + 1}) {user.firstname}{" "}
+                                    {user.lastname}
+                                    {"  "}
+                                    <div className="vr"></div> {user.quizResult}
+                                    pkt
+                                    {"  "}
+                                    <div className="vr"></div>{" "}
+                                    {user.percentResult}%
+                                  </div>
+                                  <div>
+                                    {" "}
+                                    {/* Wrap the buttons in a div */}
+                                    <button
+                                      className="btn btn-light"
+                                      onClick={() => handlePrint(user)}>
+                                      <FontAwesomeIcon icon="fa-solid fa-print" />
+                                    </button>
+                                    &nbsp;
+                                    <button
+                                      className="btn btn-light"
+                                      onClick={() => handleUserPDFraport(user)}>
+                                      <FontAwesomeIcon icon="fa-solid fa-file-pdf" />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="col-md-4 mt-5">
+                              <PieChart
+                                data={[
+                                  group.users.filter(
+                                    (user) => user.percentResult >= 50
+                                  ).length,
+                                  group.users.filter(
+                                    (user) => user.percentResult < 50
+                                  ).length,
+                                ]}
+                                labels={["Zdało", "Oblało"]}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </Collapse>
+                    </td>
+                  </tr>
+                </React.Fragment>
+              ))}
+          </tbody>
+        </table>
+        <Pagination
+          usersPerPage={usersPerPage}
+          totalUsers={filteredUsers.length}
+          paginate={paginate}
+        />
+      </div>
+    </div>
+  );
 };
 export default ExamSheet;
