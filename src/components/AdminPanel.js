@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useContext, useCallback } from "react";
+import logoASE from "../ase_mini.png";
+import { library } from "@fortawesome/fontawesome-svg-core";
+import { faClosedCaptioning, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import "bootstrap/dist/js/bootstrap.bundle";
 import ExamCreator from "./ExamCreator";
 import ExamTable from "./ExamTable";
@@ -13,18 +16,52 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
+import { db, remoteConfig } from "../firebase";
+import {
+  getRemoteConfig,
+  fetchAndActivate,
+  getValue,
+} from "firebase/remote-config";
+import {
+  faClose,
+  faDownload
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
+library.add(faClose, faDownload);
 
 const AdminPanel = () => {
+  const currentVersion = "3.10.30"; // wersja aplikacji
   const checkLogin = useNavigate();
   const { userRole, setUserRole } = useContext(AppContext);
   const [quizCodesData, setQuizCodesData] = useState({});
   const { userName, setUserName } = useContext(AppContext);
   const [refreshExams, setRefreshExams] = useState(0);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
 
   if (userName === "") {
     checkLogin(`/login`);
   }
+
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      try {
+        await fetchAndActivate(remoteConfig);
+        const latestVersion = getValue(
+          remoteConfig,
+          "latest_version"
+        ).asString();
+
+        console.log(`wersja aplikacji ${latestVersion}`);
+        if (currentVersion !== latestVersion) {
+          setShowUpdateModal(true);
+        }
+      } catch (error) {
+        console.error("Błąd podczas sprawdzania aktualizacji:", error);
+      }
+    };
+    checkForUpdates();
+  }, []);
 
   useEffect(() => {
     const fetchQuizCodes = async () => {
@@ -74,6 +111,50 @@ const AdminPanel = () => {
     <div>
       <AdminHeader />
       <div className="container">
+        <div
+          className={`modal ${showUpdateModal ? "show" : ""}`}
+          tabIndex="-1"
+          style={{ display: showUpdateModal ? "block" : "none" }}
+          aria-hidden={!showUpdateModal}>
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  <img className="logoCodenight" src={logoASE} /> MES -
+                  Aktualizacja dostępna
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowUpdateModal(false)}
+                  aria-label="Zamknij"></button>
+              </div>
+              <div className="modal-body">
+                <p>
+                  Nowa wersja aplikacji jest dostępna! <br /> Proszę
+                  zaktualizować, aby korzystać z najnowszych funkcji.
+                </p>
+              </div>
+              <div className="modal-footer">
+                <a
+                  href="https://github.com/lbryk/MES-app.git"
+                  className="btn btn-warning"
+                  target="_blank"
+                  rel="noopener noreferrer">
+                  <FontAwesomeIcon icon="fa-solid fa-download" /> {}
+                  Pobierz
+                </a>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={() => setShowUpdateModal(false)}>
+                  Zamknij {}
+                  <FontAwesomeIcon icon="fa-solid fa-close" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
         <nav className="mt-4">
           <div className="nav nav-tabs" id="nav-tab" role="tablist">
             <button
@@ -312,7 +393,7 @@ const AdminPanel = () => {
         </div>
         <ToastContainer />
       </div>
-      <Footer />
+      <Footer version={currentVersion} />
     </div>
   );
 };

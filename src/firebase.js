@@ -1,8 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app';
-import { getAnalytics } from 'firebase/analytics';
+import { getRemoteConfig } from "firebase/remote-config";
 import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
-import firebase from '@firebase/app';
 import { getAuth } from "firebase/auth"; 
 import 'firebase/firestore';
 // TODO: Add SDKs for Firebase products that you want to use
@@ -25,6 +24,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const remoteConfig = getRemoteConfig(app);
 
 enableIndexedDbPersistence(db).catch((err) => {
   if (err.code === "failed-precondition") {
@@ -34,5 +34,13 @@ enableIndexedDbPersistence(db).catch((err) => {
   }
 });
 
-export { db, auth };
+remoteConfig.settings = {
+  minimumFetchIntervalMillis: 0, // 1 godzina
+};
+
+remoteConfig.defaultConfig = {
+  latest_version: "1.0.0", // Wartość domyślna
+};
+
+export { db, auth, remoteConfig};
 //export default firebaseConfig;

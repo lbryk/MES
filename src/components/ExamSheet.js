@@ -42,6 +42,7 @@ import { isSameDay } from "date-fns";
 import Badge from "@mui/material/Badge";
 import { styled } from "@mui/material/styles";
 
+
 // import { MyChart as LibraryChart } from 'library-name';
 library.add(
   faTrashCan,
@@ -215,7 +216,10 @@ const ExamSheet = ({ quizCodesData }) => {
           }
           <h2>Odpowiedzi ucznia:</h2>
           ${myAnswers
-            .map((answer, index) => `<p>Pytanie ${index + 1} - ${answer}</p>`)
+            .map(
+              (answer, index) =>
+                `<p>Pytanie ${index + 1} - ${answer}</p>`
+            )
             .join("")}
         `;
 
