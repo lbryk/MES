@@ -11,7 +11,6 @@ import 'react-toastify/dist/ReactToastify.css';
 
 library.add(faAdd);
 const QuestCreator = ({ examName }) => {
-	console.log(examName, '<br />');
 	const editorRef = useRef(null);
 	const [questNumber, setQuestNumber] = useState('1');
 	const [questText, setquestText] = useState('');
@@ -91,6 +90,9 @@ const QuestCreator = ({ examName }) => {
 			answer: selectedAnswer,
 		}).then(() => {
 			setQuestNumber((prevQuestNumber) => Number(prevQuestNumber) + 1);
+      toast.success(`Pytanie ${questNumber} - zostało dodane`, {
+        autoClose: 150,
+      });
 		});
 	};
 
