@@ -1,18 +1,19 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { useTimer, convertToTimeFormat } from './TimerContext';
-import { useParams, useNavigate } from 'react-router-dom';
-import Header from './Header';
-import { Link } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { library } from '@fortawesome/fontawesome-svg-core';
+import React, { useState, useEffect, useContext } from "react";
+import { useTimer, convertToTimeFormat } from "./TimerContext";
+import { useParams, useNavigate } from "react-router-dom";
+import Header from "./Header";
+import { Link } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { library } from "@fortawesome/fontawesome-svg-core";
 import {
-	faCheck,
-	faRightFromBracket,
-	faRotateLeft,
-	faDoorOpen,
-} from '@fortawesome/free-solid-svg-icons';
-import Footer from './Footer';
-import AppContext from './AppContext';
+  faCheck,
+  faRightFromBracket,
+  faRotateLeft,
+  faDoorOpen,
+  faSave,
+} from "@fortawesome/free-solid-svg-icons";
+import Footer from "./Footer";
+import AppContext from "./AppContext";
 import {
   collection,
   query,
@@ -21,11 +22,11 @@ import {
   setDoc,
   deleteDoc,
 } from "firebase/firestore";
-import {db} from '../firebase';
-import { async } from '@firebase/util';
-import { useAuth } from '../AuthContext';
+import { db } from "../firebase";
+import { async } from "@firebase/util";
+import { useAuth } from "../AuthContext";
 
-library.add(faDoorOpen);
+library.add(faDoorOpen, faSave);
 
 const ExitExam = () => {
   const navigate = useNavigate();
@@ -103,7 +104,7 @@ const ExitExam = () => {
       return answer !== "null" ? count + 1 : count;
     }, 0);
   };
-  
+
   const countNull = countNullsInSelectedAnswers();
   const countUserAnswers = countAnswersInSelectedAnswers();
   const percentResult = Math.round((sumOfRightAnswers / 40) * 100 * 100) / 100;
@@ -136,7 +137,7 @@ const ExitExam = () => {
   }, [auth.user, navigate]);
 
   const reset = async () => {
-	await deleteUserSession(userName);
+    await deleteUserSession(userName);
     auth.logout();
   };
 
@@ -167,6 +168,35 @@ const ExitExam = () => {
     }
   };
 
+  const exportAnswersToFile = () => {
+    const content = selectedAnswers
+      .map(
+        (answer, index) =>
+          `Pytanie ${index + 1}\n${
+            answer !== "null" ? answer : "Nie udzielono odpowiedzi"
+          }`
+      )
+      .join("\n\n");
+
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${userName}_odpowiedzi.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  useEffect(() => {
+    const docRef = doc(db, "users", `user${login}`);
+    const updateUserData = async () => {
+      await setDoc(docRef, { myAnswers: selectedAnswers }, { merge: true });
+    };
+    updateUserData();
+  }, [db, login, selectedAnswers]);
+
   return (
     <div>
       <div className="container">
@@ -193,6 +223,10 @@ const ExitExam = () => {
             Liczba błędnych odpowiedzi: {sumOfWrongAnswers}
             <br />
             <br />
+            <button onClick={exportAnswersToFile} className="btn btn-info">
+              Eksportuj swoje odpowiedzi {}
+              <FontAwesomeIcon icon="fa-solid fa-save" />
+            </button>
             {/* <div className='col-12 reportTitle'>
 							<span className='raportHeadertext'>Klucz odpowiedzi</span>
 						</div>

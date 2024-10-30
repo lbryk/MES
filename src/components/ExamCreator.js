@@ -227,10 +227,6 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName, onExam
 			await setDoc(newDocRef, {
 				// Add fields to the document as needed
 			});
-			// setCode(generateCode());
-			// setSelectedProfession('');
-			// setQualification('');
-			// setIsSaved(false);
 
 			  toast.success('Nowy arkusz został utworzony', {
                 autoClose: 900,

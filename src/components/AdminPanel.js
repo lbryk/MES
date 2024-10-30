@@ -249,7 +249,65 @@ const AdminPanel = () => {
             role="tabpanel"
             aria-labelledby="nav-settings-tab"
             tabindex="0">
-            Autor programu: Łukasz Bryk
+            <div className="mt-4">
+              <ul
+                className="nav nav-pills mb-3"
+                id="settings-tab"
+                role="tablist">
+                <li className="nav-item" role="presentation">
+                  <button
+                    className="nav-link active"
+                    id="admin-btn"
+                    data-bs-toggle="pill"
+                    data-bs-target="#admin-tab"
+                    type="button"
+                    role="tab"
+                    aria-controls="admin-tab"
+                    aria-selected="true">
+                    Administratorzy
+                  </button>
+                </li>
+                <li className="nav-item" role="presentation">
+                  <button
+                    className="nav-link"
+                    id="create-admin-btn"
+                    data-bs-toggle="pill"
+                    data-bs-target="#create-admin-tab"
+                    type="button"
+                    role="tab"
+                    aria-controls="create-admin-tab"
+                    aria-selected="false">
+                    Twórz nowego administratora
+                  </button>
+                </li>
+                <li className="nav-item" role="presentation">
+                  <button
+                    className="nav-link"
+                    id="qualifications-btn"
+                    data-bs-toggle="pill"
+                    data-bs-target="#qualifications-tab"
+                    type="button"
+                    role="tab"
+                    aria-controls="qualifications-tab"
+                    aria-selected="false">
+                    Kwalifikacje
+                  </button>
+                </li>
+                <li className="nav-item" role="presentation">
+                  <button
+                    className="nav-link"
+                    id="admin-panel-settings-btn"
+                    data-bs-toggle="pill"
+                    data-bs-target="#admin-panel-settings-tab"
+                    type="button"
+                    role="tab"
+                    aria-controls="admin-panel-settings-tab"
+                    aria-selected="false">
+                    Ustawienia panelu administracyjnego
+                  </button>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
         <ToastContainer />

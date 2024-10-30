@@ -51,9 +51,9 @@ const Content = () => {
       const userRef = doc(db, "users", 'user'+login); // Using login as document ID
       try {
         await updateDoc(userRef, { attemptToSolve: 1 });
-        console.log(`Zaktualizowano attemptToSolve dla użytkownika ${login}`);
+   
       } catch (error) {
-        console.error("Błąd podczas aktualizacji attemptToSolve:", error);
+    
       }
     }
   };
@@ -71,11 +71,7 @@ const Content = () => {
          // Step 2: Use the retrieved login to update attemptToSolve
          await updateAttemptToSolve(login);
          await deleteUserSession(userName); // Delete the user session
-       } else {
-         console.error("Nie znaleziono loginu w dokumencie userSessions.");
        }
-     } else {
-       console.error("Dokument session dla userName nie istnieje.");
      }
    } catch (error) {
      console.error("Błąd podczas obsługi wylogowania i przekierowania:", error);
@@ -88,14 +84,13 @@ const Content = () => {
    navigate("/exitExam");
  };
 
-
+console.log(selectedAnswers);
   useEffect(() => {
     if (userName) {
       const sessionRef = doc(db, "userSessions", userName);
       const unsubscribe = onSnapshot(sessionRef, (doc) => {
         if (doc.exists()) {
           const data = doc.data();
-          console.log("Session data:", data);
           if (data.isActive === false) {
             alert("Egzamin został przerwany przez administratora.");
             handleLogoutAndRedirect();

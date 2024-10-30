@@ -171,54 +171,70 @@ const ExamSheet = ({ quizCodesData }) => {
 
   const [lpSortDirection, setLpSortDirection] = useState("asc");
 
-  const handlePrint = (user) => {
+  const handlePrint = async (user) => {
     if (user && user.quizID) {
       const data = quizCodesData[user.quizID];
       if (data && data.Qualification) {
         const qualification = data.Qualification;
-        let iframe = document.createElement("iframe");
 
-        // Set the iframe to be invisible
-        iframe.style.visibility = "hidden";
-        iframe.style.position = "fixed";
-        iframe.style.right = "0";
-        iframe.style.bottom = "0";
-        document.body.appendChild(iframe);
-        // Generate the content for the report
-        let content =
-          `
-        <h1>Imię i nazwisko: ${user.firstname} ${user.lastname}</h1><br />
-		<hr />
-        <p>Zawód:<b> ${user.profession}</b></p>
-        <p>Klasa: ${user.class}</p><br/><br/>
-		<p>Kwalifikacja:<b> ${qualification
-      .match(/[a-zA-Z]+/g)
-      .join("")
-      .toUpperCase()}` +
-          `.${qualification.match(/\d+/g)}</b></p>
-        <p>Oznaczenie arkusza:<b> ${user.quizID}</b></p>
-        <p>Wynik: ${user.quizResult} / 40</p>
-        <p>Wynik procentowy: ${user.percentResult}%</p><br />
-		${
-      user.percentResult >= 50
-        ? '<p style="color: rgb(0,128,0);" >Egzamin zdany</p>'
-        : '<p style="color:rgb(255,0,0);">Egzamin oblany</p>'
-    } 
-        <footer style="position: fixed; bottom: 0; width: 100%;">
-		<small>Raport utworzony dnia: ${new Date().toLocaleDateString()}</small>
-		<p><small>Zestawienie zostało wygenerowane w programie MES, aplikacji do tworzenia i przeprowadzania próbnych egzaminów zawodowych</small></p></footer>
-    `;
+        // Ensure login is defined
+        if (!user.login) {
+          console.error("Login is undefined");
+          return;
+        }
 
-        iframe.contentDocument.write(content);
-        iframe.contentDocument.close();
+        try {
+          // Fetch myAnswers for the user
+          const userDocRef = doc(db, "users", `user${user.login}`);
+          const userDoc = await getDoc(userDocRef);
 
-        // Call the print function
-        iframe.contentWindow.print();
+          // Map over myAnswers to replace "null" string values
+          const myAnswers =
+            userDoc.exists() && Array.isArray(userDoc.data().myAnswers)
+              ? userDoc
+                  .data()
+                  .myAnswers.map((answer) =>
+                    answer === "null"
+                      ? "Zdający nie udzielił odpowiedzi"
+                      : answer
+                  )
+              : [];
 
-        // Remove the iframe after printing
-        iframe.contentWindow.onafterprint = () => {
-          document.body.removeChild(iframe);
-        };
+          // Generate the content for printing
+          let content = `
+          <h1>Imię i nazwisko: ${user.firstname} ${user.lastname}</h1>
+          <p>Zawód: ${user.profession}</p>
+          <p>Klasa: ${user.class}</p>
+          <p>Kwalifikacja: ${qualification.toUpperCase()}</p>
+          <p>Wynik: ${user.quizResult} / 40</p>
+          <p>Wynik procentowy: ${user.percentResult}%</p>
+          ${
+            user.percentResult >= 50
+              ? '<p style="color: green;">Egzamin zdany</p>'
+              : '<p style="color: red;">Egzamin oblany</p>'
+          }
+          <h2>Odpowiedzi ucznia:</h2>
+          ${myAnswers
+            .map((answer, index) => `<p>Pytanie ${index + 1} - ${answer}</p>`)
+            .join("")}
+        `;
+
+          // Set up a hidden iframe for printing
+          let iframe = document.createElement("iframe");
+          iframe.style.visibility = "hidden";
+          document.body.appendChild(iframe);
+          iframe.contentDocument.write(content);
+          iframe.contentDocument.close();
+
+          // Trigger the print dialog
+          iframe.contentWindow.print();
+
+          // Remove the iframe after printing
+          iframe.contentWindow.onafterprint = () =>
+            document.body.removeChild(iframe);
+        } catch (error) {
+          console.error("Error fetching myAnswers:", error);
+        }
       } else {
         console.error(
           "Qualification field is missing or invalid in the document data"
@@ -510,120 +526,100 @@ const ExamSheet = ({ quizCodesData }) => {
       const data = quizCodesData[user.quizID];
       if (data && data.Qualification) {
         const qualification = data.Qualification;
-        generateUserPDF(user, qualification); // Pass user and qualification to generatePDF
-      } else {
-        console.error(
-          "Qualification field is missing or invalid in the document data"
-        );
+
+        // Ensure login is defined
+        if (!user.login) {
+          console.error("Login is undefined");
+          return;
+        }
+
+        try {
+          // Fetch myAnswers for the user
+          const userDocRef = doc(db, "users", `user${user.login}`);
+          const userDoc = await getDoc(userDocRef);
+
+          // Map over myAnswers to replace "null" string values
+          const myAnswers =
+            userDoc.exists() && Array.isArray(userDoc.data().myAnswers)
+              ? userDoc
+                  .data()
+                  .myAnswers.map((answer) =>
+                    answer === "null"
+                      ? "Zdający nie udzielił odpowiedzi"
+                      : answer
+                  )
+              : [];
+
+          generateUserPDF(user, qualification, myAnswers); // Pass processed myAnswers to PDF generation
+        } catch (error) {
+          console.error("Error fetching myAnswers:", error);
+        }
       }
+    }
+  };
+
+  const generateUserPDF = (user, qualification, myAnswers) => {
+    const docpdf = new jsPDF("p", "pt", "a4");
+
+    docpdf.addFileToVFS("Roboto-Regular.ttf", robotoBase64);
+    docpdf.addFont("Roboto-Regular.ttf", "Roboto", "normal");
+    docpdf.setFont("Roboto");
+
+    let y = 40;
+
+    docpdf.setFontSize(12);
+    docpdf.text(20, y, `Imię i nazwisko: ${user.firstname} ${user.lastname}`);
+    y += 20;
+    docpdf.text(20, y, `Zawód: ${user.profession}`);
+    y += 20;
+    docpdf.text(20, y, `Klasa: ${user.class}`);
+    y += 20;
+    docpdf.text(20, y, `Kwalifikacja: ${qualification.toUpperCase()}`);
+    y += 20;
+    docpdf.text(20, y, `Oznaczenie arkusza: ${user.quizID}`);
+    y += 20;
+    docpdf.text(20, y, `Wynik: ${user.quizResult} / 40`);
+    y += 20;
+    docpdf.text(20, y, `Wynik procentowy: ${user.percentResult}%`);
+
+    docpdf.setFontSize(16);
+    if (user.percentResult >= 50) {
+      docpdf.setTextColor(0, 128, 0);
+      y += 30;
+      docpdf.text(20, y, "Egzamin zdany");
     } else {
-      console.error(
-        "User, user.quizID, or quizCodesData[user.quizID] is undefined or null"
-      );
+      docpdf.setTextColor(255, 0, 0);
+      y += 30;
+      docpdf.text(20, y, "Egzamin oblany");
     }
-  };
 
-  const generateUserPDF = (user, qualification) => {
-    try {
-      const docpdf = new jsPDF("p", "pt", "a4");
+    docpdf.setTextColor(0, 0, 0);
+    docpdf.setFontSize(12);
+    y += 20;
 
-      docpdf.addFileToVFS("Roboto-Regular.ttf", robotoBase64);
-      docpdf.addFont("Roboto-Regular.ttf", "Roboto", "normal");
+    // Add "Odpowiedzi ucznia" section
+    docpdf.text(20, y, "Odpowiedzi ucznia:");
+    y += 20;
 
-      docpdf.setFont("Roboto");
-      let y = 20;
+    // Add each answer, ensuring null replacements as needed
+    myAnswers.forEach((answer, index) => {
+      docpdf.text(20, y, `Pytanie ${index + 1} - ${answer}`);
+      y += 15;
+    });
 
-      y += 20;
-      docpdf.text(20, y, `Imię i nazwisko: ${user.firstname} ${user.lastname}`);
-      y += 20;
-      docpdf.line(0, y, 595, y);
-
-      y += 20;
-
-      docpdf.setFontSize(10);
-      docpdf.text(20, y, `Zawód: `);
-
-      docpdf.setFont("Roboto", "bold");
-      docpdf.text(55, y, `${user.profession}`);
-      y += 20;
-      docpdf.setFont("Roboto", "normal");
-      docpdf.text(20, y, `Klasa: ${user.class}`);
-
-      y += 40;
-      docpdf.text(20, y, `Kwalifikacja:`);
-      docpdf.setFont("Roboto", "bold");
-      docpdf.text(
-        85,
-        y,
-        `${qualification
-          .match(/[a-zA-Z]+/g)
-          .join("")
-          .toUpperCase()}` + `.${qualification.match(/\d+/g)}`
-      );
-      docpdf.setFont("Roboto", "normal");
-      y += 20;
-      docpdf.text(20, y, `Oznaczenie arkusza:`);
-      docpdf.setFont("Roboto", "bold");
-      docpdf.text(120, y, `${user.quizID}`);
-      docpdf.setFont("Roboto", "normal");
-      y += 20;
-      docpdf.text(20, y, `Wynik: ${user.quizResult} / 40`);
-
-      y += 20;
-      docpdf.text(20, y, `Wynik procentowy: ${user.percentResult}%`);
-      y += 20;
-
-      docpdf.setFontSize(10);
-      const pageCount = docpdf.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        docpdf.setPage(i);
-
-        docpdf.text(
-          "Raport utworzony dnia: " + new Date().toLocaleDateString(),
-          20,
-          docpdf.internal.pageSize.height - 40
-        );
-        y += 20;
-        docpdf.setFontSize(8);
-        docpdf.text(
-          "Zestawienie zostało wygenerowane w programie MES, aplikacji do tworzenia i przeprowadzania próbnych egzaminów zawodowych ",
-          20,
-          docpdf.internal.pageSize.height - 20
-        );
-      }
-
-      docpdf.setFontSize(16);
-      if (user.percentResult >= 50) {
-        docpdf.setTextColor(0, 128, 0); // Set text color to green
-        y += 20; // Increase Y-coordinate for the next line
-        docpdf.text(20, y, "Egzamin zdany");
-      } else {
-        docpdf.setTextColor(255, 0, 0); // Set text color to red
-        y += 20; // Increase Y-coordinate for the next line
-        docpdf.text(20, y, "Egzamin oblany");
-      }
-
-      const id = toast.loading("Generowanie reportu...");
-      //do something else
-      setTimeout(() => {
-        toast.update(id, {
-          render: "Za chwilę rozpocznie się automatyczne pobieranie...",
-          type: "success",
-          isLoading: false,
-          autoClose: 1500,
-          onClose: () => {
-            docpdf.save(`wyniki_${user.firstname}_${user.lastname}.pdf`);
-          },
-        });
-      }, 1000);
-    } catch (error) {
-      toast.error("Błąd: " + error.message, {
-        autoClose: 5000, // Close the error message after 5 seconds
+    const id = toast.loading("Generowanie reportu...");
+    setTimeout(() => {
+      toast.update(id, {
+        render: "Pobieranie rozpoczęte...",
+        type: "success",
+        isLoading: false,
+        autoClose: 1500,
+        onClose: () =>
+          docpdf.save(`wyniki_${user.firstname}_${user.lastname}.pdf`),
       });
-    }
+    }, 1000);
   };
 
- 
   const [filterQuizID, setFilterQuizID] = useState("");
   const [filterQualification, setFilterQualification] = useState("");
   const [filterClass, setFilterClass] = useState("");
@@ -636,21 +632,20 @@ const ExamSheet = ({ quizCodesData }) => {
   const quizIDSuggestions = [
     ...new Set(groupedUsersArray.map((group) => group.quizID)),
   ];
- const qualificationSuggestions = [
-   ...new Set(
-     Object.values(quizCodesData)
-       .map((quiz) =>
-         quiz.Qualification
-           ? `${quiz.Qualification.replace(
-               /([a-zA-Z]+)(\d+)/,
-               "$1.$2"
-             ).toUpperCase()}`
-           : ""
-       )
-       .filter((qual) => qual) // Usuwa puste wartości
-   ),
- ];
-
+  const qualificationSuggestions = [
+    ...new Set(
+      Object.values(quizCodesData)
+        .map((quiz) =>
+          quiz.Qualification
+            ? `${quiz.Qualification.replace(
+                /([a-zA-Z]+)(\d+)/,
+                "$1.$2"
+              ).toUpperCase()}`
+            : ""
+        )
+        .filter((qual) => qual) // Usuwa puste wartości
+    ),
+  ];
 
   const classSuggestions = [
     ...new Set(groupedUsersArray.map((group) => group.class)),
@@ -692,7 +687,7 @@ const ExamSheet = ({ quizCodesData }) => {
       filterCount ? group.count?.toString().includes(filterCount) : true
     );
 
-	const examDates = [
+  const examDates = [
     ...new Set(
       groupedUsersArray.map((group) => {
         const parsedDate = parse(group.examTerm, "dd.MM.yyyy", new Date());
