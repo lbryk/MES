@@ -202,7 +202,6 @@ const RaportExam = ({ quizCodesData }) => {
     }
   };
 
-
   const generateUserPDF = (user, qualification, myAnswers, correctAnswers) => {
     const docpdf = new jsPDF("p", "pt", "a4");
 
@@ -269,11 +268,11 @@ const RaportExam = ({ quizCodesData }) => {
         isLoading: false,
         autoClose: 1500,
         onClose: () =>
-          docpdf.save(`wyniki_${user.firstname}_${user.lastname}.pdf`),
+          toast.dismiss(),
       });
     }, 1000);
+    docpdf.save(`wyniki_${user.firstname}_${user.lastname}.pdf`);
   };
-
 
   const handlePrint = async (user) => {
     if (user && user.quizID) {

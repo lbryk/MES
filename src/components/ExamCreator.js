@@ -233,8 +233,10 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName, onExam
                 onClose: () => {
                     setIsFormActive(false);
                     onExamCreated(); // Wywołanie funkcji odświeżającej
+					toast.dismiss();
                 },
-            });
+            }); 
+			
 			setIsSaved(true);
 		} catch (error) {
 			toast.error(`Wystąpił błąd ${error}. Arkusz nie został utworzony.`, {

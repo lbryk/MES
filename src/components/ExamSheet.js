@@ -42,7 +42,6 @@ import { isSameDay } from "date-fns";
 import Badge from "@mui/material/Badge";
 import { styled } from "@mui/material/styles";
 
-
 // import { MyChart as LibraryChart } from 'library-name';
 library.add(
   faTrashCan,
@@ -68,7 +67,7 @@ const ExamSheet = ({ quizCodesData }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(10);
   const [selectedUser, setSelectedUser] = useState(null); // inicjalizacja z kodem testu
-
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [quizCodes, setQuizCodes] = useState([]);
 
   useEffect(() => {
@@ -418,10 +417,11 @@ const ExamSheet = ({ quizCodesData }) => {
           isLoading: false,
           autoClose: 1500,
           onClose: () => {
-            docpdf.save(`wyniki_${group.quizID}_${group.examTerm}.pdf`);
+            toast.dismiss();
           },
         });
       }, 1000);
+      docpdf.save(`wyniki_${group.quizID}_${group.examTerm}.pdf`);
     } catch (error) {
       toast.error("Błąd: " + error.message, {
         autoClose: 5000, // Close the error message after 5 seconds
@@ -540,14 +540,16 @@ const ExamSheet = ({ quizCodesData }) => {
   };
 
   const handleUserPDFraport = async (user) => {
-    if (user && user.quizID && quizCodesData[user.quizID]) {
+    if (!isGeneratingPDF && user && user.quizID && quizCodesData[user.quizID]) {
+      setIsGeneratingPDF(true); 
+      console.log(isGeneratingPDF);
       const data = quizCodesData[user.quizID];
       if (data && data.Qualification) {
         const qualification = data.Qualification;
 
         // Upewnienie się, że login użytkownika jest zdefiniowany
         if (!user.login) {
-          console.error("Login is undefined");
+          setIsGeneratingPDF(false);
           return;
         }
 
@@ -656,9 +658,12 @@ const ExamSheet = ({ quizCodesData }) => {
               isLoading: false,
               autoClose: 1500,
               onClose: () =>
-                docpdf.save(`wyniki_${user.firstname}_${user.lastname}.pdf`),
+                toast.dismiss(),
             });
           }, 1000);
+          docpdf.save(`wyniki_${user.firstname}_${user.lastname}.pdf`);
+            setIsGeneratingPDF(false);
+          console.log(isGeneratingPDF);
         } catch (error) {
           console.error("Error fetching myAnswers or generating PDF:", error);
         }

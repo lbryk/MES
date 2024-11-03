@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useContext, useCallback } from "react";
 import logoASE from "../ase_mini.png";
 import { library } from "@fortawesome/fontawesome-svg-core";
-import { faClosedCaptioning, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
+import {
+  faClosedCaptioning,
+  faRightFromBracket,
+} from "@fortawesome/free-solid-svg-icons";
 import "bootstrap/dist/js/bootstrap.bundle";
 import ExamCreator from "./ExamCreator";
 import ExamTable from "./ExamTable";
@@ -22,10 +25,7 @@ import {
   fetchAndActivate,
   getValue,
 } from "firebase/remote-config";
-import {
-  faClose,
-  faDownload
-} from "@fortawesome/free-solid-svg-icons";
+import { faClose, faDownload } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 library.add(faClose, faDownload);
