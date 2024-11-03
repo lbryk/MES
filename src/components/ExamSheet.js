@@ -178,74 +178,88 @@ const ExamSheet = ({ quizCodesData }) => {
       if (data && data.Qualification) {
         const qualification = data.Qualification;
 
-        // Ensure login is defined
-        if (!user.login) {
-          console.error("Login is undefined");
-          return;
+        // Pobranie odpowiedzi ucznia
+        const userDocRef = doc(db, "users", `user${user.login}`);
+        const userDoc = await getDoc(userDocRef);
+        const myAnswers =
+          userDoc.exists() && Array.isArray(userDoc.data().myAnswers)
+            ? userDoc
+                .data()
+                .myAnswers.map((answer) =>
+                  answer === "null" ? "Zdający nie udzielił odpowiedzi" : answer
+                )
+            : [];
+
+        // Pobranie poprawnych odpowiedzi w kolejności dokumentów
+        const collectionName = `${qualification
+          .toLowerCase()
+          .replace(".", "")}${data.Year}${data.Session}`;
+        const questionsRef = collection(db, collectionName);
+        const questionsSnapshot = await getDocs(questionsRef);
+
+        // Mapowanie i sortowanie dokumentów po numerze pytania (nazwie dokumentu)
+        const sortedQuestions = questionsSnapshot.docs.sort(
+          (a, b) => parseInt(a.id) - parseInt(b.id)
+        ); // Sortowanie dokumentów według ID
+
+        const correctAnswers = sortedQuestions.map((doc) => ({
+          questionNumber: doc.id, // Numer pytania (nazwa dokumentu)
+          correctAnswer: doc.data().answer,
+        }));
+
+        // Generowanie treści z tabelą odpowiedzi
+        let content = `
+        <h1>Imię i nazwisko: ${user.firstname} ${user.lastname}</h1>
+        <p>Zawód: ${user.profession}</p>
+        <p>Klasa: ${user.class}</p>
+        <p>Kwalifikacja: ${qualification.toUpperCase()}</p>
+        <p>Oznaczenie arkusza: ${user.quizID}</p>
+        <p>Wynik: ${user.quizResult} / 40</p>
+        <p>Wynik procentowy: ${user.percentResult}%</p>
+        ${
+          user.percentResult >= 50
+            ? '<p style="color: green;">Egzamin zdany</p>'
+            : '<p style="color: red;">Egzamin oblany</p>'
         }
-
-        try {
-          // Fetch myAnswers for the user
-          const userDocRef = doc(db, "users", `user${user.login}`);
-          const userDoc = await getDoc(userDocRef);
-
-          // Map over myAnswers to replace "null" string values
-          const myAnswers =
-            userDoc.exists() && Array.isArray(userDoc.data().myAnswers)
-              ? userDoc
-                  .data()
-                  .myAnswers.map((answer) =>
-                    answer === "null"
-                      ? "Zdający nie udzielił odpowiedzi"
-                      : answer
-                  )
-              : [];
-
-          // Generate the content for printing
-          let content = `
-          <h1>Imię i nazwisko: ${user.firstname} ${user.lastname}</h1>
-          <p>Zawód: ${user.profession}</p>
-          <p>Klasa: ${user.class}</p>
-          <p>Kwalifikacja: ${qualification.toUpperCase()}</p>
-          <p>Wynik: ${user.quizResult} / 40</p>
-          <p>Wynik procentowy: ${user.percentResult}%</p>
-          ${
-            user.percentResult >= 50
-              ? '<p style="color: green;">Egzamin zdany</p>'
-              : '<p style="color: red;">Egzamin oblany</p>'
-          }
-          <h2>Odpowiedzi ucznia:</h2>
+        <h2>Odpowiedzi:</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="border: 1px solid black; padding: 5px;">Numer pytania</th>
+              <th style="border: 1px solid black; padding: 5px;">Odpowiedź ucznia</th>
+              <th style="border: 1px solid black; padding: 5px;">Poprawna odpowiedź</th>
+            </tr>
+          </thead>
+          <tbody>
           ${myAnswers
             .map(
-              (answer, index) =>
-                `<p>Pytanie ${index + 1} - ${answer}</p>`
+              (answer, index) => `
+            <tr>
+              <td style="border: 1px solid black; padding: 5px;">${
+                correctAnswers[index].questionNumber
+              }</td>
+              <td style="border: 1px solid black; padding: 5px;">${answer}</td>
+              <td style="border: 1px solid black; padding: 5px;">${
+                correctAnswers[index].correctAnswer || "Brak danych"
+              }</td>
+            </tr>
+          `
             )
             .join("")}
-        `;
+          </tbody>
+        </table>
+      `;
 
-          // Set up a hidden iframe for printing
-          let iframe = document.createElement("iframe");
-          iframe.style.visibility = "hidden";
-          document.body.appendChild(iframe);
-          iframe.contentDocument.write(content);
-          iframe.contentDocument.close();
-
-          // Trigger the print dialog
-          iframe.contentWindow.print();
-
-          // Remove the iframe after printing
-          iframe.contentWindow.onafterprint = () =>
-            document.body.removeChild(iframe);
-        } catch (error) {
-          console.error("Error fetching myAnswers:", error);
-        }
-      } else {
-        console.error(
-          "Qualification field is missing or invalid in the document data"
-        );
+        // Wydruk zawartości
+        let iframe = document.createElement("iframe");
+        iframe.style.visibility = "hidden";
+        document.body.appendChild(iframe);
+        iframe.contentDocument.write(content);
+        iframe.contentDocument.close();
+        iframe.contentWindow.print();
+        iframe.contentWindow.onafterprint = () =>
+          document.body.removeChild(iframe);
       }
-    } else {
-      console.error("User or user.quizID is undefined or null");
     }
   };
 
@@ -531,18 +545,16 @@ const ExamSheet = ({ quizCodesData }) => {
       if (data && data.Qualification) {
         const qualification = data.Qualification;
 
-        // Ensure login is defined
+        // Upewnienie się, że login użytkownika jest zdefiniowany
         if (!user.login) {
           console.error("Login is undefined");
           return;
         }
 
         try {
-          // Fetch myAnswers for the user
+          // Pobranie odpowiedzi ucznia
           const userDocRef = doc(db, "users", `user${user.login}`);
           const userDoc = await getDoc(userDocRef);
-
-          // Map over myAnswers to replace "null" string values
           const myAnswers =
             userDoc.exists() && Array.isArray(userDoc.data().myAnswers)
               ? userDoc
@@ -554,74 +566,104 @@ const ExamSheet = ({ quizCodesData }) => {
                   )
               : [];
 
-          generateUserPDF(user, qualification, myAnswers); // Pass processed myAnswers to PDF generation
+          // Pobranie poprawnych odpowiedzi w kolejności dokumentów
+          const collectionName = `${qualification
+            .toLowerCase()
+            .replace(".", "")}${data.Year}${data.Session}`;
+          const questionsRef = collection(db, collectionName);
+          const questionsSnapshot = await getDocs(questionsRef);
+
+          // Sortowanie dokumentów według numerów pytań
+          const sortedQuestions = questionsSnapshot.docs.sort(
+            (a, b) => parseInt(a.id) - parseInt(b.id)
+          );
+
+          const correctAnswers = sortedQuestions.map((doc) => ({
+            questionNumber: doc.id, // Numer pytania (nazwa dokumentu)
+            correctAnswer: doc.data().answer,
+          }));
+
+          // Generowanie pliku PDF z tabelą
+          const docpdf = new jsPDF("p", "pt", "a4");
+          docpdf.addFileToVFS("Roboto-Regular.ttf", robotoBase64);
+          docpdf.addFont("Roboto-Regular.ttf", "Roboto", "normal");
+          docpdf.setFont("Roboto");
+
+          let y = 40;
+
+          // Nagłówki z informacjami o użytkowniku i egzaminie
+          docpdf.setFontSize(12);
+          docpdf.text(
+            20,
+            y,
+            `Imię i nazwisko: ${user.firstname} ${user.lastname}`
+          );
+          y += 20;
+          docpdf.text(20, y, `Zawód: ${user.profession}`);
+          y += 20;
+          docpdf.text(20, y, `Klasa: ${user.class}`);
+          y += 20;
+          docpdf.text(20, y, `Kwalifikacja: ${qualification.toUpperCase()}`);
+          y += 20;
+          docpdf.text(20, y, `Oznaczenie arkusza: ${user.quizID}`);
+          y += 20;
+          docpdf.text(20, y, `Wynik: ${user.quizResult} / 40`);
+          y += 20;
+          docpdf.text(20, y, `Wynik procentowy: ${user.percentResult}%`);
+
+          docpdf.setFontSize(16);
+          if (user.percentResult >= 50) {
+            docpdf.setTextColor(0, 128, 0);
+            y += 30;
+            docpdf.text(20, y, "Egzamin zdany");
+          } else {
+            docpdf.setTextColor(255, 0, 0);
+            y += 30;
+            docpdf.text(20, y, "Egzamin oblany");
+          }
+
+          // Przywrócenie koloru tekstu
+          docpdf.setTextColor(0, 0, 0);
+          docpdf.setFontSize(12);
+          y += 20;
+
+          // Tabela z numerem pytania, odpowiedzią ucznia i poprawną odpowiedzią
+          const columns = [
+            "Numer pytania",
+            "Odpowiedź ucznia",
+            "Poprawna odpowiedź",
+          ];
+          const rows = myAnswers.map((answer, index) => [
+            correctAnswers[index].questionNumber, // Numer pytania
+            answer, // Odpowiedź ucznia
+            correctAnswers[index].correctAnswer || "Brak danych", // Poprawna odpowiedź
+          ]);
+
+          docpdf.autoTable({
+            head: [columns],
+            body: rows,
+            startY: y,
+            styles: { font: "Roboto", fontSize: 10 },
+            headStyles: { fillColor: [220, 220, 220] },
+          });
+
+          // Finalizacja pliku PDF z informacją o dacie wygenerowania
+          const id = toast.loading("Generowanie raportu...");
+          setTimeout(() => {
+            toast.update(id, {
+              render: "Pobieranie rozpoczęte...",
+              type: "success",
+              isLoading: false,
+              autoClose: 1500,
+              onClose: () =>
+                docpdf.save(`wyniki_${user.firstname}_${user.lastname}.pdf`),
+            });
+          }, 1000);
         } catch (error) {
-          console.error("Error fetching myAnswers:", error);
+          console.error("Error fetching myAnswers or generating PDF:", error);
         }
       }
     }
-  };
-
-  const generateUserPDF = (user, qualification, myAnswers) => {
-    const docpdf = new jsPDF("p", "pt", "a4");
-
-    docpdf.addFileToVFS("Roboto-Regular.ttf", robotoBase64);
-    docpdf.addFont("Roboto-Regular.ttf", "Roboto", "normal");
-    docpdf.setFont("Roboto");
-
-    let y = 40;
-
-    docpdf.setFontSize(12);
-    docpdf.text(20, y, `Imię i nazwisko: ${user.firstname} ${user.lastname}`);
-    y += 20;
-    docpdf.text(20, y, `Zawód: ${user.profession}`);
-    y += 20;
-    docpdf.text(20, y, `Klasa: ${user.class}`);
-    y += 20;
-    docpdf.text(20, y, `Kwalifikacja: ${qualification.toUpperCase()}`);
-    y += 20;
-    docpdf.text(20, y, `Oznaczenie arkusza: ${user.quizID}`);
-    y += 20;
-    docpdf.text(20, y, `Wynik: ${user.quizResult} / 40`);
-    y += 20;
-    docpdf.text(20, y, `Wynik procentowy: ${user.percentResult}%`);
-
-    docpdf.setFontSize(16);
-    if (user.percentResult >= 50) {
-      docpdf.setTextColor(0, 128, 0);
-      y += 30;
-      docpdf.text(20, y, "Egzamin zdany");
-    } else {
-      docpdf.setTextColor(255, 0, 0);
-      y += 30;
-      docpdf.text(20, y, "Egzamin oblany");
-    }
-
-    docpdf.setTextColor(0, 0, 0);
-    docpdf.setFontSize(12);
-    y += 20;
-
-    // Add "Odpowiedzi ucznia" section
-    docpdf.text(20, y, "Odpowiedzi ucznia:");
-    y += 20;
-
-    // Add each answer, ensuring null replacements as needed
-    myAnswers.forEach((answer, index) => {
-      docpdf.text(20, y, `Pytanie ${index + 1} - ${answer}`);
-      y += 15;
-    });
-
-    const id = toast.loading("Generowanie reportu...");
-    setTimeout(() => {
-      toast.update(id, {
-        render: "Pobieranie rozpoczęte...",
-        type: "success",
-        isLoading: false,
-        autoClose: 1500,
-        onClose: () =>
-          docpdf.save(`wyniki_${user.firstname}_${user.lastname}.pdf`),
-      });
-    }, 1000);
   };
 
   const [filterQuizID, setFilterQuizID] = useState("");
