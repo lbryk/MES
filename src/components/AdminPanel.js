@@ -15,6 +15,9 @@ import RaportExam from "./RaportExam";
 import AdminHeader from "./AdminHeader";
 import AppContext from "./AppContext";
 import LiveUser from "./LiveUser";
+import ShowAdmins from "./ShowAdmins";
+import AddAdmin from "./AddAdmin";
+import ChangePassword from "./ChangePassword";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -31,11 +34,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 library.add(faClose, faDownload);
 
 const AdminPanel = () => {
-  const currentVersion = "3.10.30"; // wersja aplikacji
+  const currentVersion = "3.11.04"; // wersja aplikacji
   const checkLogin = useNavigate();
   const { userRole, setUserRole } = useContext(AppContext);
   const [quizCodesData, setQuizCodesData] = useState({});
   const { userName, setUserName } = useContext(AppContext);
+  const { login, setLogin } = useContext(AppContext);
   const [refreshExams, setRefreshExams] = useState(0);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
 
@@ -212,6 +216,17 @@ const AdminPanel = () => {
               aria-selected="false">
               Kreator egzaminów
             </button>
+            <button
+              className="nav-link"
+              id="nav-change-password-tab"
+              data-bs-toggle="tab"
+              data-bs-target="#nav-change-password"
+              type="button"
+              role="tab"
+              aria-controls="nav-change-password"
+              aria-selected="false">
+              Zmiana hasła
+            </button>
             {userRole === "sa" && (
               <button
                 className="nav-link"
@@ -326,6 +341,14 @@ const AdminPanel = () => {
           </div>
           <div
             className="tab-pane fade"
+            id="nav-change-password"
+            role="tabpanel"
+            aria-labelledby="nav-change-password-tab"
+            tabIndex="0">
+            <ChangePassword userName={userName} login={login} />
+          </div>
+          <div
+            className="tab-pane fade"
             id="nav-settings"
             role="tabpanel"
             aria-labelledby="nav-settings-tab"
@@ -337,7 +360,7 @@ const AdminPanel = () => {
                 role="tablist">
                 <li className="nav-item" role="presentation">
                   <button
-                    className="nav-link active"
+                    className="nav-link active" // Ustaw active tutaj
                     id="admin-btn"
                     data-bs-toggle="pill"
                     data-bs-target="#admin-tab"
@@ -374,6 +397,7 @@ const AdminPanel = () => {
                     Kwalifikacje
                   </button>
                 </li>
+
                 <li className="nav-item" role="presentation">
                   <button
                     className="nav-link"
@@ -388,6 +412,26 @@ const AdminPanel = () => {
                   </button>
                 </li>
               </ul>
+              <div className="tab-content " id="nav-tabContent">
+                <div
+                  className="tab-pane fade show active" // Ustaw show active tutaj
+                  id="admin-tab"
+                  role="tabpanel"
+                  aria-labelledby="admin-btn"
+                  tabIndex="0">
+                  <ShowAdmins currentUserId={`user${login}`} />{" "}
+                </div>
+              </div>
+              <div className="tab-content " id="nav-tabContent">
+                <div
+                  className="tab-pane fade"
+                  id="create-admin-tab"
+                  role="tabpanel"
+                  aria-labelledby="create-admin-btn"
+                  tabIndex="0">
+                  <AddAdmin />
+                </div>
+              </div>
             </div>
           </div>
         </div>

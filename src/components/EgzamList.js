@@ -78,51 +78,6 @@ const ExamList = ({ refreshKey }) => {
     }));
   };
 
-  // const handlePreviewClick = async (collectionName) => {
-  //   // Otwórz nowe okno dla podglądu
-  //   const previewWindow = window.open("", "_blank", "width=1000,height=800");
-
-  //   // Pobierz pytania z Firebase
-  //   const q = query(collection(db, collectionName));
-  //   const querySnapshot = await getDocs(q);
-  //   const questions = querySnapshot.docs.map((doc) => ({
-  //     id: doc.id,
-  //     ...doc.data(),
-  //   }));
-
-  //   // Tworzenie struktury HTML w nowym oknie
-  //   previewWindow.document.write(`
-  //     <html>
-  //       <head>
-  //         <title>Podgląd - ${collectionName}</title>
-  //         <style>
-  //           body { font-family: Arial, sans-serif; margin: 20px; }
-  //           .header, .footer { background: #f5f5f5; padding: 10px; text-align: center; }
-  //           .content { margin-top: 20px; }
-  //           .task { margin-bottom: 15px; }
-  //         </style>
-  //       </head>
-  //       <body>
-  //         <div id="headerPreview"></div>
-  //         <div id="widgetPreview"></div>
-  //         <div class="content">
-  //           ${questions
-  //             .map(
-  //               (q) =>
-  //                 `<div class="task"><strong>Pytanie ${q.id}:</strong> ${q.questions}</div>`
-  //             )
-  //             .join("")}
-  //         </div>
-  //         <div id="widgetClose"></div>
-  //       </body>
-  //     </html>
-  //   `);
-
-  //   // Dodaj przycisk zamykania w widgetcie
-  //   previewWindow.document.getElementById("widgetClose").innerHTML = `
-  //     <button onclick="window.close()">Zamknij podgląd</button>
-  //   `;
-  // };
   const formatQualification = (qualification) => {
     // Konwertuje wszystkie litery na wielkie i dodaje "-" przed pierwszą cyfrą
     return qualification

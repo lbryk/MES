@@ -25,7 +25,7 @@ import {
   faArrowUp,
   faPlus,
 } from "@fortawesome/free-solid-svg-icons";
-import {db} from "../firebase";
+import { db } from "../firebase";
 import {
   collection,
   getDocs,
@@ -640,7 +640,12 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
         .replace(".", "")}${exam.year}${exam.session}`;
       const questionDocRef = doc(db, collectionName, `${questionId + 1}`);
 
-      await updateDoc(questionDocRef, { [field]: updatedContent });
+      const cleanContent = updatedContent.replace(
+        /<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
+        ""
+      );
+
+      await updateDoc(questionDocRef, { [field]: cleanContent });
       setIsSaved(true);
       toast.success("Odpowiedź została pomyślnie zaktualizowana!", {
         autoClose: 2000,
