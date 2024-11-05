@@ -348,6 +348,11 @@ const ShowUser = ({ refreshKey }) => {
      setFiltersVisible(!isFiltersVisible);
    };
 
+    const centeredIconStyle = {
+      textAlign: "center",
+      verticalAlign: "middle",
+    };
+
   return (
     <div className="mt-4">
       <button
@@ -476,7 +481,7 @@ const ShowUser = ({ refreshKey }) => {
               Dostęp do arkusza
             </th>
             <th>
-              <div style={{ textAlign: "center" }}>
+              <div style={centeredIconStyle}>
                 <FontAwesomeIcon icon="fa-solid fa-trash-can" />
               </div>
             </th>
@@ -655,7 +660,7 @@ const ShowUser = ({ refreshKey }) => {
                   </span>
                 )}
               </td>
-              <td>
+              <td style={centeredIconStyle}>
                 <button
                   className="btn btn-danger"
                   onClick={() => handleDelete(user.id)}

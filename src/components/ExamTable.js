@@ -812,7 +812,6 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
 
   return (
     <div className="mt-4" ref={tableRef}>
-      <ToastContainer />
       <DragDropContext onDragEnd={onDragEnd}>
         <table className="table table-striped">
           <thead>

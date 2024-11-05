@@ -82,6 +82,7 @@ const ChangePassword = ({ userName, login }) => {
         justifyContent: "center",
         alignItems: "center",
         height: "100vh",
+        marginTop: "-70px",
       }}>
       <div
         style={{

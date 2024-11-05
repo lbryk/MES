@@ -302,6 +302,11 @@ const ShowAdmins = ({ currentUserId }) => {
     setFiltersVisible(!isFiltersVisible);
   };
 
+   const centeredIconStyle = {
+     textAlign: "center",
+     verticalAlign: "middle",
+   };
+
   return (
     <div className="mt-4">
       <button
@@ -404,7 +409,7 @@ const ShowAdmins = ({ currentUserId }) => {
             <th onClick={() => handleSort("password")}>Hasło</th>
             <th onClick={() => handleSort("role")}>Uprawnienia</th>
             <th>
-              <div style={{ textAlign: "center" }}>
+              <div style={centeredIconStyle}>
                 <FontAwesomeIcon icon="fa-solid fa-trash-can" />
               </div>
             </th>
@@ -511,7 +516,7 @@ const ShowAdmins = ({ currentUserId }) => {
                   </span>
                 )}
               </td>
-              <td>
+              <td style={centeredIconStyle}>
                 <button
                   className="btn btn-danger"
                   onClick={() => handleDelete(user.id)}

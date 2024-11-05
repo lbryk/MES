@@ -233,7 +233,6 @@ const ExamCreator = ({ quizCodesData, professionsData, qualificationName, onExam
                 onClose: () => {
                     setIsFormActive(false);
                     onExamCreated(); // Wywołanie funkcji odświeżającej
-					toast.dismiss();
                 },
             }); 
 			

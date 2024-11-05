@@ -17,6 +17,7 @@ import AppContext from "./AppContext";
 import LiveUser from "./LiveUser";
 import ShowAdmins from "./ShowAdmins";
 import AddAdmin from "./AddAdmin";
+import ShowProfessions from "./ShowProfessions";
 import ChangePassword from "./ChangePassword";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
@@ -389,12 +390,12 @@ const AdminPanel = () => {
                     className="nav-link"
                     id="qualifications-btn"
                     data-bs-toggle="pill"
-                    data-bs-target="#qualifications-tab"
+                    data-bs-target="#nav-professions"
                     type="button"
                     role="tab"
-                    aria-controls="qualifications-tab"
+                    aria-controls="nav-professions"
                     aria-selected="false">
-                    Kwalifikacje
+                    Zawody
                   </button>
                 </li>
 
@@ -408,7 +409,7 @@ const AdminPanel = () => {
                     role="tab"
                     aria-controls="admin-panel-settings-tab"
                     aria-selected="false">
-                    Ustawienia panelu administracyjnego
+                    Kwalifikacje zawodowe
                   </button>
                 </li>
               </ul>
@@ -430,6 +431,16 @@ const AdminPanel = () => {
                   aria-labelledby="create-admin-btn"
                   tabIndex="0">
                   <AddAdmin />
+                </div>
+              </div>
+              <div className="tab-content " id="nav-tabContent">
+                <div
+                  className="tab-pane fade"
+                  id="nav-professions"
+                  role="tabpanel"
+                  aria-labelledby="nav-professions-tab"
+                  tabindex="0">
+                  <ShowProfessions />
                 </div>
               </div>
             </div>

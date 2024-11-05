@@ -5,7 +5,7 @@ import { useTimer } from "./components/TimerContext";
 import AppContext from "./components/AppContext";
 import { useNavigate } from "react-router-dom";
 import { Form, Button } from "react-bootstrap";
-import {db} from "./firebase";
+import { db } from "./firebase";
 import {
   doc,
   getDoc,
@@ -16,6 +16,12 @@ import {
 import ExitAlert from "./components/ExitAlert";
 import AdminPanel from "./components/AdminPanel";
 import { useAuth } from "./AuthContext";
+import {
+  checkInternetConnection,
+  listenForConnectionChanges,
+  checkDatabaseConnection,
+  checkQueryLimit,
+} from "./connectionChecks";
 
 const LoginExam = () => {
   const { login, setLogin } = useContext(AppContext);
@@ -33,6 +39,31 @@ const LoginExam = () => {
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const { userRole, setUserRole } = useContext(AppContext);
   const { user, logout } = useAuth();
+  const [alertMessage, setAlertMessage] = useState("");
+  const [isOnline, setIsOnline] = useState(checkInternetConnection());
+
+  const performChecks = async () => {
+    if (!isOnline) {
+      setAlertMessage("Brak połączenia z internetem.");
+      setShowAlert(true);
+      return false;
+    }
+
+    try {
+      const isConnected = await checkDatabaseConnection(db);
+      if (!isConnected) throw new Error("Brak połączenia z bazą danych");
+
+      const withinLimit = await checkQueryLimit(db);
+      if (!withinLimit)
+        throw new Error("Limit zapytań do bazy danych został przekroczony");
+
+      return true;
+    } catch (error) {
+      setAlertMessage(error.message);
+      setShowAlert(true);
+      return false;
+    }
+  };
 
   const handleAlert = () => {
     setShowAlert(true);
@@ -47,34 +78,38 @@ const LoginExam = () => {
     setTimeLeft(timeInSeconds);
   }, [timeUser]);
 
-   useEffect(() => {
-     if (user && user.userName) {
-       // Check that we have a valid user and userName
-       const userSessionRef = doc(db, "userSessions", user.userName); // Ensure userName is used for sessions
-       console.log("Listening for session changes for:", user.userName);
+  useEffect(() => {
+    if (user && user.userName) {
+      // Check that we have a valid user and userName
+      const userSessionRef = doc(db, "userSessions", user.userName); // Ensure userName is used for sessions
+      console.log("Listening for session changes for:", user.userName);
 
-       const unsubscribe = onSnapshot(userSessionRef, (doc) => {
-         if (doc.exists()) {
-           const data = doc.data();
-           console.log("Session data:", data);
-           if (data.isActive === false) {
-             alert("Egzamin został przerwany przez administratora.");
-             logout(); // Log the user out
-             navigate("/exitExam", { replace: true }); // Navigate to ExitExam component
-           }
-         } else {
-           console.error("Session document does not exist.");
-         }
-       });
+      const unsubscribe = onSnapshot(userSessionRef, (doc) => {
+        if (doc.exists()) {
+          const data = doc.data();
+          console.log("Session data:", data);
+          if (data.isActive === false) {
+            alert("Egzamin został przerwany przez administratora.");
+            logout(); // Log the user out
+            navigate("/exitExam", { replace: true }); // Navigate to ExitExam component
+          }
+        } else {
+          console.error("Session document does not exist.");
+        }
+      });
 
-       return () => unsubscribe();
-     } else {
-       console.error("User not found or userName missing.");
-     }
-   }, [user, logout, navigate]);
+      return () => unsubscribe();
+    } else {
+      console.error("User not found or userName missing.");
+    }
+  }, [user, logout, navigate]);
 
   const handleButtonClick = async (event) => {
     event.preventDefault();
+
+    const checksPassed = await performChecks();
+    if (!checksPassed) return;
+
     const docRef = doc(db, "users", `user${login}`);
     const docSnap = await getDoc(docRef);
     const usernameWithPrefix = `user${login}`;
@@ -168,33 +203,14 @@ const LoginExam = () => {
     }
   };
 
-// useEffect(() => {
-//   if (user) {
-//     console.log("Nasłuchiwanie sesji użytkownika:", user.uid);
-
-//     const userSessionRef = doc(db, "userSessions", user.uid);
-//     const unsubscribe = onSnapshot(userSessionRef, (doc) => {
-//       if (doc.exists()) {
-//         const data = doc.data();
-//         if (data.isActive === false) {
-//           alert("Egzamin został przerwany przez administratora.");
-//           navigate("/login");
-//         }
-//       }
-//     });
-
-//     return () => unsubscribe();
-//   } else {
-//     console.log("Brak zalogowanego użytkownika.");
-//   }
-// }, [user, navigate]);
-
-
-
-
   return (
     <div className="bodyLog">
       <div className="container conLog">
+        {!isOnline && (
+          <div className="alert alert-warning" role="alert">
+            Brak połączenia z internetem. Sprawdź swoje połączenie sieciowe.
+          </div>
+        )}
         <Form onSubmit={handleButtonClick}>
           <Form.Group className="groupForm" controlId="formBasicEmail">
             <Form.Label>Login:</Form.Label>
