@@ -24,6 +24,8 @@ import {
   faUserPlus,
   faUserMinus,
   faFilter,
+  faEye,
+  faEyeSlash,
 } from "@fortawesome/free-solid-svg-icons";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -164,15 +166,15 @@ const ShowAdmins = ({ currentUserId }) => {
 
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [userIndex, setUserIndex] = useState(null);
- 
-  const handleDelete = (userId) => {
-  if (userId === currentUserId) {
-    toast.error("Nie możesz usunąć swojego konta.");
-    return;
-  }
 
-  setUserIndex(userId);
-  setModalIsOpen(true);
+  const handleDelete = (userId) => {
+    if (userId === currentUserId) {
+      toast.error("Nie możesz usunąć swojego konta.");
+      return;
+    }
+
+    setUserIndex(userId);
+    setModalIsOpen(true);
   };
 
   const deleteUser = async () => {
@@ -277,24 +279,24 @@ const ShowAdmins = ({ currentUserId }) => {
   const [deleteModalIsOpen, setDeleteModalIsOpen] = useState(false);
 
   const deleteSelectedUsers = async () => {
-     if (selectedUsers.includes(currentUserId)) {
-       toast.error("Nie możesz usunąć swojego konta.");
-       return;
-     }
+    if (selectedUsers.includes(currentUserId)) {
+      toast.error("Nie możesz usunąć swojego konta.");
+      return;
+    }
 
-     for (const id of selectedUsers) {
-       try {
-         const userRef = doc(db, "users", id);
-         await deleteDoc(userRef);
-         toast.success("Usuwanie zakończone pomyślnie", { autoClose: 1000 });
-       } catch (error) {
-         toast.error("Błąd podczas usuwania: " + error.message, {
-           autoClose: 5000,
-         });
-       }
-     }
-     fetchData();
-     setSelectedUsers([]);
+    for (const id of selectedUsers) {
+      try {
+        const userRef = doc(db, "users", id);
+        await deleteDoc(userRef);
+        toast.success("Usuwanie zakończone pomyślnie", { autoClose: 1000 });
+      } catch (error) {
+        toast.error("Błąd podczas usuwania: " + error.message, {
+          autoClose: 5000,
+        });
+      }
+    }
+    fetchData();
+    setSelectedUsers([]);
   };
 
   const [isFiltersVisible, setFiltersVisible] = useState(false);
@@ -302,10 +304,19 @@ const ShowAdmins = ({ currentUserId }) => {
     setFiltersVisible(!isFiltersVisible);
   };
 
-   const centeredIconStyle = {
-     textAlign: "center",
-     verticalAlign: "middle",
-   };
+  const centeredIconStyle = {
+    textAlign: "center",
+    verticalAlign: "middle",
+  };
+
+  const [passwordVisibility, setPasswordVisibility] = useState({});
+
+  const togglePasswordVisibility = (id) => {
+    setPasswordVisibility((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
 
   return (
     <div className="mt-4">
@@ -476,9 +487,10 @@ const ShowAdmins = ({ currentUserId }) => {
               </td>
               <td className="text-success font-weight-bold">{user.login}</td>
               <td
-                onClick={() =>
+                onDoubleClick={() =>
                   handleDoubleClick(index, "password", user.password)
-                }>
+                }
+                className="position-relative">
                 {editingIndex === index && editingField === "password" ? (
                   <input
                     type="text"
@@ -489,9 +501,26 @@ const ShowAdmins = ({ currentUserId }) => {
                     onChange={(e) => handleInputChange(e, user.id, "password")}
                   />
                 ) : (
-                  <span className="text-success font-weight-bold">
-                    {user.password}
-                  </span>
+                  <>
+                    <span>
+                      {passwordVisibility[user.id] ? user.password : "••••••••"}
+                    </span>
+                    <FontAwesomeIcon
+                      icon={passwordVisibility[user.id] ? faEye : faEyeSlash}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        togglePasswordVisibility(user.id);
+                      }}
+                      className="position-absolute"
+                      style={{
+                        right: passwordVisibility[user.id] ? "0" : "50%",
+                        transform: passwordVisibility[user.id]
+                          ? "translateX(0)"
+                          : "translateX(50%)",
+                        cursor: "pointer",
+                      }}
+                    />
+                  </>
                 )}
               </td>
               <td>

@@ -35,7 +35,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 library.add(faClose, faDownload);
 
 const AdminPanel = () => {
-  const currentVersion = "3.11.04"; // wersja aplikacji
+  const currentVersion = "3.11.06"; // wersja aplikacji
   const checkLogin = useNavigate();
   const { userRole, setUserRole } = useContext(AppContext);
   const [quizCodesData, setQuizCodesData] = useState({});
@@ -43,6 +43,8 @@ const AdminPanel = () => {
   const { login, setLogin } = useContext(AppContext);
   const [refreshExams, setRefreshExams] = useState(0);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [productKey, setProductKey] = useState('brak numery seryjnego');
+  const [newAppVersion, setNewAppVersion] = useState('1.0.0');
 
   if (userName === "") {
     checkLogin(`/login`);
@@ -54,10 +56,12 @@ const AdminPanel = () => {
         await fetchAndActivate(remoteConfig);
         const latestVersion = getValue(
           remoteConfig,
-          "latest_version"
+          "latest_version",
         ).asString();
 
-        console.log(`wersja aplikacji ${latestVersion}`);
+        setProductKey(getValue(remoteConfig, "product_key").asString());
+        setNewAppVersion(latestVersion);
+
         if (currentVersion !== latestVersion) {
           setShowUpdateModal(true);
         }
@@ -136,13 +140,22 @@ const AdminPanel = () => {
               </div>
               <div className="modal-body">
                 <p>
-                  Nowa wersja aplikacji jest dostępna! <br /> Proszę
-                  zaktualizować, aby korzystać z najnowszych funkcji.
+                  Nowa wersja aplikacji MES v{newAppVersion} jest dostępna!{" "}
+                  <br /> Proszę zaktualizować, aby korzystać z najnowszych
+                  funkcji.
+                  <br />
+                  <br />
+                  <strong>Kod twojego produktu: </strong> {productKey}
+                  <br />
+                  <small>
+                    Kod należy zapisać wymagany jest on do rozpakowania plików
+                    instalacyjnych
+                  </small>
                 </p>
               </div>
               <div className="modal-footer">
                 <a
-                  href="https://github.com/lbryk/MES-app.git"
+                  href={`https://lbryk.pl/mes/mes-${newAppVersion}.zip`}
                   className="btn btn-warning"
                   target="_blank"
                   rel="noopener noreferrer">

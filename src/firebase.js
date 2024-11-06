@@ -39,7 +39,8 @@ remoteConfig.settings = {
 };
 
 remoteConfig.defaultConfig = {
-  latest_version: "1.0.0", // Wartość domyślna
+  latest_version: "1.0.0",
+  product_key: "",
 };
 
 export { db, auth, remoteConfig};
