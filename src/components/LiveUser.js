@@ -121,8 +121,10 @@ const LiveUser = () => {
 
   useEffect(() => {
     const unsubscribe = listenToActiveSessions();
+    const unsubscribeUsers = listenToUsers();
     return () => {
       if (unsubscribe) unsubscribe();
+      if (unsubscribeUsers) unsubscribeUsers();
     };
   }, []);
 
@@ -183,6 +185,20 @@ const LiveUser = () => {
     return [...new Set(classes)]; // Usuwamy duplikaty
   };
 
+  const listenToUsers = () => {
+    const usersCollection = collection(db, "users");
+
+    const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
+      const usersData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setUsers(usersData);
+    });
+
+    return unsubscribe;
+  };
+
   return (
     <div className="admin-panel mt-4">
       <h4>Aktualnie trwające egzaminy</h4>
@@ -206,28 +222,42 @@ const LiveUser = () => {
                   <th>Kod egzaminu</th>
                   <th>Kwalifikacja</th>
                   <th>Status</th>
+                  <th>Nielegalne opuszczenie arkusza</th>
                   <th>Akcja</th>
                 </tr>
               </thead>
               <tbody>
-                {groupedUsers[quizID].map((user) => (
-                  <tr key={user.id}>
-                    <td>{user.id}</td>
-                    <td>{user.login}</td>
-                    <td>{user.class}</td>
-                    <td>{user.quizID}</td>
-                    <td>{qualifications[user.quizID]}</td>
-                    <td>Aktywny</td>
-                    <td>
-                      <Button
-                        variant="danger"
-                        onClick={() => endSessionForUser(user.id)}>
-                        <FontAwesomeIcon icon="fa-solid fa-door-open" /> {}
-                        Przerwij egzamin
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {groupedUsers[quizID].map((user) => {
+                  // Znajdź odpowiadającego użytkownika w kolekcji `users`
+                  const matchingUser = users.find(
+                    (u) => u.id === `user${user.login}`
+                  );
+                  const inLegalCount = matchingUser
+                    ? matchingUser.inLegal || 0
+                    : 0;
+
+                  return (
+                    <tr key={user.id}>
+                      <td>
+                        {user.userID}
+                      </td>
+                      <td>{user.login}</td>
+                      <td>{user.class}</td>
+                      <td>{user.quizID}</td>
+                      <td>{qualifications[user.quizID]}</td>
+                      <td>Aktywny</td>
+                      <td>{inLegalCount}</td>
+                      <td>
+                        <Button
+                          variant="danger"
+                          onClick={() => endSessionForUser(user.id)}>
+                          <FontAwesomeIcon icon="fa-solid fa-door-open" />{" "}
+                          Przerwij egzamin
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </Table>
           </div>

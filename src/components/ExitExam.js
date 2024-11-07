@@ -123,6 +123,7 @@ const ExitExam = () => {
       await setDoc(docRef, { percentResult: percentResult }, { merge: true });
       await setDoc(docRef, { attemptToSolve: 1 }, { merge: true });
       await setDoc(docRef, { examDate: formattedDate }, { merge: true });
+      await setDoc(docRef, { inLegal: 0 }, { merge: true });
     };
     updateUserData();
   }, [db, login, sumOfRightAnswers, percentResult]);

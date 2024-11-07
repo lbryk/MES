@@ -16,10 +16,12 @@ import {
   deleteDoc,
 } from "firebase/firestore"; // Poprawny import Firebase
 import { db } from "../firebase";
+import { Modal, Button } from "react-bootstrap";
 
 library.add(faRightFromBracket);
 
 const Content = () => {
+  const [showModal, setShowModal] = useState(false);
   const {
     rightAnswers,
     sumOfRightAnswers,
@@ -48,43 +50,43 @@ const Content = () => {
 
   const updateAttemptToSolve = async (login) => {
     if (login) {
-      const userRef = doc(db, "users", 'user'+login); // Using login as document ID
+      const userRef = doc(db, "users", "user" + login); // Using login as document ID
       try {
         await updateDoc(userRef, { attemptToSolve: 1 });
-   
-      } catch (error) {
-    
-      }
+      } catch (error) {}
     }
   };
 
- const handleLogoutAndRedirect = async () => {
-   try {
-     // Step 1: Fetch the login field from userSessions collection
-     const sessionRef = doc(db, "userSessions", userName);
-     const sessionDoc = await getDoc(sessionRef);
+  const handleLogoutAndRedirect = async () => {
+    try {
+      // Step 1: Fetch the login field from userSessions collection
+      const sessionRef = doc(db, "userSessions", userName);
+      const sessionDoc = await getDoc(sessionRef);
 
-     if (sessionDoc.exists()) {
-       const { login } = sessionDoc.data();
+      if (sessionDoc.exists()) {
+        const { login } = sessionDoc.data();
 
-       if (login) {
-         // Step 2: Use the retrieved login to update attemptToSolve
-         await updateAttemptToSolve(login);
-         await deleteUserSession(userName); // Delete the user session
-       }
-     }
-   } catch (error) {
-     console.error("Błąd podczas obsługi wylogowania i przekierowania:", error);
-   }
+        if (login) {
+          // Step 2: Use the retrieved login to update attemptToSolve
+          await updateAttemptToSolve(login);
+          await deleteUserSession(userName); // Delete the user session
+        }
+      }
+    } catch (error) {
+      console.error(
+        "Błąd podczas obsługi wylogowania i przekierowania:",
+        error
+      );
+    }
 
-   setIsPaused(!isPaused);
-   setIsDisabled(true);
-   restartTimer();
-   logout();
-   navigate("/exitExam");
- };
+    setIsPaused(!isPaused);
+    setIsDisabled(true);
+    restartTimer();
+    logout();
+    navigate("/exitExam");
+  };
 
-console.log(selectedAnswers);
+  console.log(selectedAnswers);
   useEffect(() => {
     if (userName) {
       const sessionRef = doc(db, "userSessions", userName);
@@ -168,6 +170,54 @@ console.log(selectedAnswers);
     });
   }
 
+  const updateInLegalCount = async () => {
+    if (login) {
+      const userRef = doc(db, "users", `user${login}`);
+      try {
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          const currentCount = userDoc.data().inLegal || 0; // Pobierz obecny licznik, jeśli istnieje
+          await updateDoc(userRef, {
+            inLegal: currentCount + 1, // Zwiększ licznik o 1
+          });
+          console.log("Licznik inLegal zaktualizowany");
+        }
+      } catch (error) {
+        console.error("Błąd podczas aktualizacji pola inLegal:", error);
+      }
+    }
+  };
+
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === "hidden") {
+      setShowModal(true);
+    }
+  };
+
+  useEffect(() => {
+    // Dodanie listenera do zdarzenia zamknięcia okna
+    const handleBlur = () => {
+      setShowModal(true);
+    };
+
+    window.addEventListener("blur", handleBlur);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("blur", handleBlur);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  const handleModalClose = () => {
+    // Zamknięcie okna modalnego
+    setShowModal(false);
+
+    // Następnie aktualizacja licznika
+    updateInLegalCount();
+  };
+
+
   return (
     <div>
       <div className="row header wrapper">
@@ -191,6 +241,21 @@ console.log(selectedAnswers);
         </div>
       </div>
       <div className="space"></div>
+      <Modal show={showModal} onHide={handleModalClose}>
+        <Modal.Header closeButton>
+          <Modal.Title>Uwaga! {userName} </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <b><p class="text-danger">Wykryłem nielegalną próbę opuszczenia arkusza egzaminacyjnego!</p></b>Każda taka próba
+          jest rejestrowana i może zakończyć się przerwaniem egzaminu przez
+          asystenta.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="danger" onClick={handleModalClose}>
+            Rozumiem
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
