@@ -230,22 +230,30 @@ const ExamSheet = ({ quizCodesData }) => {
             </tr>
           </thead>
           <tbody>
-          ${myAnswers
-            .map(
-              (answer, index) => `
-            <tr>
-              <td style="border: 1px solid black; padding: 5px;">${
-                correctAnswers[index].questionNumber
-              }</td>
-              <td style="border: 1px solid black; padding: 5px;">${answer}</td>
-              <td style="border: 1px solid black; padding: 5px;">${
-                correctAnswers[index].correctAnswer || "Brak danych"
-              }</td>
-            </tr>
-          `
-            )
-            .join("")}
-          </tbody>
+  ${myAnswers
+    .map(
+      (answer, index) => `
+      <tr>
+        <td style="border: 1px solid black; padding: 5px;">
+          ${
+            correctAnswers[index]
+              ? correctAnswers[index].questionNumber
+              : "Brak danych"
+          }
+        </td>
+        <td style="border: 1px solid black; padding: 5px;">${answer}</td>
+        <td style="border: 1px solid black; padding: 5px;">
+          ${
+            correctAnswers[index]
+              ? correctAnswers[index].correctAnswer
+              : "Brak danych"
+          }
+        </td>
+      </tr>
+    `
+    )
+    .join("")}
+</tbody>
         </table>
       `;
 
@@ -541,7 +549,7 @@ const ExamSheet = ({ quizCodesData }) => {
 
   const handleUserPDFraport = async (user) => {
     if (!isGeneratingPDF && user && user.quizID && quizCodesData[user.quizID]) {
-      setIsGeneratingPDF(true); 
+      setIsGeneratingPDF(true);
       console.log(isGeneratingPDF);
       const data = quizCodesData[user.quizID];
       if (data && data.Qualification) {
@@ -635,10 +643,15 @@ const ExamSheet = ({ quizCodesData }) => {
             "Odpowiedź ucznia",
             "Poprawna odpowiedź",
           ];
+
           const rows = myAnswers.map((answer, index) => [
-            correctAnswers[index].questionNumber, // Numer pytania
-            answer, // Odpowiedź ucznia
-            correctAnswers[index].correctAnswer || "Brak danych", // Poprawna odpowiedź
+            correctAnswers[index]
+              ? correctAnswers[index].questionNumber
+              : "Brak danych",
+            answer,
+            correctAnswers[index]
+              ? correctAnswers[index].correctAnswer
+              : "Brak danych",
           ]);
 
           docpdf.autoTable({
@@ -657,12 +670,11 @@ const ExamSheet = ({ quizCodesData }) => {
               type: "success",
               isLoading: false,
               autoClose: 1500,
-              onClose: () =>
-                toast.dismiss(),
+              onClose: () => toast.dismiss(),
             });
           }, 1000);
           docpdf.save(`wyniki_${user.firstname}_${user.lastname}.pdf`);
-            setIsGeneratingPDF(false);
+          setIsGeneratingPDF(false);
           console.log(isGeneratingPDF);
         } catch (error) {
           console.error("Error fetching myAnswers or generating PDF:", error);

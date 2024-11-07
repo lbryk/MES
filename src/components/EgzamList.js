@@ -12,7 +12,13 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 library.add(faEye);
 
 const ExamList = ({ refreshKey }) => {
+  const examsPerPage = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+  const indexOfLastExam = currentPage * examsPerPage;
+  const indexOfFirstExam = indexOfLastExam - examsPerPage;
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
   const [exams, setExams] = useState([]);
+  const currentExams = exams.slice(indexOfFirstExam, indexOfLastExam);
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState("asc");
   const [expandedExams, setExpandedExams] = useState({});
@@ -242,9 +248,19 @@ const ExamList = ({ refreshKey }) => {
     }
   };
 
-
   return (
     <div className="mt-4">
+      <div className="row">
+        <div className="col-1"></div>
+        <div className="alert alert-info col-4 align-middle" role="alert">
+          Tym kolorem oznaczone są arkusze Twojego autorstwa
+        </div>
+        <div className="col-1"></div>
+        <div className="alert alert-secondary col-4 align-middle" role="alert">
+          Tym kolorem oznaczone są arkusze, do których masz dostęp
+        </div>
+        <div className="col-1"></div>
+      </div>
       <table className="table table-striped">
         <thead>
           <tr>
@@ -265,55 +281,71 @@ const ExamList = ({ refreshKey }) => {
           </tr>
         </thead>
         <tbody>
-          {exams.map((exam, index) => (
-            <React.Fragment key={exam.id}>
-              <tr>
-                <td>{index + 1}</td>
-                <td onClick={() => handleExamClick(exam.id)}>{exam.name}</td>
-                <td>{exam.qualification}</td>
-                <td className="text-muted">
-                  <strong>{exam.collectionName}</strong>
-                </td>
-                <td>{exam.profession}</td>
-                <td>
-                  {exam.autors.map((author, index) => (
-                    <Badge key={index} pill bg="primary" className="me-2">
-                      {author}
-                    </Badge>
-                  ))}
-                </td>
-                <td>
-                  <button
-                    class="btn btn-outline-success"
-                    onClick={() =>
-                      handlePreviewClick(
-                        exam.collectionName,
-                        exam.qualification
-                      )
-                    }>
-                    <FontAwesomeIcon icon="fa-solid fa-eye" />
-                  </button>
-                </td>
-              </tr>
-              <tr>
-                <td colSpan={5}>
-                  <Collapse in={expandedExams[exam.id]}>
-                    <div className="p-3 mb-2 bg-light text-dark rounded text-muted">
-                      <p>Rok utworzenia: {exam.year}</p>
-                      <p>Unikalny kod sesji: {exam.session}</p>
-                      <p>Skrót kwalifikacji: {exam.qualification}</p>
-                      <p>
-                        Autor arkusza: <strong>{exam.autors[0]}</strong>
-                      </p>
-                    </div>
-                  </Collapse>
-                </td>
-              </tr>
-            </React.Fragment>
-          ))}
+          {currentExams.map((exam, index) => {
+            // Trim and convert to strings for a strict comparison
+            const authorName = exam.autors[0]
+              ? exam.autors[0].toString().trim()
+              : "";
+            const trimmedUserName = userName.toString().trim();
+            const isFirstAuthor = authorName === trimmedUserName;
+
+            return (
+              <React.Fragment key={exam.id}>
+                <tr
+                  className={`align-middle ${
+                    isFirstAuthor ? "table-info" : ""
+                  } ${!isFirstAuthor ? "table-muted" : ""}`}>
+                  <td>{index + 1}</td>
+                  <td onClick={() => handleExamClick(exam.id)}>{exam.name}</td>
+                  <td>{exam.qualification}</td>
+                  <td className="text-muted">
+                    <strong>{exam.collectionName}</strong>
+                  </td>
+                  <td>{exam.profession}</td>
+                  <td>
+                    {exam.autors.map((author, idx) => (
+                      <Badge key={idx} pill bg="primary" className="me-2">
+                        {author}
+                      </Badge>
+                    ))}
+                  </td>
+                  <td>
+                    <button
+                      className="btn btn-outline-success"
+                      onClick={() =>
+                        handlePreviewClick(
+                          exam.collectionName,
+                          exam.qualification
+                        )
+                      }>
+                      <FontAwesomeIcon icon="fa-solid fa-eye" />
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td colSpan={7}>
+                    <Collapse in={expandedExams[exam.id]}>
+                      <div className="p-3 mb-2 bg-light text-dark rounded text-muted">
+                        <p>Rok utworzenia: {exam.year}</p>
+                        <p>Unikalny kod sesji: {exam.session}</p>
+                        <p>Skrót kwalifikacji: {exam.qualification}</p>
+                        <p>
+                          Autor arkusza: <strong>{authorName}</strong>
+                        </p>
+                      </div>
+                    </Collapse>
+                  </td>
+                </tr>
+              </React.Fragment>
+            );
+          })}
         </tbody>
       </table>
-      <Pagination />
+      <Pagination
+        usersPerPage={examsPerPage}
+        totalUsers={exams.length}
+        paginate={paginate}
+      />
     </div>
   );
 };

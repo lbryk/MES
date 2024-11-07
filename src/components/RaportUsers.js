@@ -245,10 +245,15 @@ const RaportExam = ({ quizCodesData }) => {
 
     // Tabela z numerem pytania, odpowiedzią ucznia i poprawną odpowiedzią
     const columns = ["Numer pytania", "Odpowiedź ucznia", "Poprawna odpowiedź"];
+
     const rows = myAnswers.map((answer, index) => [
-      correctAnswers[index].questionNumber, // Numer pytania
-      answer, // Odpowiedź ucznia
-      correctAnswers[index].correctAnswer || "Brak danych", // Poprawna odpowiedź
+      correctAnswers[index]
+        ? correctAnswers[index].questionNumber
+        : "Brak danych",
+      answer,
+      correctAnswers[index]
+        ? correctAnswers[index].correctAnswer
+        : "Brak danych",
     ]);
 
     docpdf.autoTable({
@@ -267,8 +272,7 @@ const RaportExam = ({ quizCodesData }) => {
         type: "success",
         isLoading: false,
         autoClose: 1500,
-        onClose: () =>
-          toast.dismiss(),
+        onClose: () => toast.dismiss(),
       });
     }, 1000);
     docpdf.save(`wyniki_${user.firstname}_${user.lastname}.pdf`);
@@ -333,22 +337,30 @@ const RaportExam = ({ quizCodesData }) => {
             </tr>
           </thead>
           <tbody>
-          ${myAnswers
-            .map(
-              (answer, index) => `
-            <tr>
-              <td style="border: 1px solid black; padding: 5px;">${
-                correctAnswers[index].questionNumber
-              }</td>
-              <td style="border: 1px solid black; padding: 5px;">${answer}</td>
-              <td style="border: 1px solid black; padding: 5px;">${
-                correctAnswers[index].correctAnswer || "Brak danych"
-              }</td>
-            </tr>
-          `
-            )
-            .join("")}
-          </tbody>
+  ${myAnswers
+    .map(
+      (answer, index) => `
+      <tr>
+        <td style="border: 1px solid black; padding: 5px;">
+          ${
+            correctAnswers[index]
+              ? correctAnswers[index].questionNumber
+              : "Brak danych"
+          }
+        </td>
+        <td style="border: 1px solid black; padding: 5px;">${answer}</td>
+        <td style="border: 1px solid black; padding: 5px;">
+          ${
+            correctAnswers[index]
+              ? correctAnswers[index].correctAnswer
+              : "Brak danych"
+          }
+        </td>
+      </tr>
+    `
+    )
+    .join("")}
+</tbody>
         </table>
       `;
 

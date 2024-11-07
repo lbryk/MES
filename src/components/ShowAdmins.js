@@ -503,7 +503,9 @@ const ShowAdmins = ({ currentUserId }) => {
                 ) : (
                   <>
                     <span>
-                      {passwordVisibility[user.id] ? user.password : "••••••••"}
+                      {passwordVisibility[user.id]
+                        ? user.password
+                        : "••••••••••••••••"}
                     </span>
                     <FontAwesomeIcon
                       icon={passwordVisibility[user.id] ? faEye : faEyeSlash}
@@ -513,10 +515,9 @@ const ShowAdmins = ({ currentUserId }) => {
                       }}
                       className="position-absolute"
                       style={{
-                        right: passwordVisibility[user.id] ? "0" : "50%",
-                        transform: passwordVisibility[user.id]
-                          ? "translateX(0)"
-                          : "translateX(50%)",
+                        right: "50px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
                         cursor: "pointer",
                       }}
                     />
