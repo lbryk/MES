@@ -11,7 +11,7 @@ import {
   deleteDoc,
   getDoc,
 } from "firebase/firestore";
-import {db} from "../firebase";
+import { db } from "../firebase";
 import Pagination from "./Pagination";
 import AddUserForm from "./AddUserForm";
 import WindowConfirm from "./WindowConfirm";
@@ -24,10 +24,11 @@ import {
   faUserPlus,
   faUserMinus,
   faFilter,
+  faPrint,
 } from "@fortawesome/free-solid-svg-icons";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-library.add(faTrashCan, faFileExcel, faFile, faUserPlus, faUserMinus);
+library.add(faTrashCan, faFileExcel, faFile, faUserPlus, faUserMinus, faPrint);
 
 const ShowUser = ({ refreshKey }) => {
   const [originalUsers, setOriginalUsers] = useState([]);
@@ -36,12 +37,13 @@ const ShowUser = ({ refreshKey }) => {
     // setUsers(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
     const usersData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
     setUsers(usersData);
-    setOriginalUsers(usersData);
+    // setOriginalUsers(usersData);
+
   };
 
   const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [usersPerPage] = useState(10);
+  const [usersPerPage] = useState(30);
   const [selectedUser, setSelectedUser] = useState(null);
   const [oldTime, setOldTime] = useState(null);
 
@@ -344,13 +346,100 @@ const ShowUser = ({ refreshKey }) => {
   };
 
   const [isFiltersVisible, setFiltersVisible] = useState(false);
-   const toggleFiltersVisibility = () => {
-     setFiltersVisible(!isFiltersVisible);
-   };
+  const toggleFiltersVisibility = () => {
+    setFiltersVisible(!isFiltersVisible);
+  };
 
-    const centeredIconStyle = {
-      textAlign: "center",
-      verticalAlign: "middle",
+  const centeredIconStyle = {
+    textAlign: "center",
+    verticalAlign: "middle",
+  };
+
+  const handlePrint = async (user) => {
+    if (user) {
+      let content = `
+        <h1>Dane zdającego</h1>
+        <h2>Imię i nazwisko: ${user.firstname} ${user.lastname}</h2>
+        <p>Login: ${user.login}</p>
+        <p>Hasło: ${user.password}</p>
+        <p>Zawód: ${user.profession}</p>
+        <p>Klasa: ${user.class}</p>
+      `;
+
+      // Create an iframe for printing
+      let iframe = document.createElement("iframe");
+      iframe.style.visibility = "hidden";
+      document.body.appendChild(iframe);
+      iframe.contentDocument.write(content);
+      iframe.contentDocument.close();
+      iframe.contentWindow.print();
+      iframe.contentWindow.onafterprint = () =>
+        document.body.removeChild(iframe);
+    }
+  };
+
+  const handlePrintSelectedUsers = () => {
+    if (selectedUsers.length === 0) return;
+
+    const selectedData = users.filter((user) =>
+      selectedUsers.includes(user.id)
+    );
+    let content = `
+      <h1>Dane zaznaczonych użytkowników</h1>
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr>
+            <th style="border: 1px solid black; padding: 5px;">Imię</th>
+            <th style="border: 1px solid black; padding: 5px;">Nazwisko</th>
+            <th style="border: 1px solid black; padding: 5px;">Login</th>
+            <th style="border: 1px solid black; padding: 5px;">Hasło</th>
+            <th style="border: 1px solid black; padding: 5px;">Zawód</th>
+            <th style="border: 1px solid black; padding: 5px;">Klasa</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${selectedData
+            .map(
+              (user) => `
+                <tr>
+                  <td style="border: 1px solid black; padding: 5px;">${user.firstname}</td>
+                  <td style="border: 1px solid black; padding: 5px;">${user.lastname}</td>
+                  <td style="border: 1px solid black; padding: 5px;">${user.login}</td>
+                  <td style="border: 1px solid black; padding: 5px;">${user.password}</td>
+                  <td style="border: 1px solid black; padding: 5px;">${user.profession}</td>
+                  <td style="border: 1px solid black; padding: 5px;">${user.class}</td>
+                </tr>`
+            )
+            .join("")}
+        </tbody>
+      </table>
+    `;
+
+    // Create an iframe for printing
+    let iframe = document.createElement("iframe");
+    iframe.style.visibility = "hidden";
+    document.body.appendChild(iframe);
+    iframe.contentDocument.write(content);
+    iframe.contentDocument.close();
+    iframe.contentWindow.print();
+    iframe.contentWindow.onafterprint = () => document.body.removeChild(iframe);
+  };
+
+    const handleSelectAll = () => {
+      const displayedUserIds = currentUsers.map((user) => user.id);
+      const allSelected = displayedUserIds.every((id) =>
+        selectedUsers.includes(id)
+      );
+
+      if (allSelected) {
+        // Unselect all currently displayed users
+        setSelectedUsers(
+          selectedUsers.filter((id) => !displayedUserIds.includes(id))
+        );
+      } else {
+        // Select all currently displayed users
+        setSelectedUsers([...new Set([...selectedUsers, ...displayedUserIds])]);
+      }
     };
 
   return (
@@ -455,17 +544,12 @@ const ShowUser = ({ refreshKey }) => {
           <tr>
             <th>
               <input
-                type="checkbox"
                 className="form-check-input"
-                checked={selectAll}
-                onChange={() => {
-                  setSelectAll(!selectAll);
-                  if (!selectAll) {
-                    setSelectedUsers(users.map((user) => user.id));
-                  } else {
-                    setSelectedUsers([]);
-                  }
-                }}
+                type="checkbox"
+                onChange={handleSelectAll}
+                checked={currentUsers.every((user) =>
+                  selectedUsers.includes(user.id)
+                )}
               />
             </th>
             <th>lp</th>
@@ -662,6 +746,11 @@ const ShowUser = ({ refreshKey }) => {
               </td>
               <td style={centeredIconStyle}>
                 <button
+                  className="btn btn-light"
+                  onClick={() => handlePrint(user)}>
+                  <FontAwesomeIcon icon={faPrint} />
+                </button>{" "}
+                <button
                   className="btn btn-danger"
                   onClick={() => handleDelete(user.id)}
                   disabled={selectedUsers.length > 1}>
@@ -687,6 +776,12 @@ const ShowUser = ({ refreshKey }) => {
           ))}
         </tbody>
       </table>
+      <button
+        className="btn btn-light"
+        onClick={handlePrintSelectedUsers}
+        disabled={selectedUsers.length === 0}>
+        <FontAwesomeIcon icon={faPrint} /> Drukuj dane zaznaczonych użytkowników
+      </button>{" "}
       <button
         className="btn btn-danger"
         onClick={() => setDeleteModalIsOpen(true)}
