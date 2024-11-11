@@ -1,102 +1,182 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
-import 'bootstrap/dist/js/bootstrap.bundle';
-import { Editor } from '@tinymce/tinymce-react';
-import { doc, setDoc } from 'firebase/firestore';
-import {db} from '../firebase';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faAdd } from '@fortawesome/free-solid-svg-icons';
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import React, { useState, useEffect, useContext, useRef } from "react";
+import "bootstrap/dist/js/bootstrap.bundle";
+import { Editor } from "@tinymce/tinymce-react";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "../firebase";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faAdd } from "@fortawesome/free-solid-svg-icons";
+import { library } from "@fortawesome/fontawesome-svg-core";
+import { toast, ToastContainer } from "react-toastify";
+import AppContext from "./AppContext";
+import "react-toastify/dist/ReactToastify.css";
 
 library.add(faAdd);
 const QuestCreator = ({ examName }) => {
-	const editorRef = useRef(null);
-	const [questNumber, setQuestNumber] = useState('1');
-	const [questText, setquestText] = useState('');
-	const [ansA, setAnsA] = useState('');
-	const [ansB, setAnsB] = useState('');
-	const [ansC, setAnsC] = useState('');
-	const [ansD, setAnsD] = useState('');
+  const { editorApiKey } = useContext(AppContext); 
+  const editorRef = useRef(null);
+  const [questNumber, setQuestNumber] = useState("1");
+  const [questText, setquestText] = useState("");
+  const [answers, setAnswers] = useState({ A: "", B: "", C: "", D: "" });
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
 
-	useEffect(() => {
-		if (!questNumber) {
-			setQuestNumber(setQuestNumber);
-		}
-	}, [questNumber]);
+  const handleEditorChange = (content, key) => {
+    setAnswers((prev) => ({ ...prev, [key]: content }));
+  };
 
-	const log = () => {
-		if (editorRef.current) {
-			console.log(editorRef.current.getContent());
-		}
-	};
+  const renderAnswerOption = (key, label) => (
+    <div className="d-flex mt-4" key={key}>
+      <div className="col-1 d-flex justify-content-center">
+        <input
+          type="radio"
+          className="form-check-input"
+          name="answer"
+          value={key}
+          checked={selectedAnswer === key}
+          onChange={() => setSelectedAnswer(key)}
+        />
+        &nbsp;
+        <strong>{label}</strong>
+      </div>
+      <div className="col-10">
+        <Editor
+          key={label}
+          apiKey={editorApiKey}
+          initialValue={`<p>Tu twórz odpowiedź ${label}.</p>`}
+          onEditorChange={(content) => handleEditorChange(content, key)}
+          name={`ans${label}`}
+          init={{
+            selector: "textarea",
+            toolbar: "language",
+            language: "pl",
+            content_langs: [{ title: "Polish", code: "pl" }],
+            height: 200,
+            width: 850,
+            menubar: false,
+            forced_root_block: "",
+            force_br_newlines: true,
+            force_p_newlines: false,
+            plugins: [
+              "advlist",
+              "autolink",
+              "lists",
+              "link",
+              "image",
+              "charmap",
+              "preview",
+              "anchor",
+              "searchreplace",
+              "visualblocks",
+              "code",
+              "fullscreen",
+              "insertdatetime",
+              "media",
+              "table",
+              "help",
+              "wordcount",
+              "codesample",
+              "hilitecolor",
+              "charmap",
+            ],
+            toolbar:
+              "undo redo | media image link table charmap codesample | " +
+              "bold italic underline forecolor backcolor | alignleft aligncenter " +
+              "alignright alignjustify | bullist numlist outdent indent | " +
+              "removeformat | help",
+            content_style:
+              "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+          }}
+        />
+      </div>
+    </div>
+  );
 
-	const handleFormSubmit = async (event) => {
-		event.preventDefault();
+  useEffect(() => {
+    if (!questNumber) {
+      setQuestNumber(setQuestNumber);
+    }
+  }, [questNumber]);
 
-		if (
-			!questText ||
-			!ansA ||
-			!ansB ||
-			!ansC ||
-			!ansD ||
-			!document.querySelector('input[name="answer"]:checked')
-		) {
-			toast.error(`Uzupełnij wszystkie pola: pytanie, odpowiedzi oraz zanacz poprawną odpowiedź!`, {
-				autoClose: 950,
-			});
-			return;
-		}
+  const log = () => {
+    if (editorRef.current) {
+      console.log(editorRef.current.getContent());
+    }
+  };
 
-		if (questNumber > 40) {
-			setQuestNumber(40);
-			toast.error(`Maksymalna ilość pytań w arkuszu wynosi 40.`, {
-				autoClose: 950,
-			});
 
-			document.querySelector('button[name="addQuestbutton1"]').disabled = true;
-			document.querySelector('button[name="addQuestbutton2"]').disabled = true;
-			// wyszarz przycisk "zapisz"
-			//
-			return;
-		}
+  const handleFormSubmit = async (event) => {
+    event.preventDefault();
 
-		const selectedAnswer = document.querySelector(
-			'input[name="answer"]:checked'
-		).value;
+    if (
+      !questText ||
+      !answers.A ||
+      !answers.B ||
+      !answers.C ||
+      !answers.D ||
+      !selectedAnswer
+    ) {
+      toast.error(
+        `Uzupełnij wszystkie pola: pytanie, odpowiedzi oraz zaznacz poprawną odpowiedź!`,
+        {
+          autoClose: 950,
+        }
+      );
+      return;
+    }
 
-		const docRef = doc(db, examName, String(questNumber));
-		await setDoc(docRef, {
-			a: ansA.replace(
-				/<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
-				''
-			),
-			b: ansB.replace(
-				/<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
-				''
-			),
-			c: ansC.replace(
-				/<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
-				''
-			),
-			d: ansD.replace(
-				/<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
-				''
-			),
-			question: questText.replace(
-				/<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
-				''
-			),
-			answer: selectedAnswer,
-		}).then(() => {
-			setQuestNumber((prevQuestNumber) => Number(prevQuestNumber) + 1);
+    if (questNumber > 40) {
+      setQuestNumber(40);
+      toast.error(`Maksymalna ilość pytań w arkuszu wynosi 40.`, {
+        autoClose: 950,
+      });
+
+      document.querySelector('button[name="addQuestbutton1"]').disabled = true;
+      document.querySelector('button[name="addQuestbutton2"]').disabled = true;
+      return;
+    }
+
+    try {
+      const docRef = doc(db, examName, String(questNumber));
+
+      await setDoc(docRef, {
+        question: questText.replace(
+          /<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
+          ""
+        ),
+        a: answers.A.replace(
+          /<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
+          ""
+        ),
+        b: answers.B.replace(
+          /<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
+          ""
+        ),
+        c: answers.C.replace(
+          /<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
+          ""
+        ),
+        d: answers.D.replace(
+          /<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
+          ""
+        ),
+        answer: selectedAnswer.toLowerCase(),
+      });
+
+      setQuestNumber((prevQuestNumber) => Number(prevQuestNumber) + 1);
       toast.success(`Pytanie ${questNumber} - zostało dodane`, {
         autoClose: 150,
       });
-		});
-	};
+    } catch (error) {
+      console.error("Error saving question:", error);
+      toast.error(
+        "Wystąpił błąd podczas zapisywania pytania. Spróbuj ponownie.",
+        {
+          autoClose: 950,
+        }
+      );
+    }
+  };
 
-	return (
+  return (
     <div className="mt-4">
       <div className="line"></div>
       <div className="d-flex justify-content-end">
@@ -114,7 +194,7 @@ const QuestCreator = ({ examName }) => {
           <div className="pb-3 h4">Pytanie {questNumber}</div>
           {
             <Editor
-              apiKey="lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5"
+              apiKey={editorApiKey}
               onInit={(evt, editor) => (editorRef.current = editor)}
               initialValue="<p>Tu twórz pytanie.</p>"
               name="questEdit"
@@ -162,267 +242,7 @@ const QuestCreator = ({ examName }) => {
           }
           <div className="mt-4">
             <strong className="h4">Odpowiedzi</strong>
-            <div className="d-flex mt-3">
-              <div className="col-1 d-flex justify-content-center">
-                <input
-                  type="radio"
-                  className="form-check-input"
-                  name="answer"
-                  // value={ansA}
-                  value="a"
-                />
-                &nbsp;
-                <strong> A. </strong>
-              </div>
-              <div className="col-10">
-                {
-                  <Editor
-                    apiKey="lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5"
-                    onInit={(evt, editor) => (editorRef.current = editor)}
-                    name="ansA"
-                    onEditorChange={(content, editor) => {
-                      setAnsA(content);
-                    }}
-                    init={{
-                      selector: "textarea",
-                      toolbar: "language",
-                      language: "pl",
-                      content_langs: [{ title: "Polish", code: "pl" }],
-                      height: 200,
-                      width: 850,
-                      menubar: false,
-                      forced_root_block: "",
-                      force_br_newlines: true,
-                      force_p_newlines: false,
-                      plugins: [
-                        "advlist",
-                        "autolink",
-                        "lists",
-                        "link",
-                        "image",
-                        "charmap",
-                        "preview",
-                        "anchor",
-                        "searchreplace",
-                        "visualblocks",
-                        "code",
-                        "fullscreen",
-                        "insertdatetime",
-                        "media",
-                        "table",
-                        "help",
-                        "wordcount",
-                        "codesample",
-                        "hilitecolor",
-                        "charmap",
-                      ],
-                      toolbar:
-                        "undo redo | media image link table charmap codesample | " +
-                        "bold italic underline forecolor backcolor | alignleft aligncenter " +
-                        "alignright alignjustify | bullist numlist outdent indent | " +
-                        "removeformat | help",
-                      content_style:
-                        "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-                    }}
-                  />
-                }
-              </div>
-            </div>
-            <div className="d-flex mt-4">
-              <div className="col-1 d-flex justify-content-center">
-                <input
-                  type="radio"
-                  className="form-check-input"
-                  name="answer"
-                  // value={ansB}
-                  value="b"
-                />
-                &nbsp;
-                <strong> B. </strong>
-              </div>
-              <div className="col-10">
-                {
-                  <Editor
-                    apiKey="lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5"
-                    onInit={(evt, editor) => (editorRef.current = editor)}
-                    name="ansB"
-                    onEditorChange={(content, editor) => {
-                      setAnsB(content);
-                    }}
-                    init={{
-                      selector: "textarea",
-                      toolbar: "language",
-                      language: "pl",
-                      content_langs: [{ title: "Polish", code: "pl" }],
-                      height: 200,
-                      width: 850,
-                      menubar: false,
-                      forced_root_block: "",
-                      force_br_newlines: true,
-                      force_p_newlines: false,
-                      plugins: [
-                        "advlist",
-                        "autolink",
-                        "lists",
-                        "link",
-                        "image",
-                        "charmap",
-                        "preview",
-                        "anchor",
-                        "searchreplace",
-                        "visualblocks",
-                        "code",
-                        "fullscreen",
-                        "insertdatetime",
-                        "media",
-                        "table",
-                        "help",
-                        "wordcount",
-                        "codesample",
-                        "hilitecolor",
-                        "charmap",
-                      ],
-                      toolbar:
-                        "undo redo | media image link table charmap codesample | " +
-                        "bold italic underline forecolor backcolor | alignleft aligncenter " +
-                        "alignright alignjustify | bullist numlist outdent indent | " +
-                        "removeformat | help",
-                      content_style:
-                        "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-                    }}
-                  />
-                }
-              </div>
-            </div>
-            <div className="d-flex mt-4">
-              <div className="col-1 d-flex justify-content-center">
-                <input
-                  type="radio"
-                  className="form-check-input"
-                  name="answer"
-                  // value={ansC}
-                  value="c"
-                />
-                &nbsp;
-                <strong> C. </strong>
-              </div>
-              <div className="col-10">
-                {
-                  <Editor
-                    apiKey="lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5"
-                    onInit={(evt, editor) => (editorRef.current = editor)}
-                    name="ansC"
-                    onEditorChange={(content, editor) => {
-                      setAnsC(content);
-                    }}
-                    init={{
-                      selector: "textarea",
-                      toolbar: "language",
-                      language: "pl",
-                      content_langs: [{ title: "Polish", code: "pl" }],
-                      height: 200,
-                      width: 850,
-                      menubar: false,
-                      plugins: [
-                        "advlist",
-                        "autolink",
-                        "lists",
-                        "link",
-                        "image",
-                        "charmap",
-                        "preview",
-                        "anchor",
-                        "searchreplace",
-                        "visualblocks",
-                        "code",
-                        "fullscreen",
-                        "insertdatetime",
-                        "media",
-                        "table",
-                        "help",
-                        "wordcount",
-                        "codesample",
-                        "hilitecolor",
-                        "charmap",
-                      ],
-                      toolbar:
-                        "undo redo | media image link table charmap codesample | " +
-                        "bold italic underline forecolor backcolor | alignleft aligncenter " +
-                        "alignright alignjustify | bullist numlist outdent indent | " +
-                        "removeformat | help",
-                      content_style:
-                        "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-                    }}
-                  />
-                }
-              </div>
-            </div>
-            <div className="d-flex mt-4">
-              <div className="col-1 d-flex justify-content-center">
-                <input
-                  type="radio"
-                  className="form-check-input"
-                  name="answer"
-                  // value={ansD}
-                  value="d"
-                />
-                &nbsp;
-                <strong> D. </strong>
-              </div>
-              <div className="col-10">
-                {
-                  <Editor
-                    apiKey="lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5"
-                    onInit={(evt, editor) => (editorRef.current = editor)}
-                    name="ansD"
-                    onEditorChange={(content, editor) => {
-                      setAnsD(content);
-                    }}
-                    init={{
-                      selector: "textarea",
-                      toolbar: "language",
-                      language: "pl",
-                      content_langs: [{ title: "Polish", code: "pl" }],
-                      height: 200,
-                      width: 850,
-                      menubar: false,
-                      forced_root_block: "",
-                      force_br_newlines: true,
-                      force_p_newlines: false,
-                      plugins: [
-                        "advlist",
-                        "autolink",
-                        "lists",
-                        "link",
-                        "image",
-                        "charmap",
-                        "preview",
-                        "anchor",
-                        "searchreplace",
-                        "visualblocks",
-                        "code",
-                        "fullscreen",
-                        "insertdatetime",
-                        "media",
-                        "table",
-                        "help",
-                        "wordcount",
-                        "codesample",
-                        "hilitecolor",
-                        "charmap",
-                      ],
-                      toolbar:
-                        "undo redo | media image link table charmap codesample | " +
-                        "bold italic underline forecolor backcolor | alignleft aligncenter " +
-                        "alignright alignjustify | bullist numlist outdent indent | " +
-                        "removeformat | help",
-                      content_style:
-                        "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-                    }}
-                  />
-                }
-              </div>
-            </div>
+            {["A", "B", "C", "D"].map((key) => renderAnswerOption(key, key))}
             <div className="d-flex justify-content-end">
               <button
                 type="submit"

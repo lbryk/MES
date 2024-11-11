@@ -48,6 +48,7 @@ import WindowConfirm from "./WindowConfirm";
 import { Editor } from "@tinymce/tinymce-react";
 
 const ExamTable = ({ refreshKey, onExamCreated }) => {
+  const { editorApiKey } = useContext(AppContext); 
   const [docCounts, setDocCounts] = useState(0);
   const [exams, setExams] = useState([]);
   const [sortField, setSortField] = useState(null);
@@ -196,7 +197,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
       })
     );
   };
-
+console.log(editorApiKey);
   const handleSelectUser = (userId) => {
     const user = availableUsers.find((user) => user.id === userId);
     if (user && !editingAuthors.some((author) => author.id === userId)) {
@@ -692,6 +693,8 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
     document.removeEventListener("mousedown", handleClickOutsideEditor);
   };
 
+
+
   // Funkcja do zamykania edytora po kliknięciu poza jego obszar
   const handleClickOutsideEditor = (event) => {
     if (
@@ -1103,7 +1106,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                           editing.questionIndex === idx &&
                                           editing.field === "question" ? (
                                             <Editor
-                                              apiKey="lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5"
+                                              apiKey={editorApiKey}
                                               value={
                                                 expandedExams[exam.id][idx]
                                                   .question
@@ -1289,7 +1292,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                                       </DropdownButton>
                                                     ) : (
                                                       <Editor
-                                                        apiKey="lkd5bbnbo3yigqxq0v3ofuy58c40gv08t47skq72ni7cz8q5"
+                                                        apiKey={editorApiKey}
                                                         value={
                                                           expandedExams[
                                                             exam.id

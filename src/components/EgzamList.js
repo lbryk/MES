@@ -182,7 +182,7 @@ const ExamList = ({ refreshKey }) => {
                                   .map((q, index) => {
                                     // Sprawdzamy, która odpowiedź jest poprawna na podstawie pola "answer"
                                     const correctAnswer =
-                                      q.answer.toLowerCase();
+                                      q.answer;
                                     const getAnswerClass = (option) =>
                                       option === correctAnswer
                                         ? "correct-answer"

@@ -385,7 +385,7 @@ const ShowUser = ({ refreshKey }) => {
       selectedUsers.includes(user.id)
     );
     let content = `
-      <h1>Dane zaznaczonych użytkowników</h1>
+      <h1>Dane zdających</h1>
       <table style="width: 100%; border-collapse: collapse;">
         <thead>
           <tr>
@@ -566,6 +566,7 @@ const ShowUser = ({ refreshKey }) => {
             </th>
             <th>
               <div style={centeredIconStyle}>
+                <FontAwesomeIcon icon={faPrint} />{" / "}
                 <FontAwesomeIcon icon="fa-solid fa-trash-can" />
               </div>
             </th>

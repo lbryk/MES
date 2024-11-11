@@ -56,6 +56,7 @@ function Index() {
 	const [showAlert, setShowAlert] = useState(false);
 	const [login, setLogin] = useState(false);
 	const [timeUser, setTimeUser] = useState(false); // czas pobierany z bazy
+	const [editorApiKey, setEditorApiKey] = useState(false);
 
 	useEffect(() => {
 		const fetchSettings = async () => {
@@ -140,126 +141,127 @@ function Index() {
 	const [showExitAlert, setShowExitAlert] = useState(false);
 
 	return (
-		<AuthProvider>
-			<AppContext.Provider
-				value={{
-					keyExam,
-					keyQualification,
-					idBase,
-					rightAnswers,
-					setRightAnswers,
-					updateRightAnswers,
-					sumOfRightAnswers,
-					selectedAnswers,
-					setSelectedAnswers,
-					updateSelectedAnswers,
-					sumOfWrongAnswers,
-					rightKeyAnswers,
-					setRightKeyAnswers,
-					isDisabled,
-					setIsDisabled,
-					qi,
-					setQi,
-					userName,
-					setUserName,
-					login,
-					setLogin,
-					setId,
-					id,
-					timeUser,
-					setTimeUser,
-					quizData,
-					isLoading,
-					showExitAlert,
-					setShowExitAlert,
-					currentUser,
-					setCurrentUser,
-					setUserRole,
-					userRole
-				}}
-			>
-				<TimerProvider>
-					<BrowserRouter>
-						<Routes>
-							<Route exact path='/login' element={<LoginExam />} />
-							<Route
-								exact
-								path='/'
-								element={
-									<ProtectedRoute>
-										<App />
-									</ProtectedRoute>
-								}
-							/>
-							<Route
-								exact
-								path='/:id'
-								element={
-									<ProtectedRoute>
-										<App />
-									</ProtectedRoute>
-								}
-							/>
-							<Route
-								exact
-								path='/widget'
-								element={
-									<ProtectedRoute>
-										<Widget />
-									</ProtectedRoute>
-								}
-							/>
-							<Route
-								exact
-								path='/quest/:idBase/:i'
-								element={
-									<ProtectedRoute>
-										<Quest />
-									</ProtectedRoute>
-								}
-							/>
-							<Route
-								exact
-								path='/quest/'
-								element={
-									<ProtectedRoute>
-										<Quest />
-									</ProtectedRoute>
-								}
-							/>
-							<Route
-								exact
-								path='/finish/:i'
-								element={
-									<ProtectedRoute>
-										<ExitExam />
-									</ProtectedRoute>
-								}
-							/>
-							<Route
-								exact
-								path='/finish/'
-								element={
-									<ProtectedRoute>
-										<ExitExam />
-									</ProtectedRoute>
-								}
-							/>
-							<Route
-								exact
-								path='/admin'
-								element={
-									<ProtectedRoute>
-										<AdminPanel />
-									</ProtectedRoute>
-								}
-							/>
-						</Routes>
-					</BrowserRouter>
-				</TimerProvider>
-			</AppContext.Provider>
-		</AuthProvider>
-	);
+    <AuthProvider>
+      <AppContext.Provider
+        value={{
+          keyExam,
+          keyQualification,
+          idBase,
+          rightAnswers,
+          setRightAnswers,
+          updateRightAnswers,
+          sumOfRightAnswers,
+          selectedAnswers,
+          setSelectedAnswers,
+          updateSelectedAnswers,
+          sumOfWrongAnswers,
+          rightKeyAnswers,
+          setRightKeyAnswers,
+          isDisabled,
+          setIsDisabled,
+          qi,
+          setQi,
+          userName,
+          setUserName,
+          login,
+          setLogin,
+          setId,
+          id,
+          timeUser,
+          setTimeUser,
+          quizData,
+          isLoading,
+          showExitAlert,
+          setShowExitAlert,
+          currentUser,
+          setCurrentUser,
+          setUserRole,
+          userRole,
+          editorApiKey,
+          setEditorApiKey
+        }}>
+        <TimerProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route exact path="/login" element={<LoginExam />} />
+              <Route
+                exact
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <App />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                exact
+                path="/:id"
+                element={
+                  <ProtectedRoute>
+                    <App />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                exact
+                path="/widget"
+                element={
+                  <ProtectedRoute>
+                    <Widget />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                exact
+                path="/quest/:idBase/:i"
+                element={
+                  <ProtectedRoute>
+                    <Quest />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                exact
+                path="/quest/"
+                element={
+                  <ProtectedRoute>
+                    <Quest />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                exact
+                path="/finish/:i"
+                element={
+                  <ProtectedRoute>
+                    <ExitExam />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                exact
+                path="/finish/"
+                element={
+                  <ProtectedRoute>
+                    <ExitExam />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                exact
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <AdminPanel />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </BrowserRouter>
+        </TimerProvider>
+      </AppContext.Provider>
+    </AuthProvider>
+  );
 }
 
 library.add(faCheckSquare);

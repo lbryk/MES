@@ -22,7 +22,7 @@ import ChangePassword from "./ChangePassword";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, getDoc, doc } from "firebase/firestore";
 import { db, remoteConfig } from "../firebase";
 import {
   getRemoteConfig,
@@ -49,6 +49,24 @@ const AdminPanel = () => {
   if (userName === "") {
     checkLogin(`/login`);
   }
+
+    const { setEditorApiKey } = useContext(AppContext); // Get the setter function from context
+
+    useEffect(() => {
+      const fetchApiKey = async () => {
+        try {
+          const docRef = doc(db, "settings", "tinyMCE");
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setEditorApiKey(docSnap.data().apiKey); // Set the API key in context
+          }
+        } catch (error) {
+          console.error("Klucz tinyMCE nie został załadowany", error);
+        }
+      };
+
+      fetchApiKey();
+    }, [setEditorApiKey]);
 
   useEffect(() => {
     const checkForUpdates = async () => {
