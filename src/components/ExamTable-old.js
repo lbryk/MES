@@ -4,7 +4,6 @@ import React, {
   useRef,
   useContext,
   useCallback,
-  memo,
 } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle";
@@ -14,8 +13,6 @@ import {
   DropdownButton,
   Dropdown,
   Collapse,
-  Modal,
-  Form,
 } from "react-bootstrap";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -48,164 +45,10 @@ import ExitAlert from "./ExitAlert";
 import Pagination from "./Pagination";
 import AppContext from "./AppContext";
 import WindowConfirm from "./WindowConfirm";
-import JoditEditor from "jodit-react";
-import Prism from "prismjs";
-import "prismjs/themes/prism.css";
-import "prismjs/components/prism-javascript";
-import "prismjs/components/prism-python";
-import "prismjs/components/prism-xml-doc";
-import "prismjs/components/prism-textile";
-import "prismjs/components/prism-ruby";
-import "prismjs/components/prism-java";
-import "prismjs/components/prism-c";
-import "prismjs/components/prism-csharp";
-import "prismjs/components/prism-textile";
-import "prismjs/components/prism-typescript";
-import "prismjs/components/prism-css";
-import "prismjs/components/prism-basic";
-import "prismjs/components/prism-visual-basic";
-import "prismjs/components/prism-dart";
-
-const CodeSampleModal = ({ show, onClose, onSave }) => {
-  const [language, setLanguage] = useState("HTML/XML");
-  const [code, setCode] = useState("");
-  const codeRef = useRef(null);
-
-  const highlightCode = useCallback(() => {
-    Prism.highlightAll();
-  }, [code, language]);
-
-  useEffect(() => {
-    highlightCode();
-  }, [highlightCode]);
-
-  // Generate line numbers by splitting the code into lines
-  const getLineNumbers = () => {
-    return code.split("\n").map((_, index) => `${index + 1}`);
-  };
-
-  // Function to keep the cursor at the end after each update
-  const moveCursorToEnd = useCallback(() => {
-    if (codeRef.current) {
-      const range = document.createRange();
-      const selection = window.getSelection();
-      range.selectNodeContents(codeRef.current);
-      range.collapse(false);
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-  }, []);
-
-  // Set up the initial state and bind input handler
-  const handleInput = (e) => {
-    // Update the state without modifying the DOM directly
-    setCode(e.currentTarget.textContent);
-  };
-
-  // Ensure the cursor stays at the end after code state updates
-  useEffect(() => {
-    moveCursorToEnd();
-  }, [code, moveCursorToEnd]);
-
-  const handleSave = () => {
-    onSave(language, code);
-    onClose();
-  };
-
-  // useEffect(() => {
-  //   Prism.highlightAll();
-  // }, [code, language]);
-
-  return (
-    <Modal show={show} onHide={onClose} centered>
-      <Modal.Header closeButton>
-        <Modal.Title>Insert/Edit Code</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <Form>
-          <Form.Group controlId="languageSelect">
-            <Form.Label>Select Programming Language</Form.Label>
-            <Form.Control
-              as="select"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}>
-              <option value="xml">HTML/XML</option>
-              <option value="javascript">JavaScript</option>
-              <option value="css">CSS</option>
-              <option value="php">PHP</option>
-              <option value="ruby">Ruby</option>
-              <option value="python">Python</option>
-              <option value="java">Java</option>
-              <option value="c">C</option>
-              <option value="csharp">C#</option>
-              <option value="basic">Basic</option>
-              <option value="visual-basic">VBA</option>
-              <option value="typescript">TypeScript</option>
-              <option value="dart">Dart</option>
-              <option value="textile">Plain Text</option>
-            </Form.Control>
-          </Form.Group>
-          <Form.Group controlId="codeTextarea">
-            <Form.Label>Code Preview</Form.Label>
-            <div style={{ display: "flex", alignItems: "flex-start" }}>
-              <div
-                style={{
-                  marginRight: "10px",
-                  textAlign: "right",
-                  color: "#999",
-                  lineHeight: "1.5em",
-                  fontSize: "0.9em",
-                  paddingTop: "10px", // Adjust to align with the code
-                }}>
-                {code.split("\n").map((_, index) => (
-                  <div key={index} style={{ height: "1.5em" }}>
-                    {index + 1}
-                  </div>
-                ))}
-              </div>
-              <pre
-                className={`language-${language}`}
-                style={{
-                  flexGrow: 1,
-                  margin: 0,
-                  paddingTop: "10px", // Aligns with line numbers
-                }}>
-                <code
-                  ref={codeRef}
-                  className={`language-${language}`}
-                  contentEditable
-                  suppressContentEditableWarning={true}
-                  onInput={handleInput}
-                  style={{
-                    backgroundColor: "#f5f5f5",
-                    padding: "10px",
-                    borderRadius: "5px",
-                    lineHeight: "1.5em",
-                    whiteSpace: "pre-wrap",
-                    fontSize: "0.9em",
-                    margin: 0,
-                  }}>
-                  {code}
-                </code>
-              </pre>
-            </div>
-          </Form.Group>
-        </Form>
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button variant="primary" onClick={() => onSave(language, code)}>
-          Save
-        </Button>
-      </Modal.Footer>
-    </Modal>
-  );
-};
+import { Editor } from "@tinymce/tinymce-react";
 
 const ExamTable = ({ refreshKey, onExamCreated }) => {
-  const { editorApiKey } = useContext(AppContext);
+  const { editorApiKey } = useContext(AppContext); 
   const [docCounts, setDocCounts] = useState(0);
   const [exams, setExams] = useState([]);
   const [sortField, setSortField] = useState(null);
@@ -233,8 +76,6 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
   const [examsPerPage] = useState(10);
   const [editing, setEditing] = useState({ examId: null, questionIndex: null });
   const editorRef = useRef(null);
-  const [isEditorVisible, setIsEditorVisible] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
 
   const fetchUserRole = async () => {
     try {
@@ -315,7 +156,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
   }, [currentUser]);
 
   useEffect(() => {
-    if (userRole && !isEditorVisible) {
+    if (userRole) {
       fetchExams();
       fetchUsers();
       fetchProfessionsAndQualifications();
@@ -356,7 +197,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
       })
     );
   };
-  console.log(editorApiKey);
+console.log(editorApiKey);
   const handleSelectUser = (userId) => {
     const user = availableUsers.find((user) => user.id === userId);
     if (user && !editingAuthors.some((author) => author.id === userId)) {
@@ -785,8 +626,6 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
     setEditing({ examId, questionIndex, field });
     document.removeEventListener("mousedown", handleClickOutsideEditor);
     document.addEventListener("mousedown", handleClickOutsideEditor);
-    setIsEditorVisible(true);
-    setIsSaved(true);
   };
 
   const updateQuestionInDatabase = async (
@@ -809,19 +648,8 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
 
       await updateDoc(questionDocRef, { [field]: cleanContent });
       setIsSaved(true);
-      setEditing({ examId: null, questionIndex: null, field: null });
       toast.success("Odpowiedź została pomyślnie zaktualizowana!", {
         autoClose: 2000,
-      });
-
-      setExpandedExams((prevExams) => {
-        const updatedExams = { ...prevExams };
-        updatedExams[examId] = updatedExams[examId].map((question, index) =>
-          index === questionId
-            ? { ...question, [field]: updatedContent }
-            : question
-        );
-        return updatedExams;
       });
     } catch (error) {
       console.error("Błąd podczas aktualizacji odpowiedzi:", error);
@@ -848,6 +676,8 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
     setIsSaved(false); // Zresetuj stan po każdej zmianie
   };
 
+  const [isSaved, setIsSaved] = useState(false);
+
   const handleBlurEgzam = () => {
     if (
       !isSaved &&
@@ -860,10 +690,10 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
       updateQuestionInDatabase(examId, questionIndex, updatedContent, field);
     }
     setEditing({ examId: null, questionIndex: null, field: null });
-    setIsEditorVisible(false);
     document.removeEventListener("mousedown", handleClickOutsideEditor);
-    fetchExams();
   };
+
+
 
   // Funkcja do zamykania edytora po kliknięciu poza jego obszar
   const handleClickOutsideEditor = (event) => {
@@ -980,20 +810,6 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
     } catch (error) {
       console.error(`Błąd podczas dodawania nowego pytania:`, error);
       toast.error("Dodawanie nowego pytania nie powiodło się.");
-    }
-  };
-
-  const [showModal, setShowModal] = useState(false);
-  const handleOpenModal = () => setShowModal(true);
-  const handleCloseModal = () => setShowModal(false);
-
-  const handleSaveCodeSample = (language, code) => {
-    const editor = editorRef.current?.editor;
-    if (editor) {
-      const pre = editor.selection.j.createInside.element("pre");
-      pre.style = "background-color:#F0F0F0; text-align:left; padding:10px;";
-      pre.innerHTML = `<code class="${language}">${code}</code>`;
-      editor.selection.insertNode(pre);
     }
   };
 
@@ -1268,13 +1084,8 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                           toggleAnswerVisibility(exam.id, idx)
                                         }>
                                         <strong>Pytanie {idx + 1}</strong>
-
                                         <hr />
-
                                         <div
-                                          style={{
-                                            position: "relative",
-                                          }}
                                           className="p-3 mb-2 bg-light text-dark rounded position-relative"
                                           onDoubleClick={() =>
                                             handleDoubleClick(
@@ -1287,12 +1098,15 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                             setHoverField(
                                               `${exam.id}-${idx}-question`
                                             )
+                                          }
+                                          onMouseLeave={() =>
+                                            setHoverField(null)
                                           }>
                                           {editing.examId === exam.id &&
                                           editing.questionIndex === idx &&
                                           editing.field === "question" ? (
-                                            <JoditEditor
-                                              ref={editorRef}
+                                            <Editor
+                                              apiKey={editorApiKey}
                                               value={
                                                 expandedExams[exam.id][idx]
                                                   .question
@@ -1305,98 +1119,67 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                                   "question"
                                                 )
                                               }
-                                              // onBlur={handleBlurEgzam}
-                                              config={{
-                                                readonly: false,
-                                                toolbarSticky: true,
-                                                toolbarStickyOffset: 0,
-
+                                              onBlur={handleBlurEgzam}
+                                              init={{
                                                 height: 400,
-                                                toolbarAdaptive: false,
-                                                buttons: [
-                                                  {
-                                                    name: "save",
-                                                    exec: () =>
-                                                      updateQuestionInDatabase(
-                                                        exam.id,
-                                                        idx,
-                                                        editorRef.current.value,
-                                                        "question"
-                                                      ),
-                                                  },
-                                                  "|",
-                                                  "undo",
-                                                  "redo",
-                                                  "|",
-                                                  "video",
-                                                  "image",
-                                                  "link",
-                                                  "table",
-                                                  "|",
-                                                  "font",
-                                                  "fontsize",
-                                                  "bold",
-                                                  "italic",
-                                                  "underline",
-                                                  "strikethrough",
-                                                  "brush",
-                                                  "|",
-                                                  "align",
-                                                  "|",
-                                                  "ul",
-                                                  "ol",
-                                                  "outdent",
-                                                  "indent",
-                                                  "|",
-                                                  "copyformat",
-                                                  "eraser",
-                                                  "|",
-                                                  "hr",
-                                                ],
-                                                extraButtons: [
-                                                  {
-                                                    name: "codeBlock",
-                                                    tooltip: "Wstaw blok kodu",
-                                                    iconURL:
-                                                      "https://cdn.icon-icons.com/icons2/2406/PNG/512/codeblock_editor_highlight_icon_145997.png",
-                                                    exec: (editor) => {
-                                                      const pre =
-                                                        editor.selection.j.createInside.element(
-                                                          "pre"
-                                                        );
-                                                      pre.style =
-                                                        "background-color:#F0F0F0; text-align:left; padding:10px;";
-                                                      pre.innerHTML =
-                                                        editor.selection.html;
-                                                      editor.selection.insertNode(
-                                                        pre
-                                                      );
-                                                    },
-                                                  },
-                                                  {
-                                                    name: "insertCode",
-                                                    tooltip: "Wstaw kod",
-                                                    zIndex: 99999, // Główny zIndex dla całego edytora
-                                                    iconURL:
-                                                      "https://cdn.icon-icons.com/icons2/936/PNG/512/code_icon-icons.com_73620.png",
-                                                    exec: () =>
-                                                      handleOpenModal(),
-                                                  },
-                                                  {
-                                                    name: "exitEditor",
-                                                    tooltip:
-                                                      "Wyjdź z trybu edycji",
-                                                    iconURL:
-                                                      "https://cdn.icon-icons.com/icons2/1993/PNG/512/cancel_close_delete_exit_logout_remove_x_icon_123217.png",
-                                                    exec: () => {
-                                                      handleBlurEgzam();
-                                                    },
-                                                  },
-                                                ],
-                                                uploader: {
-                                                  insertImageAsBase64URI: true,
+                                                menubar: false,
+                                                save_onsavecallback: async (
+                                                  editor
+                                                ) => {
+                                                  const content =
+                                                    editor.getContent(); // Pobiera najnowszą zawartość
+                                                  const {
+                                                    examId,
+                                                    questionIndex,
+                                                    field,
+                                                  } = editing;
+
+                                                  if (
+                                                    examId !== null &&
+                                                    questionIndex !== null &&
+                                                    field
+                                                  ) {
+                                                    await updateQuestionInDatabase(
+                                                      examId,
+                                                      questionIndex,
+                                                      content,
+                                                      field
+                                                    );
+                                                  }
+                                                  setIsSaved(true);
                                                 },
+                                                plugins: [
+                                                  "advlist",
+                                                  "autolink",
+                                                  "lists",
+                                                  "link",
+                                                  "image",
+                                                  "charmap",
+                                                  "preview",
+                                                  "anchor",
+                                                  "searchreplace",
+                                                  "visualblocks",
+                                                  "code",
+                                                  "fullscreen",
+                                                  "insertdatetime",
+                                                  "media",
+                                                  "table",
+                                                  "help",
+                                                  "wordcount",
+                                                  "codesample",
+                                                  "hilitecolor",
+                                                  "charmap",
+                                                  "save",
+                                                ],
+                                                toolbar:
+                                                  "save | undo redo blocks | media image link table charmap codesample | " +
+                                                  "bold italic underline forecolor backcolor | alignleft aligncenter " +
+                                                  "alignright alignjustify | bullist numlist outdent indent | " +
+                                                  "removeformat | help",
+                                                content_style:
+                                                  "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
                                               }}
+                                              ref={editorRef} // Ustawienie referencji na edytor
                                             />
                                           ) : (
                                             <div className="position-relative">
@@ -1453,6 +1236,9 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                                     setHoverField(
                                                       `${exam.id}-${idx}-${field}`
                                                     )
+                                                  }
+                                                  onMouseLeave={() =>
+                                                    setHoverField(null)
                                                   }>
                                                   <p>
                                                     <strong>
@@ -1505,8 +1291,8 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                                         </Dropdown.Item>
                                                       </DropdownButton>
                                                     ) : (
-                                                      <JoditEditor
-                                                        ref={editorRef}
+                                                      <Editor
+                                                        apiKey={editorApiKey}
                                                         value={
                                                           expandedExams[
                                                             exam.id
@@ -1522,56 +1308,65 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                                             field
                                                           )
                                                         }
-                                                        onBlur={handleBlurEgzam}
-                                                        config={{
-                                                          readonly: false,
-                                                          toolbarSticky: true,
-                                                          toolbarStickyOffset: 0,
-                                                          zIndex: 9999, // Aby zapewnić widoczność paska narzędzi nad innymi elementami
-                                                          popup: {
-                                                            showOnClick: true,
-                                                            zIndex: 9999, // Ustawienia z-index dla popupów
-                                                          },
-                                                          toolbarAdaptive: false,
+                                                        init={{
+                                                          height: 200,
+                                                          menubar: false,
+                                                          save_onsavecallback:
+                                                            async (editor) => {
+                                                              const content =
+                                                                editor.getContent();
+                                                              const {
+                                                                examId,
+                                                                questionIndex,
+                                                                field,
+                                                              } = editing;
 
-                                                          buttons: [
+                                                              if (
+                                                                examId !==
+                                                                  null &&
+                                                                questionIndex !==
+                                                                  null &&
+                                                                field
+                                                              ) {
+                                                                await updateQuestionInDatabase(
+                                                                  examId,
+                                                                  questionIndex,
+                                                                  content,
+                                                                  field
+                                                                );
+                                                              }
+                                                              setIsSaved(true);
+                                                            },
+                                                          plugins: [
                                                             "save",
-                                                            "|",
-                                                            "undo",
-                                                            "redo",
-                                                            "|",
-                                                            "video",
-                                                            "image",
+                                                            "advlist",
+                                                            "autolink",
+                                                            "lists",
                                                             "link",
+                                                            "image",
+                                                            "charmap",
+                                                            "preview",
+                                                            "anchor",
+                                                            "searchreplace",
+                                                            "visualblocks",
+                                                            "code",
+                                                            "fullscreen",
+                                                            "insertdatetime",
+                                                            "media",
                                                             "table",
-                                                            "|",
-                                                            "font",
-                                                            "fontsize",
-                                                            "bold",
-                                                            "italic",
-                                                            "underline",
-                                                            "strikethrough",
-                                                            "brush",
-                                                            "|",
-                                                            "align",
-                                                            "|",
-                                                            "ul",
-                                                            "ol",
-                                                            "outdent",
-                                                            "indent",
-                                                            "|",
-                                                            "copyformat",
-                                                            "|",
-                                                            "hr",
+                                                            "help",
+                                                            "wordcount",
+                                                            "codesample",
+                                                            "hilitecolor",
+                                                            "charmap",
                                                           ],
-                                                          uploader: {
-                                                            insertImageAsBase64URI: true, // Enables image insertion as base64 data URI directly
-                                                          },
-                                                          style: {
-                                                            pre: "font-family: monospace; background: #f4f4f4; padding: 10px; border-radius: 4px;",
-                                                            code: "color: #d6336c; background-color: #f4f4f4; padding: 3px; border-radius: 3px;",
-                                                          },
+                                                          toolbar:
+                                                            "save | undo redo | media image link table charmap codesample | " +
+                                                            "bold italic underline forecolor backcolor | alignleft aligncenter " +
+                                                            "alignright alignjustify | bullist numlist outdent indent | " +
+                                                            "removeformat | help",
                                                         }}
+                                                        onBlur={handleBlurEgzam}
                                                       />
                                                     )
                                                   ) : (
@@ -1685,11 +1480,6 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
           setModalIsOpen(false);
           if (selectedExam) deleteExam(selectedExam);
         }}
-      />
-      <CodeSampleModal
-        show={showModal}
-        onClose={handleCloseModal}
-        onSave={handleSaveCodeSample}
       />
     </div>
   );
