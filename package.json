@@ -24,6 +24,8 @@
     "firebaseui": "^6.0.2",
     "font-awesome": "^4.7.0",
     "fontkit": "^2.0.2",
+    "highlight.js": "^11.10.0",
+    "html2canvas": "^1.4.1",
     "jodit-react": "^4.1.2",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.7.1",

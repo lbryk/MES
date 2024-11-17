@@ -48,6 +48,7 @@ import ExitAlert from "./ExitAlert";
 import Pagination from "./Pagination";
 import AppContext from "./AppContext";
 import WindowConfirm from "./WindowConfirm";
+import html2canvas from "html2canvas";
 import JoditEditor from "jodit-react";
 import Prism from "prismjs";
 import "prismjs/themes/prism.css";
@@ -65,8 +66,10 @@ import "prismjs/components/prism-css";
 import "prismjs/components/prism-basic";
 import "prismjs/components/prism-visual-basic";
 import "prismjs/components/prism-dart";
+import "prismjs/components/prism-xml-doc";
 
-const CodeSampleModal = ({ show, onClose, onSave }) => {
+
+const CodeSampleModal = ({ show, onClose, onSave, editorRef }) => {
   const [language, setLanguage] = useState("HTML/XML");
   const [code, setCode] = useState("");
   const codeRef = useRef(null);
@@ -77,7 +80,7 @@ const CodeSampleModal = ({ show, onClose, onSave }) => {
 
   useEffect(() => {
     highlightCode();
-  }, [highlightCode]);
+  }, [code, language, highlightCode]);
 
   // Generate line numbers by splitting the code into lines
   const getLineNumbers = () => {
@@ -107,29 +110,47 @@ const CodeSampleModal = ({ show, onClose, onSave }) => {
     moveCursorToEnd();
   }, [code, moveCursorToEnd]);
 
-  const handleSave = () => {
-    onSave(language, code);
-    onClose();
+  const handleSaveImage = async () => {
+    if (!codeRef.current) {
+      console.error("Nie znaleziono referencji do bloku kodu.");
+      return;
+    }
+
+    try {
+      const canvas = await html2canvas(codeRef.current, {
+        backgroundColor: "#fff",
+        useCORS: true,
+      });
+      const image = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.href = image;
+      link.download = `code-preview-${Date.now()}.png`;
+      link.click();
+      toast.success(
+        "Obraz z twojego kodu został wygenerowany pomyślnie.  Użyj narzędzia wstawiania grafiki aby dodać go do edytora."
+      );
+      onClose();
+    } catch (error) {
+      toast.error("Wystąpił błąd podczas generowania obrazu z kodu");
+    }
   };
 
-  // useEffect(() => {
-  //   Prism.highlightAll();
-  // }, [code, language]);
 
   return (
     <Modal show={show} onHide={onClose} centered>
       <Modal.Header closeButton>
-        <Modal.Title>Insert/Edit Code</Modal.Title>
+        <Modal.Title>Generetor obrazu z kodu programu</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <Form>
           <Form.Group controlId="languageSelect">
-            <Form.Label>Select Programming Language</Form.Label>
+            <Form.Label>Wybierz język programowania</Form.Label>
             <Form.Control
               as="select"
               value={language}
+              style={{ width: "95%" }}
               onChange={(e) => setLanguage(e.target.value)}>
-              <option value="xml">HTML/XML</option>
+              <option value="textile">HTML/XML</option>
               <option value="javascript">JavaScript</option>
               <option value="css">CSS</option>
               <option value="php">PHP</option>
@@ -142,12 +163,17 @@ const CodeSampleModal = ({ show, onClose, onSave }) => {
               <option value="visual-basic">VBA</option>
               <option value="typescript">TypeScript</option>
               <option value="dart">Dart</option>
-              <option value="textile">Plain Text</option>
+              <option value="plain">Plain Text</option>
             </Form.Control>
           </Form.Group>
           <Form.Group controlId="codeTextarea">
-            <Form.Label>Code Preview</Form.Label>
-            <div style={{ display: "flex", alignItems: "flex-start" }}>
+            <Form.Label>Podgląd kodu</Form.Label>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                width: "98%",
+              }}>
               <div
                 style={{
                   marginRight: "10px",
@@ -155,11 +181,17 @@ const CodeSampleModal = ({ show, onClose, onSave }) => {
                   color: "#999",
                   lineHeight: "1.5em",
                   fontSize: "0.9em",
-                  paddingTop: "10px", // Adjust to align with the code
+                  paddingTop: "10px", // Aligns with code block
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "flex-start",
+                  whiteSpace: "pre-wrap",
+                  fontFamily: "monospace", // Ensure font match with line numbers
+                  fontSize: "0.9em", // Consistent size for both
                 }}>
-                {code.split("\n").map((_, index) => (
+                {getLineNumbers().map((lineNumber, index) => (
                   <div key={index} style={{ height: "1.5em" }}>
-                    {index + 1}
+                    {lineNumber}
                   </div>
                 ))}
               </div>
@@ -168,7 +200,7 @@ const CodeSampleModal = ({ show, onClose, onSave }) => {
                 style={{
                   flexGrow: 1,
                   margin: 0,
-                  paddingTop: "10px", // Aligns with line numbers
+                  paddingTop: "10px",
                 }}>
                 <code
                   ref={codeRef}
@@ -184,6 +216,7 @@ const CodeSampleModal = ({ show, onClose, onSave }) => {
                     whiteSpace: "pre-wrap",
                     fontSize: "0.9em",
                     margin: 0,
+                    fontFamily: "monospace", // Ensure font match with line numbers
                   }}>
                   {code}
                 </code>
@@ -194,10 +227,10 @@ const CodeSampleModal = ({ show, onClose, onSave }) => {
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={onClose}>
-          Cancel
+          Zrezygnuj
         </Button>
-        <Button variant="primary" onClick={() => onSave(language, code)}>
-          Save
+        <Button variant="primary" onClick={handleSaveImage}>
+          Zapisz obraz
         </Button>
       </Modal.Footer>
     </Modal>
@@ -235,6 +268,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
   const editorRef = useRef(null);
   const [isEditorVisible, setIsEditorVisible] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isEditorReady, setIsEditorReady] = useState(false);
 
   const fetchUserRole = async () => {
     try {
@@ -356,7 +390,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
       })
     );
   };
-  console.log(editorApiKey);
+
   const handleSelectUser = (userId) => {
     const user = availableUsers.find((user) => user.id === userId);
     if (user && !editingAuthors.some((author) => author.id === userId)) {
@@ -866,9 +900,20 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
   };
 
   // Funkcja do zamykania edytora po kliknięciu poza jego obszar
+  // const handleClickOutsideEditor = (event) => {
+  //   if (
+  //     editorRef.current &&
+  //     !editorRef.current.editorContainer.contains(event.target)
+  //   ) {
+  //     handleBlurEgzam();
+  //   }
+  // };
+
   const handleClickOutsideEditor = (event) => {
+    // Check if the editorRef and editor container exist before proceeding
     if (
       editorRef.current &&
+      editorRef.current.editorContainer &&
       !editorRef.current.editorContainer.contains(event.target)
     ) {
       handleBlurEgzam();
@@ -987,13 +1032,54 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
   const handleOpenModal = () => setShowModal(true);
   const handleCloseModal = () => setShowModal(false);
 
-  const handleSaveCodeSample = (language, code) => {
-    const editor = editorRef.current?.editor;
-    if (editor) {
-      const pre = editor.selection.j.createInside.element("pre");
-      pre.style = "background-color:#F0F0F0; text-align:left; padding:10px;";
-      pre.innerHTML = `<code class="${language}">${code}</code>`;
-      editor.selection.insertNode(pre);
+  // const waitForEditorInstance = async (maxRetries = 10, interval = 100) => {
+  //   for (let i = 0; i < maxRetries; i++) {
+  //     if (editorRef.current && editorRef.current.editor) {
+  //       return editorRef.current.editor;
+  //     }
+  //     console.log(`Waiting for editor instance... (${i + 1}/${maxRetries})`);
+  //     await new Promise((resolve) => setTimeout(resolve, interval));
+  //   }
+  //   throw new Error(
+  //     "Failed to initialize Jodit editor instance within the timeout."
+  //   );
+  // };
+
+  // const handleSaveCodeSample = async () => {
+  //   try {
+  //     const codeContainer = codeRef.current; // Odwołanie do bloku kodu
+  //     if (!codeContainer) {
+  //       console.error("Nie znaleziono kontenera kodu.");
+  //       return;
+  //     }
+
+  //     // Renderowanie kontenera kodu jako obraz
+  //     const canvas = await html2canvas(codeContainer, {
+  //       backgroundColor: "#fff", // Ustaw białe tło dla przejrzystości
+  //     });
+  //     const image = canvas.toDataURL("image/png");
+
+  //     // Tworzenie linku do pobrania
+  //     const link = document.createElement("a");
+  //     link.href = image;
+  //     link.download = `code-preview-${Date.now()}.png`; // Nazwa pliku z timestampem
+  //     link.click();
+
+  //     console.log("Obraz wygenerowany pomyślnie!");
+  //   } catch (error) {
+  //     console.error("Błąd podczas generowania obrazu:", error);
+  //   }
+  // };
+
+  const handleInsertImage = (image) => {
+    if (editorRef.current && editorRef.current.editor) {
+      const editorInstance = editorRef.current.editor;
+      editorInstance.selection.insertHTML(
+        `<img src="${image}" alt="Code Preview" />`
+      );
+      console.log("Obraz dodany do edytora!");
+    } else {
+      console.error("Brak aktywnego edytora JoditEditor.");
     }
   };
 
@@ -1305,7 +1391,12 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                                   "question"
                                                 )
                                               }
-                                              // onBlur={handleBlurEgzam}
+                                              onChange={() =>
+                                                setIsEditorReady(true)
+                                              }
+                                              onBlur={() =>
+                                                setIsEditorReady(true)
+                                              }
                                               config={{
                                                 readonly: false,
                                                 toolbarSticky: true,
@@ -1375,10 +1466,11 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                                                   },
                                                   {
                                                     name: "insertCode",
-                                                    tooltip: "Wstaw kod",
+                                                    tooltip:
+                                                      "Generuj obraz z kodu",
                                                     zIndex: 99999, // Główny zIndex dla całego edytora
                                                     iconURL:
-                                                      "https://cdn.icon-icons.com/icons2/936/PNG/512/code_icon-icons.com_73620.png",
+                                                      "https://cdn.icon-icons.com/icons2/561/PNG/512/code-optimization_icon-icons.com_53810.png",
                                                     exec: () =>
                                                       handleOpenModal(),
                                                   },
@@ -1689,7 +1781,8 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
       <CodeSampleModal
         show={showModal}
         onClose={handleCloseModal}
-        onSave={handleSaveCodeSample}
+        onSave={handleInsertImage}
+        editorRef={editorRef}
       />
     </div>
   );
