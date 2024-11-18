@@ -4,7 +4,6 @@ import React, {
   useRef,
   useContext,
   useCallback,
-  memo,
 } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle";
@@ -50,94 +49,53 @@ import AppContext from "./AppContext";
 import WindowConfirm from "./WindowConfirm";
 import html2canvas from "html2canvas";
 import JoditEditor from "jodit-react";
-import Prism from "prismjs";
-import "prismjs/themes/prism.css";
-import "prismjs/components/prism-javascript";
-import "prismjs/components/prism-python";
-import "prismjs/components/prism-xml-doc";
-import "prismjs/components/prism-textile";
-import "prismjs/components/prism-ruby";
-import "prismjs/components/prism-java";
-import "prismjs/components/prism-c";
-import "prismjs/components/prism-csharp";
-import "prismjs/components/prism-textile";
-import "prismjs/components/prism-typescript";
-import "prismjs/components/prism-css";
-import "prismjs/components/prism-basic";
-import "prismjs/components/prism-visual-basic";
-import "prismjs/components/prism-dart";
-import "prismjs/components/prism-xml-doc";
+
+import CodeEditor from "./CodeEditor";
+import domtoimage from "dom-to-image";
 
 
 const CodeSampleModal = ({ show, onClose, onSave, editorRef }) => {
-  const [language, setLanguage] = useState("HTML/XML");
+  const [language, setLanguage] = useState("html");
   const [code, setCode] = useState("");
   const codeRef = useRef(null);
 
-  const highlightCode = useCallback(() => {
-    Prism.highlightAll();
-  }, [code, language]);
 
-  useEffect(() => {
-    highlightCode();
-  }, [code, language, highlightCode]);
 
-  // Generate line numbers by splitting the code into lines
-  const getLineNumbers = () => {
-    return code.split("\n").map((_, index) => `${index + 1}`);
-  };
 
-  // Function to keep the cursor at the end after each update
-  const moveCursorToEnd = useCallback(() => {
-    if (codeRef.current) {
-      const range = document.createRange();
-      const selection = window.getSelection();
-      range.selectNodeContents(codeRef.current);
-      range.collapse(false);
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-  }, []);
-
-  // Set up the initial state and bind input handler
-  const handleInput = (e) => {
-    // Update the state without modifying the DOM directly
-    setCode(e.currentTarget.textContent);
-  };
-
-  // Ensure the cursor stays at the end after code state updates
-  useEffect(() => {
-    moveCursorToEnd();
-  }, [code, moveCursorToEnd]);
-
-  const handleSaveImage = async () => {
-    if (!codeRef.current) {
-      console.error("Nie znaleziono referencji do bloku kodu.");
+const handleSaveImage = async () => {
+  try {
+    const editorContainer = document.querySelector("#UNIQUE_ID_OF_DIV"); // Znajdź kontener edytora na podstawie jego ID
+    if (!editorContainer) {
+      console.error("Nie znaleziono kontenera edytora.");
       return;
     }
 
-    try {
-      const canvas = await html2canvas(codeRef.current, {
-        backgroundColor: "#fff",
-        useCORS: true,
-      });
-      const image = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.href = image;
-      link.download = `code-preview-${Date.now()}.png`;
-      link.click();
-      toast.success(
-        "Obraz z twojego kodu został wygenerowany pomyślnie.  Użyj narzędzia wstawiania grafiki aby dodać go do edytora."
-      );
-      onClose();
-    } catch (error) {
-      toast.error("Wystąpił błąd podczas generowania obrazu z kodu");
-    }
-  };
+    // Użyj html2canvas do wygenerowania obrazu
+    const canvas = await html2canvas(editorContainer, {
+      backgroundColor: "#fff", // Ustaw białe tło
+    });
+
+    // Konwertuj obraz na dane URL w formacie PNG
+    const image = canvas.toDataURL("image/png");
+
+    // Utwórz link do pobrania
+    const link = document.createElement("a");
+    link.href = image;
+    link.download = `code-editor-snapshot-${Date.now()}.png`; // Nadaj nazwę plikowi z timestampem
+    link.click();
+
+    console.log("Obraz został pomyślnie zapisany!");
+  } catch (error) {
+    console.error("Błąd podczas zapisywania obrazu:", error);
+  }
+};
+
+
+
 
 
   return (
-    <Modal show={show} onHide={onClose} centered>
+    <Modal show={show} onHide={onClose} centered size="lg">
       <Modal.Header closeButton>
         <Modal.Title>Generetor obrazu z kodu programu</Modal.Title>
       </Modal.Header>
@@ -150,20 +108,21 @@ const CodeSampleModal = ({ show, onClose, onSave, editorRef }) => {
               value={language}
               style={{ width: "95%" }}
               onChange={(e) => setLanguage(e.target.value)}>
-              <option value="textile">HTML/XML</option>
+              <option value="html">HTML/XML</option>
               <option value="javascript">JavaScript</option>
               <option value="css">CSS</option>
               <option value="php">PHP</option>
               <option value="ruby">Ruby</option>
               <option value="python">Python</option>
               <option value="java">Java</option>
-              <option value="c">C</option>
+              <option value="c_cpp">C</option>
               <option value="csharp">C#</option>
               <option value="basic">Basic</option>
-              <option value="visual-basic">VBA</option>
+              <option value="basic">VBA</option>
               <option value="typescript">TypeScript</option>
               <option value="dart">Dart</option>
-              <option value="plain">Plain Text</option>
+              <option value="perl">Perl</option>
+              <option value="plain_text">Plain Text</option>
             </Form.Control>
           </Form.Group>
           <Form.Group controlId="codeTextarea">
@@ -171,56 +130,11 @@ const CodeSampleModal = ({ show, onClose, onSave, editorRef }) => {
             <div
               style={{
                 display: "flex",
-                alignItems: "flex-start",
-                width: "98%",
+                width: "800px",
               }}>
-              <div
-                style={{
-                  marginRight: "10px",
-                  textAlign: "right",
-                  color: "#999",
-                  lineHeight: "1.5em",
-                  fontSize: "0.9em",
-                  paddingTop: "10px", // Aligns with code block
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "flex-start",
-                  whiteSpace: "pre-wrap",
-                  fontFamily: "monospace", // Ensure font match with line numbers
-                  fontSize: "0.9em", // Consistent size for both
-                }}>
-                {getLineNumbers().map((lineNumber, index) => (
-                  <div key={index} style={{ height: "1.5em" }}>
-                    {lineNumber}
-                  </div>
-                ))}
+              <div>
+                <CodeEditor language={language} code={code} setCode={setCode} />
               </div>
-              <pre
-                className={`language-${language}`}
-                style={{
-                  flexGrow: 1,
-                  margin: 0,
-                  paddingTop: "10px",
-                }}>
-                <code
-                  ref={codeRef}
-                  className={`language-${language}`}
-                  contentEditable
-                  suppressContentEditableWarning={true}
-                  onInput={handleInput}
-                  style={{
-                    backgroundColor: "#f5f5f5",
-                    padding: "10px",
-                    borderRadius: "5px",
-                    lineHeight: "1.5em",
-                    whiteSpace: "pre-wrap",
-                    fontSize: "0.9em",
-                    margin: 0,
-                    fontFamily: "monospace", // Ensure font match with line numbers
-                  }}>
-                  {code}
-                </code>
-              </pre>
             </div>
           </Form.Group>
         </Form>
