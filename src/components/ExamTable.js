@@ -53,46 +53,121 @@ import JoditEditor from "jodit-react";
 import CodeEditor from "./CodeEditor";
 import domtoimage from "dom-to-image";
 
-
 const CodeSampleModal = ({ show, onClose, onSave, editorRef }) => {
   const [language, setLanguage] = useState("html");
   const [code, setCode] = useState("");
   const codeRef = useRef(null);
 
+  const handleSaveImage = async () => {
+    try {
+      const editorContainer = document.querySelector("#UNIQUE_ID_OF_DIV");
+      if (!editorContainer) {
+        console.error("Nie znaleziono kontenera edytora.");
+        return;
+      }
 
+      const aceEditorInstance = editorContainer.env?.editor;
+      if (!aceEditorInstance) {
+        console.error("Nie znaleziono instancji AceEditor.");
+        return;
+      }
 
+      const code = aceEditorInstance.getValue();
+      const lines = code.split("\n");
 
-const handleSaveImage = async () => {
-  try {
-    const editorContainer = document.querySelector("#UNIQUE_ID_OF_DIV"); // Znajdź kontener edytora na podstawie jego ID
-    if (!editorContainer) {
-      console.error("Nie znaleziono kontenera edytora.");
-      return;
+      const fontSize = 18;
+      const lineHeight = fontSize + 6;
+      const padding = 20;
+      const lineNumberWidth = 60;
+
+      const tempCanvas = document.createElement("canvas");
+      const tempContext = tempCanvas.getContext("2d");
+      tempContext.font = `${fontSize}px monospace`;
+
+      let maxWidth = 0;
+      lines.forEach((line) => {
+        const lineWidth = tempContext.measureText(line).width + lineNumberWidth;
+        if (lineWidth > maxWidth) {
+          maxWidth = lineWidth;
+        }
+      });
+
+      const canvasWidth = maxWidth + 2 * padding;
+      const canvasHeight = lines.length * lineHeight + 2 * padding;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+      const context = canvas.getContext("2d");
+
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      context.font = `${fontSize}px monospace`;
+
+      let y = padding;
+      lines.forEach((line, index) => {
+        let x = padding;
+
+        const lineNumber = (index + 1).toString().padStart(4, " ");
+        context.fillStyle = "#888888";
+        context.fillText(`${lineNumber} |`, x, y);
+        x += lineNumberWidth;
+
+        const session = aceEditorInstance.getSession();
+        const tokens = session.getTokens(index);
+
+        tokens.forEach((token) => {
+          const text = token.value;
+          const tokenType = token.type;
+
+          console.log(
+            `Linia ${index + 1}, Token: "${text}", Typ: "${tokenType}"`
+          );
+
+          const color = getTokenColor(tokenType); // Użyj funkcji kolorów
+          context.fillStyle = color;
+          context.fillText(text, x, y);
+          x += context.measureText(text).width;
+        });
+
+        y += lineHeight;
+      });
+
+      const image = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.href = image;
+      link.download = `code-editor-snapshot-${Date.now()}.png`;
+      link.click();
+
+      toast.success(
+        "Obraz z twojego kodu został wygenerowany pomyślnie.  Użyj narzędzia wstawiania grafiki aby dodać go do edytora."
+      );
+    } catch (error) {
+      toast.error("Wystąpił błąd podczas generowania obrazu z kodu");
     }
+  };
 
-    // Użyj html2canvas do wygenerowania obrazu
-    const canvas = await html2canvas(editorContainer, {
-      backgroundColor: "#fff", // Ustaw białe tło
-    });
+  // Funkcja mapująca typ tokenu na kolor
+  const getTokenColor = (tokenType) => {
+    const colorMapping = {
+      keyword: "#0000FF", // Niebieski dla słów kluczowych
+      string: "#DD1144", //
+      comment: "#808080", // Szary dla komentarzy
+      constant: "#B22222", // Czerwony dla stałych
+      identifier: "#0086B3", // Czarny dla identyfikatorów
+      default: "#000000", // Czarny jako domyślny kolor
+      variable: "#0086B3", // Pomarańczowy dla zmiennych
+      function: "#0086B3", // Pomarańczowy dla zmiennych
+      storage: "#0086B3", // Ciemnoniebieski dla instrukcji (np. print, echo)
+      object: "#8B0000", // Bordowy dla obiektów
+      identifier: "#000000",
+      "keyword.control": "#0086B3", // Ciemnoniebieski dla instrukcji sterujących (np. 'echo', 'print')
+      "storage.type": "#0086B3", // Opcjonalne dla typów storage w innych językach
+    };
 
-    // Konwertuj obraz na dane URL w formacie PNG
-    const image = canvas.toDataURL("image/png");
-
-    // Utwórz link do pobrania
-    const link = document.createElement("a");
-    link.href = image;
-    link.download = `code-editor-snapshot-${Date.now()}.png`; // Nadaj nazwę plikowi z timestampem
-    link.click();
-
-    console.log("Obraz został pomyślnie zapisany!");
-  } catch (error) {
-    console.error("Błąd podczas zapisywania obrazu:", error);
-  }
-};
-
-
-
-
+    return colorMapping[tokenType] || colorMapping.default;
+  };
 
   return (
     <Modal show={show} onHide={onClose} centered size="lg">
