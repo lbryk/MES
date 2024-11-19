@@ -1,178 +1,192 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
 import "bootstrap/dist/js/bootstrap.bundle";
-import { Editor } from "@tinymce/tinymce-react";
+import JoditEditor from "jodit-react";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faAdd } from "@fortawesome/free-solid-svg-icons";
 import { library } from "@fortawesome/fontawesome-svg-core";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import AppContext from "./AppContext";
 import "react-toastify/dist/ReactToastify.css";
+import CodeImageCreatorJodit from "./CodeImageCreatorJodit";
 
 library.add(faAdd);
+
 const QuestCreator = ({ examName }) => {
-  const { editorApiKey } = useContext(AppContext); 
   const editorRef = useRef(null);
+  const { editorApiKey } = useContext(AppContext); // Context placeholder
   const [questNumber, setQuestNumber] = useState("1");
   const [questText, setquestText] = useState("");
   const [answers, setAnswers] = useState({ A: "", B: "", C: "", D: "" });
   const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const handleOpenModal = () => setShowModal(true);
+  const handleCloseModal = () => setShowModal(false);
+  const [isEditorVisible, setIsEditorVisible] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isEditorReady, setIsEditorReady] = useState(false);
+  const [editing, setEditing] = useState({ examId: null, questionIndex: null });
+  
 
-  const handleEditorChange = (content, key) => {
-    setAnswers((prev) => ({ ...prev, [key]: content }));
+ const handleEditorChange = (content, key) => {
+   if (key) {
+     setAnswers((prev) => {
+       const updatedAnswers = { ...prev, [key]: content };
+       console.log("Updated answers:", updatedAnswers); // Debug
+       return updatedAnswers;
+     });
+   } else {
+     console.log("Question text updated:", content); // Debug
+     setquestText(content);
+   }
+ };
+
+  const handleInsertImage = (image) => {
+    if (editorRef.current && editorRef.current.editor) {
+      const editorInstance = editorRef.current.editor;
+      editorInstance.selection.insertHTML(
+        `<img src="${image}" alt="Code Preview" />`
+      );
+      console.log("Obraz dodany do edytora!");
+    } else {
+      console.error("Brak aktywnego edytora JoditEditor.");
+    }
   };
 
-  const renderAnswerOption = (key, label) => (
-    <div className="d-flex mt-4" key={key}>
-      <div className="col-1 d-flex justify-content-center">
-        <input
-          type="radio"
-          className="form-check-input"
-          name="answer"
-          value={key}
-          checked={selectedAnswer === key}
-          onChange={() => setSelectedAnswer(key)}
-        />
-        &nbsp;
-        <strong>{label}</strong>
-      </div>
-      <div className="col-10">
-        <Editor
-          key={label}
-          apiKey={editorApiKey}
-          initialValue={`<p>Tu twórz odpowiedź ${label}.</p>`}
-          onEditorChange={(content) => handleEditorChange(content, key)}
-          name={`ans${label}`}
-          init={{
-            selector: "textarea",
-            toolbar: "language",
-            language: "pl",
-            content_langs: [{ title: "Polish", code: "pl" }],
-            height: 200,
-            width: 850,
-            menubar: false,
-            forced_root_block: "",
-            force_br_newlines: true,
-            force_p_newlines: false,
-            plugins: [
-              "advlist",
-              "autolink",
-              "lists",
-              "link",
-              "image",
-              "charmap",
-              "preview",
-              "anchor",
-              "searchreplace",
-              "visualblocks",
-              "code",
-              "fullscreen",
-              "insertdatetime",
-              "media",
-              "table",
-              "help",
-              "wordcount",
-              "codesample",
-              "hilitecolor",
-              "charmap",
-            ],
-            toolbar:
-              "undo redo | media image link table charmap codesample | " +
-              "bold italic underline forecolor backcolor | alignleft aligncenter " +
-              "alignright alignjustify | bullist numlist outdent indent | " +
-              "removeformat | help",
-            content_style:
-              "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-          }}
-        />
-      </div>
+
+const renderAnswerOption = (key, label) => (
+  <div className="d-flex mt-4" key={key}>
+    <div className="col-1 d-flex justify-content-center">
+      <input
+        type="radio"
+        className="form-check-input"
+        name="answer"
+        value={key}
+        checked={selectedAnswer === key}
+        onChange={() => setSelectedAnswer(key)}
+      />
+      &nbsp;
+      <strong>{label}</strong>
     </div>
-  );
-
-  useEffect(() => {
-    if (!questNumber) {
-      setQuestNumber(setQuestNumber);
-    }
-  }, [questNumber]);
-
-  const log = () => {
-    if (editorRef.current) {
-      console.log(editorRef.current.getContent());
-    }
-  };
-
+    <div className="col-10">
+      <JoditEditor
+        value={answers[key]}
+        onBlur={(newContent) => {
+          setAnswers((prev) => {
+            const updatedAnswers = { ...prev, [key]: newContent };
+            return updatedAnswers;
+          });
+        }}
+        onEditorChange={(content) => handleEditorChange(content, key)}
+        config={{
+          readonly: false,
+          toolbarSticky: true,
+          height: 200,
+          toolbarAdaptive: false,
+          buttons: [
+            "undo",
+            "redo",
+            "|",
+            "video",
+            "image",
+            "link",
+            "table",
+            "|",
+            "font",
+            "fontsize",
+            "bold",
+            "italic",
+            "underline",
+            "strikethrough",
+            "brush",
+            "|",
+            "align",
+            "|",
+            "ul",
+            "ol",
+            "outdent",
+            "indent",
+            "|",
+            "copyformat",
+            "eraser",
+            "|",
+            "hr",
+          ],
+          extraButtons: [
+            {
+              name: "codeBlock",
+              tooltip: "Wstaw blok kodu",
+              iconURL:
+                "https://cdn.icon-icons.com/icons2/2406/PNG/512/codeblock_editor_highlight_icon_145997.png",
+              exec: (editor) => {
+                const pre = editor.selection.j.createInside.element("pre");
+                pre.style =
+                  "background-color:#F0F0F0; text-align:left; padding:10px;";
+                pre.innerHTML = editor.selection.html;
+                editor.selection.insertNode(pre);
+              },
+            },
+            {
+              name: "insertCode",
+              tooltip: "Generuj obraz z kodu",
+              zIndex: 99999, // Główny zIndex dla całego edytora
+              iconURL:
+                "https://cdn.icon-icons.com/icons2/561/PNG/512/code-optimization_icon-icons.com_53810.png",
+              exec: () => handleOpenModal(),
+            },
+          ],
+          uploader: {
+            insertImageAsBase64URI: true,
+          },
+        }}
+      />
+    </div>
+  </div>
+);
 
   const handleFormSubmit = async (event) => {
-    event.preventDefault();
+      event.preventDefault();
 
-    if (
-      !questText ||
-      !answers.A ||
-      !answers.B ||
-      !answers.C ||
-      !answers.D ||
-      !selectedAnswer
-    ) {
-      toast.error(
-        `Uzupełnij wszystkie pola: pytanie, odpowiedzi oraz zaznacz poprawną odpowiedź!`,
-        {
-          autoClose: 950,
-        }
-      );
-      return;
-    }
+      console.log("Current question text:", questText);
+      console.log("Current answers:", answers);
+      console.log("Selected answer:", selectedAnswer);
 
-    if (questNumber > 40) {
-      setQuestNumber(40);
-      toast.error(`Maksymalna ilość pytań w arkuszu wynosi 40.`, {
-        autoClose: 950,
-      });
-
-      document.querySelector('button[name="addQuestbutton1"]').disabled = true;
-      document.querySelector('button[name="addQuestbutton2"]').disabled = true;
-      return;
-    }
+  if (
+    !questText.trim() ||
+    !answers.A.trim() ||
+    !answers.B.trim() ||
+    !answers.C.trim() ||
+    !answers.D.trim() ||
+    !selectedAnswer
+  ) {
+    toast.error(
+      "Uzupełnij wszystkie pola: pytanie, odpowiedzi oraz zaznacz poprawną odpowiedź!",
+      { autoClose: 950 }
+    );
+    return;
+  }
 
     try {
       const docRef = doc(db, examName, String(questNumber));
-
       await setDoc(docRef, {
-        question: questText.replace(
-          /<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
-          ""
-        ),
-        a: answers.A.replace(
-          /<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
-          ""
-        ),
-        b: answers.B.replace(
-          /<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
-          ""
-        ),
-        c: answers.C.replace(
-          /<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
-          ""
-        ),
-        d: answers.D.replace(
-          /<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
-          ""
-        ),
+        question: questText,
+        a: answers.A,
+        b: answers.B,
+        c: answers.C,
+        d: answers.D,
         answer: selectedAnswer.toLowerCase(),
       });
 
-      setQuestNumber((prevQuestNumber) => Number(prevQuestNumber) + 1);
+      setQuestNumber((prev) => Number(prev) + 1);
       toast.success(`Pytanie ${questNumber} - zostało dodane`, {
         autoClose: 150,
       });
     } catch (error) {
       console.error("Error saving question:", error);
-      toast.error(
-        "Wystąpił błąd podczas zapisywania pytania. Spróbuj ponownie.",
-        {
-          autoClose: 950,
-        }
-      );
+      toast.error("Wystąpił błąd podczas zapisywania pytania.", {
+        autoClose: 950,
+      });
     }
   };
 
@@ -189,74 +203,98 @@ const QuestCreator = ({ examName }) => {
           &nbsp; Dodaj pytanie
         </button>
       </div>
+      <div className="pb-3 h4">Pytanie {questNumber}</div>
+      <JoditEditor
+        ref={editorRef}
+        value="questEdit"
+        onBlur={(newContent) => {
+          console.log("New content for question text:", newContent); // Debug
+          setquestText(newContent);
+        }}
+        onEditorChange={(content) => {
+          setquestText(content);
+        }}
+        config={{
+          readonly: false,
+          height: 400,
+          toolbarSticky: true,
+          toolbarAdaptive: false,
+          buttons: [
+            "undo",
+            "redo",
+            "|",
+            "video",
+            "image",
+            "link",
+            "table",
+            "|",
+            "font",
+            "fontsize",
+            "bold",
+            "italic",
+            "underline",
+            "strikethrough",
+            "brush",
+            "|",
+            "align",
+            "|",
+            "ul",
+            "ol",
+            "outdent",
+            "indent",
+            "|",
+            "copyformat",
+            "eraser",
+            "|",
+            "hr",
+          ],
+          extraButtons: [
+            {
+              name: "codeBlock",
+              tooltip: "Wstaw blok kodu",
+              iconURL:
+                "https://cdn.icon-icons.com/icons2/2406/PNG/512/codeblock_editor_highlight_icon_145997.png",
+              exec: (editor) => {
+                const pre = editor.selection.j.createInside.element("pre");
+                pre.style =
+                  "background-color:#F0F0F0; text-align:left; padding:10px;";
+                pre.innerHTML = editor.selection.html;
+                editor.selection.insertNode(pre);
+              },
+            },
+            {
+              name: "insertCode",
+              tooltip: "Generuj obraz z kodu",
+              zIndex: 99999, // Główny zIndex dla całego edytora
+              iconURL:
+                "https://cdn.icon-icons.com/icons2/561/PNG/512/code-optimization_icon-icons.com_53810.png",
+              exec: () => handleOpenModal(),
+            },
+          ],
+          uploader: {
+            insertImageAsBase64URI: true,
+          },
+        }}
+      />
       <div className="mt-4">
-        <form name="questAdd">
-          <div className="pb-3 h4">Pytanie {questNumber}</div>
-          {
-            <Editor
-              apiKey={editorApiKey}
-              onInit={(evt, editor) => (editorRef.current = editor)}
-              initialValue="<p>Tu twórz pytanie.</p>"
-              name="questEdit"
-              onEditorChange={(content, editor) => {
-                setquestText(content);
-              }}
-              init={{
-                selector: "textarea",
-                toolbar: "language",
-                language: "pl",
-                content_langs: [{ title: "Polish", code: "pl" }],
-                height: 400,
-                menubar: false,
-                plugins: [
-                  "advlist",
-                  "autolink",
-                  "lists",
-                  "link",
-                  "image",
-                  "charmap",
-                  "preview",
-                  "anchor",
-                  "searchreplace",
-                  "visualblocks",
-                  "code",
-                  "fullscreen",
-                  "insertdatetime",
-                  "media",
-                  "table",
-                  "help",
-                  "wordcount",
-                  "codesample",
-                  "hilitecolor",
-                  "charmap",
-                ],
-                toolbar:
-                  "undo redo blocks | media image link table charmap codesample | " +
-                  "bold italic underline forecolor backcolor | alignleft aligncenter " +
-                  "alignright alignjustify | bullist numlist outdent indent | " +
-                  "removeformat | help",
-                content_style:
-                  "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-              }}
-            />
-          }
-          <div className="mt-4">
-            <strong className="h4">Odpowiedzi</strong>
-            {["A", "B", "C", "D"].map((key) => renderAnswerOption(key, key))}
-            <div className="d-flex justify-content-end">
-              <button
-                type="submit"
-                onClick={handleFormSubmit}
-                className="mt-4 btn btn-success"
-                name="addQuestbutton2">
-                <FontAwesomeIcon icon={faAdd} />
-                &nbsp; Dodaj pytanie
-              </button>
-            </div>
-          </div>
-        </form>
-        <div style={{ height: 50 }}></div>
+        <strong className="h4">Odpowiedzi</strong>
+        {["A", "B", "C", "D"].map((key) => renderAnswerOption(key, key))}
+        <div className="d-flex justify-content-end">
+          <button
+            type="submit"
+            onClick={handleFormSubmit}
+            className="mt-4 btn btn-success">
+            <FontAwesomeIcon icon={faAdd} />
+            &nbsp; Dodaj pytanie
+          </button>
+        </div>
       </div>
+      <CodeImageCreatorJodit
+        show={showModal}
+        onClose={handleCloseModal}
+        onSave={handleInsertImage}
+        editorRef={editorRef}
+      />
     </div>
   );
 };
