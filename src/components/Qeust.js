@@ -214,7 +214,6 @@ const Quest = () => {
           await updateDoc(userRef, {
             inLegal: currentCount + 1, // Zwiększ licznik o 1
           });
-          console.log("Licznik inLegal zaktualizowany");
         }
       } catch (error) {
         console.error("Błąd podczas aktualizacji pola inLegal:", error);

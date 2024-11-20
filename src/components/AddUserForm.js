@@ -198,7 +198,6 @@ const AddUserForm = ({ onSave, examcode, profession, refreshUsers }) => {
 		}
 	};
 
-	console.log(attemptValue);
 	return (
 		<div className='mt-4'>
 			<Form onSubmit={handleSubmit}>

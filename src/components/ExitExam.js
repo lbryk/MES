@@ -159,7 +159,6 @@ const ExitExam = () => {
       const sessionRef = doc(db, "userSessions", userName); // Dokument sesji użytkownika
       try {
         await deleteDoc(sessionRef);
-        console.log(`Usunięto sesję dla użytkownika ${userName}`);
       } catch (error) {
         console.error("Błąd podczas usuwania sesji:", error);
       }

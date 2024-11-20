@@ -380,7 +380,6 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
       fetchExams(); // Re-fetch the exams to update the list
       toast.success(`Egzamin został pomyślnie zduplikowany: ${newCode}`);
     } catch (error) {
-      console.error("Error duplicating exam: ", error);
       toast.error("Błąd podczas duplikowania egzaminu");
     }
   };
@@ -547,7 +546,6 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
         collectionDocs.forEach(async (doc) => {
           await deleteDoc(doc.ref);
         });
-        console.log(`Collection ${examCollectionName} cleared.`);
       } catch (error) {
         console.error(
           `Error clearing collection ${examCollectionName}: `,
@@ -646,7 +644,6 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
       await batch.commit();
       toast.success("Kolejność pytań została pomyślnie zaktualizowana!");
     } catch (error) {
-      console.error("Błąd podczas aktualizacji kolejności pytań:", error);
       toast.error("Aktualizacja kolejności pytań nie powiodła się.");
     }
   };
@@ -712,7 +709,6 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
         return updatedExams;
       });
     } catch (error) {
-      console.error("Błąd podczas aktualizacji odpowiedzi:", error);
       toast.error("Aktualizacja odpowiedzi nie powiodła się.", {
         autoClose: 5000,
       });
@@ -877,7 +873,6 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
         </div>
       );
     } catch (error) {
-      console.error(`Błąd podczas dodawania nowego pytania:`, error);
       toast.error("Dodawanie nowego pytania nie powiodło się.");
     }
   };
@@ -886,52 +881,12 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
   const handleOpenModal = () => setShowModal(true);
   const handleCloseModal = () => setShowModal(false);
 
-  // const waitForEditorInstance = async (maxRetries = 10, interval = 100) => {
-  //   for (let i = 0; i < maxRetries; i++) {
-  //     if (editorRef.current && editorRef.current.editor) {
-  //       return editorRef.current.editor;
-  //     }
-  //     console.log(`Waiting for editor instance... (${i + 1}/${maxRetries})`);
-  //     await new Promise((resolve) => setTimeout(resolve, interval));
-  //   }
-  //   throw new Error(
-  //     "Failed to initialize Jodit editor instance within the timeout."
-  //   );
-  // };
-
-  // const handleSaveCodeSample = async () => {
-  //   try {
-  //     const codeContainer = codeRef.current; // Odwołanie do bloku kodu
-  //     if (!codeContainer) {
-  //       console.error("Nie znaleziono kontenera kodu.");
-  //       return;
-  //     }
-
-  //     // Renderowanie kontenera kodu jako obraz
-  //     const canvas = await html2canvas(codeContainer, {
-  //       backgroundColor: "#fff", // Ustaw białe tło dla przejrzystości
-  //     });
-  //     const image = canvas.toDataURL("image/png");
-
-  //     // Tworzenie linku do pobrania
-  //     const link = document.createElement("a");
-  //     link.href = image;
-  //     link.download = `code-preview-${Date.now()}.png`; // Nazwa pliku z timestampem
-  //     link.click();
-
-  //     console.log("Obraz wygenerowany pomyślnie!");
-  //   } catch (error) {
-  //     console.error("Błąd podczas generowania obrazu:", error);
-  //   }
-  // };
-
   const handleInsertImage = (image) => {
     if (editorRef.current && editorRef.current.editor) {
       const editorInstance = editorRef.current.editor;
       editorInstance.selection.insertHTML(
         `<img src="${image}" alt="Code Preview" />`
       );
-      console.log("Obraz dodany do edytora!");
     } else {
       console.error("Brak aktywnego edytora JoditEditor.");
     }

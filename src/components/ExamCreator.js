@@ -98,11 +98,6 @@ const ExamCreator = ({
   }, [selectedProfession, qualificationName, isSaved, examName]);
 
   const editorRef = useRef(null);
-  const log = () => {
-    if (editorRef.current) {
-      console.log(editorRef.current.getContent());
-    }
-  };
 
   // Function to generate an eight-character code consisting of lowercase letters, uppercase letters, and numbers.
   const generateCode = () => {

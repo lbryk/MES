@@ -39,7 +39,6 @@ const LiveUser = () => {
           isActive: true,
           lastActive: serverTimestamp(),
         });
-        console.log("Wysłano heartbeat dla użytkownika:", user.userName);
       } catch (error) {
         console.error("Błąd przy wysyłaniu heartbeat:", error);
       }
@@ -61,7 +60,6 @@ const LiveUser = () => {
           isActive: true,
           lastActive: serverTimestamp(),
         });
-        console.log("Utworzono sesję dla użytkownika:", user.uid);
       } catch (error) {
         console.error("Błąd przy tworzeniu sesji:", error);
       }
@@ -91,7 +89,6 @@ const LiveUser = () => {
       if (snapshot.empty) {
         console.log("Brak aktywnych sesji.");
       } else {
-        console.log("Aktywne sesje znalezione:");
         snapshot.docs.forEach((doc) => console.log(doc.data()));
       }
 

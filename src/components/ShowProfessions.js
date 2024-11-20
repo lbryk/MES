@@ -37,7 +37,6 @@ const ShowProfessions = () => {
       }));
       setProfessions(professionsData);
     } catch (error) {
-      console.error("Błąd podczas pobierania danych:", error);
       toast.error("Błąd podczas pobierania danych z kolekcji professions.");
     }
   };

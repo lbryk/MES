@@ -197,7 +197,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
       })
     );
   };
-console.log(editorApiKey);
+
   const handleSelectUser = (userId) => {
     const user = availableUsers.find((user) => user.id === userId);
     if (user && !editingAuthors.some((author) => author.id === userId)) {
@@ -351,7 +351,6 @@ console.log(editorApiKey);
       fetchExams(); // Re-fetch the exams to update the list
       toast.success(`Egzamin został pomyślnie zduplikowany: ${newCode}`);
     } catch (error) {
-      console.error("Error duplicating exam: ", error);
       toast.error("Błąd podczas duplikowania egzaminu");
     }
   };
@@ -518,7 +517,6 @@ console.log(editorApiKey);
         collectionDocs.forEach(async (doc) => {
           await deleteDoc(doc.ref);
         });
-        console.log(`Collection ${examCollectionName} cleared.`);
       } catch (error) {
         console.error(
           `Error clearing collection ${examCollectionName}: `,
@@ -617,7 +615,6 @@ console.log(editorApiKey);
       await batch.commit();
       toast.success("Kolejność pytań została pomyślnie zaktualizowana!");
     } catch (error) {
-      console.error("Błąd podczas aktualizacji kolejności pytań:", error);
       toast.error("Aktualizacja kolejności pytań nie powiodła się.");
     }
   };
@@ -652,7 +649,6 @@ console.log(editorApiKey);
         autoClose: 2000,
       });
     } catch (error) {
-      console.error("Błąd podczas aktualizacji odpowiedzi:", error);
       toast.error("Aktualizacja odpowiedzi nie powiodła się.", {
         autoClose: 5000,
       });
@@ -808,7 +804,6 @@ console.log(editorApiKey);
         </div>
       );
     } catch (error) {
-      console.error(`Błąd podczas dodawania nowego pytania:`, error);
       toast.error("Dodawanie nowego pytania nie powiodło się.");
     }
   };

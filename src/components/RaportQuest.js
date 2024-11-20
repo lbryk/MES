@@ -137,7 +137,6 @@ const RaportExam = () => {
 	const handleDelete = (index) => {
 		// Calculate the index of the user in the `users` array
 		const userIndex = usersPerPage * (currentPage - 1) + index;
-		console.log('Deleting user at index:', userIndex); // Add this line
 		setUserIndex(userIndex);
 		setModalIsOpen(true);
 	};
@@ -246,7 +245,6 @@ const RaportExam = () => {
 					}
 				);
 			} catch (error) {
-				console.error('Error deleting document: ', error);
 				toast.error('Błąd podczas usuwania zdającego: ' + error.message, {
 					autoClose: 5000, // Close the error message after 5 seconds
 				});

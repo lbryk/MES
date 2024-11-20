@@ -13,13 +13,11 @@ const CodeImageCreatorJodit = ({ show, onClose, onSave, editorRef }) => {
     try {
       const editorContainer = document.querySelector("#UNIQUE_ID_OF_DIV");
       if (!editorContainer) {
-        console.error("Nie znaleziono kontenera edytora.");
         return;
       }
 
       const aceEditorInstance = editorContainer.env?.editor;
       if (!aceEditorInstance) {
-        console.error("Nie znaleziono instancji AceEditor.");
         return;
       }
 
@@ -71,11 +69,6 @@ const CodeImageCreatorJodit = ({ show, onClose, onSave, editorRef }) => {
         tokens.forEach((token) => {
           const text = token.value;
           const tokenType = token.type;
-
-          console.log(
-            `Linia ${index + 1}, Token: "${text}", Typ: "${tokenType}"`
-          );
-
           const color = getTokenColor(tokenType); // Użyj funkcji kolorów
           context.fillStyle = color;
           context.fillText(text, x, y);

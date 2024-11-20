@@ -82,12 +82,10 @@ const LoginExam = () => {
     if (user && user.userName) {
       // Check that we have a valid user and userName
       const userSessionRef = doc(db, "userSessions", user.userName); // Ensure userName is used for sessions
-      console.log("Listening for session changes for:", user.userName);
 
       const unsubscribe = onSnapshot(userSessionRef, (doc) => {
         if (doc.exists()) {
           const data = doc.data();
-          console.log("Session data:", data);
           if (data.isActive === false) {
             alert("Egzamin został przerwany przez administratora.");
             logout(); // Log the user out
@@ -194,7 +192,6 @@ const LoginExam = () => {
           isActive: true, // Ustawiamy użytkownika jako aktywnego
           lastActive: serverTimestamp(), // Czas rozpoczęcia sesji
         });
-        console.log("Utworzono sesję użytkownika w 'userSessions':", userName);
       } catch (error) {
         console.error("Błąd przy tworzeniu sesji użytkownika:", error);
       }

@@ -86,7 +86,6 @@ const Content = () => {
     navigate("/exitExam");
   };
 
-  console.log(selectedAnswers);
   useEffect(() => {
     if (userName) {
       const sessionRef = doc(db, "userSessions", userName);

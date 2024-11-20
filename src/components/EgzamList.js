@@ -97,7 +97,7 @@ const ExamList = ({ refreshKey }) => {
     const previewWindow = window.open("", "_blank", "width=1000,height=800");
 
     try {
-      console.log("Rozpoczęcie zapytania o kolekcję pytań:", collectionName);
+
 
       // Pobierz pytania z kolekcji o nazwie exam.collectionName
       const questionsRef = collection(db, collectionName); // "collectionName" to nazwa kolekcji pytań

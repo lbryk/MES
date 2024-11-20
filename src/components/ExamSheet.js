@@ -550,7 +550,6 @@ const ExamSheet = ({ quizCodesData }) => {
   const handleUserPDFraport = async (user) => {
     if (!isGeneratingPDF && user && user.quizID && quizCodesData[user.quizID]) {
       setIsGeneratingPDF(true);
-      console.log(isGeneratingPDF);
       const data = quizCodesData[user.quizID];
       if (data && data.Qualification) {
         const qualification = data.Qualification;
@@ -675,7 +674,6 @@ const ExamSheet = ({ quizCodesData }) => {
           }, 1000);
           docpdf.save(`wyniki_${user.firstname}_${user.lastname}.pdf`);
           setIsGeneratingPDF(false);
-          console.log(isGeneratingPDF);
         } catch (error) {
           console.error("Error fetching myAnswers or generating PDF:", error);
         }
