@@ -37,6 +37,7 @@ const ExamList = ({ refreshKey }) => {
           year: doc.data().Year,
           session: doc.data().Session,
           autors: doc.data().Autors || [],
+          description: doc.data().Description,
         };
 
         // Definiowanie collectionName w kontekście każdego egzaminu
@@ -272,12 +273,13 @@ const ExamList = ({ refreshKey }) => {
             </th>
             <th onClick={() => handleSort("profession")}>Zawód</th>
             <th>Osoby z prawem edycji</th>
+            <th>Opis</th>
             <th>
               {" "}
               <div style={{ textAlign: "center" }}>
                 <FontAwesomeIcon icon="fa-solid fa-eye" />
               </div>
-            </th>
+            </th>          
           </tr>
         </thead>
         <tbody>
@@ -309,6 +311,7 @@ const ExamList = ({ refreshKey }) => {
                       </Badge>
                     ))}
                   </td>
+                  <td>{exam.description === '' ? '-' : exam.description}</td>
                   <td>
                     <button
                       className="btn btn-outline-success"

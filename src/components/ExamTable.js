@@ -83,6 +83,8 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
   const [isEditorVisible, setIsEditorVisible] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isEditorReady, setIsEditorReady] = useState(false);
+  const [editingDescriptionId, setEditingDescriptionId] = useState(null);
+  const [tempDescription, setTempDescription] = useState("");
 
   const fetchUserRole = async () => {
     try {
@@ -107,6 +109,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
         year: doc.data().Year,
         session: doc.data().Session,
         autors: doc.data().Autors || [],
+        description: doc.data().Description,
       }));
 
       let filteredExams;
@@ -253,6 +256,25 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
       await handleBlur();
     }
   };
+
+  const handleDoubleClickDescription = (examId, description) => {
+    setEditingDescriptionId(examId);
+    setTempDescription(description);
+  };
+
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (editingDescriptionId !== null && !event.target.closest(`textarea`)) {
+        handleSaveDescription(editingDescriptionId);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [editingDescriptionId, tempDescription]); 
 
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
@@ -629,12 +651,30 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
     }
   };
 
-  const handleDoubleClick = (examId, questionIndex, field) => {
+  const handleDoubleClick = (examId, questionIndex, field, description) => {
     setEditing({ examId, questionIndex, field });
     document.removeEventListener("mousedown", handleClickOutsideEditor);
     document.addEventListener("mousedown", handleClickOutsideEditor);
     setIsEditorVisible(true);
     setIsSaved(true);
+    setTempDescription(description);
+  };
+
+  const handleDescriptionChange = (e) => {
+    setTempDescription(e.target.value);
+  };
+
+  const handleSaveDescription = async (examId) => {
+    if (editingDescriptionId !== null) {
+      try {
+        const examDocRef = doc(db, "quizCode", examId);
+        await updateDoc(examDocRef, { Description: tempDescription });
+        setEditingDescriptionId(null);
+        fetchExams(); // Refresh the list to show the updated description
+      } catch (error) {
+        console.error("Failed to save description: ", error);
+      }
+    }
   };
 
   const updateQuestionInDatabase = async (
@@ -909,6 +949,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
               <th onClick={() => handleSort("profession")}>Zawód</th>
               <th>Osoby z prawem edycji</th>
               <th>Pytań w arkuszu</th>
+              <th>Opis arkusza</th>
               <th>Akcje</th>
             </tr>
           </thead>
@@ -1098,6 +1139,31 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                       )}
                     </td>
                     <td>{docCounts[exam.id]} / 40</td>
+                    <td
+                      onDoubleClick={() =>
+                        handleDoubleClickDescription(exam.id, exam.description)
+                      }>
+                      {editingDescriptionId === exam.id ? (
+                        <textarea
+                          value={tempDescription}
+                          onChange={handleDescriptionChange}
+                          onBlur={() => handleSaveDescription(exam.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              handleSaveDescription(exam.id);
+                              e.preventDefault(); // Prevent new line in textarea on Enter
+                            }
+                          }}
+                          autoFocus
+                          style={{ width: "100%" }}
+                        />
+                      ) : (
+                        <span>
+                          {exam.description || ""}
+                        </span>
+                      )}
+                    </td>
+
                     <td className="align-middle">
                       {!isTestQualification && (
                         <Button
