@@ -13,6 +13,24 @@ import CodeImageCreatorJodit from "./CodeImageCreatorJodit";
 
 library.add(faAdd);
 
+const cleanContent = (content) => {
+  return content
+    .replace(
+      /<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
+      ""
+    ) 
+    .trim();
+};
+
+  // const cleanContent = (content) => {
+  //   return content
+  //     .replace(
+        // /<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
+        // ""
+  //     )
+  //     .trim();
+  // };
+
 const QuestCreator = ({ examName }) => {
   const editorRef = useRef(null);
   const { editorApiKey } = useContext(AppContext); // Context placeholder
@@ -139,6 +157,7 @@ const QuestCreator = ({ examName }) => {
     </div>
   );
 
+
   const handleFormSubmit = async (event) => {
     event.preventDefault();
 
@@ -161,10 +180,10 @@ const QuestCreator = ({ examName }) => {
       const docRef = doc(db, examName, String(questNumber));
       await setDoc(docRef, {
         question: questText,
-        a: answers.A,
-        b: answers.B,
-        c: answers.C,
-        d: answers.D,
+        a: cleanContent(answers.A),
+        b: cleanContent(answers.B),
+        c: cleanContent(answers.C),
+        d: cleanContent(answers.D),
         answer: selectedAnswer.toLowerCase(),
       });
 
@@ -195,7 +214,7 @@ const QuestCreator = ({ examName }) => {
       <div className="pb-3 h4">Pytanie {questNumber}</div>
       <JoditEditor
         ref={editorRef}
-        value="questEdit"
+        value={questText}
         onBlur={(newContent) => {
           setquestText(newContent);
         }}
