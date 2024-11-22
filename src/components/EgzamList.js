@@ -7,9 +7,9 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import AppContext from "./AppContext";
 import Pagination from "./Pagination";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEye } from "@fortawesome/free-solid-svg-icons";
+import { faEye, faPrint } from "@fortawesome/free-solid-svg-icons";
 import { library } from "@fortawesome/fontawesome-svg-core";
-library.add(faEye);
+library.add(faEye, faPrint);
 
 const ExamList = ({ refreshKey }) => {
   const examsPerPage = 10;
@@ -249,6 +249,110 @@ const ExamList = ({ refreshKey }) => {
     }
   };
 
+const handlePrintExam = async (collectionName, qualification) => {
+  try {
+    const questionsRef = collection(db, collectionName);
+    const querySnapshot = await getDocs(questionsRef);
+
+    const questions = querySnapshot.docs
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+      .sort((a, b) => parseInt(a.id) - parseInt(b.id));
+
+    const printContent = `
+      <html>
+      <head>
+        <title>Wydruk egzaminu - ${collectionName}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid black; padding: 8px; text-align: left; }
+          img { max-width: 200px; height: auto; margin-top: 10px; }
+          .correct-answer { color: green; font-weight: bold; }
+          .italic-text { font-style: italic; color: #555; }
+        </style>
+      </head>
+      <body>
+        <h1>Wydruk egzaminu - ${collectionName}</h1>
+        <h2>Kwalifikacja: ${formatQualification(qualification)}</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Pytanie</th>
+              <th>Odpowiedzi</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${questions
+              .map(
+                (q, index) => `
+                <tr>
+                  <td>${index + 1}</td>
+                  <td>
+                    ${q.question}
+                    ${
+                      q.image
+                        ? `<br/><img src="${q.image}" alt="Ilustracja do pytania" onerror="this.src='placeholder-image-url.jpg';">`
+                        : ""
+                    }
+                    ${
+                      q.video
+                        ? `<br/><span class="italic-text">Pytanie zawiera materiał multimedialny</span>`
+                        : ""
+                    }
+                  </td>
+                  <td>
+                    <ul>
+                      <li class="${
+                        q.answer === "a" ? "correct-answer" : ""
+                      }">A: ${q.a}</li>
+                      <li class="${
+                        q.answer === "b" ? "correct-answer" : ""
+                      }">B: ${q.b}</li>
+                      <li class="${
+                        q.answer === "c" ? "correct-answer" : ""
+                      }">C: ${q.c}</li>
+                      <li class="${
+                        q.answer === "d" ? "correct-answer" : ""
+                      }">D: ${q.d}</li>
+                    </ul>
+                  </td>
+                </tr>
+              `
+              )
+              .join("")}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "absolute";
+    iframe.style.top = "-10000px";
+    document.body.appendChild(iframe);
+
+    const iframeDoc = iframe.contentWindow || iframe.contentDocument;
+    iframeDoc.document.open();
+    iframeDoc.document.write(printContent);
+    iframeDoc.document.close();
+
+    iframeDoc.focus();
+    iframeDoc.print();
+
+    iframeDoc.onafterprint = () => document.body.removeChild(iframe);
+  } catch (error) {
+    console.error("Błąd podczas drukowania egzaminu:", error);
+  }
+};
+
+
+
+
+
   return (
     <div className="mt-4">
       <div className="row">
@@ -277,9 +381,10 @@ const ExamList = ({ refreshKey }) => {
             <th>
               {" "}
               <div style={{ textAlign: "center" }}>
-                <FontAwesomeIcon icon="fa-solid fa-eye" />
+                <FontAwesomeIcon icon="fa-solid fa-eye" /> /{" "}
+                <FontAwesomeIcon icon="fa-solid fa-print" />
               </div>
-            </th>          
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -311,10 +416,10 @@ const ExamList = ({ refreshKey }) => {
                       </Badge>
                     ))}
                   </td>
-                  <td>{exam.description === '' ? '-' : exam.description}</td>
+                  <td>{exam.description === "" ? "-" : exam.description}</td>
                   <td>
                     <button
-                      className="btn btn-outline-success"
+                      className="btn btn-outline-success me-2"
                       onClick={() =>
                         handlePreviewClick(
                           exam.collectionName,
@@ -322,6 +427,13 @@ const ExamList = ({ refreshKey }) => {
                         )
                       }>
                       <FontAwesomeIcon icon="fa-solid fa-eye" />
+                    </button>
+                    <button
+                      className="btn btn-light mt-2"
+                      onClick={() =>
+                        handlePrintExam(exam.collectionName, exam.qualification)
+                      }>
+                      <FontAwesomeIcon icon="fa-solid fa-print" />
                     </button>
                   </td>
                 </tr>

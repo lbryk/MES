@@ -19,7 +19,8 @@ import { useAuth } from "../AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { faDoorClosed, faDoorOpen } from "@fortawesome/free-solid-svg-icons";
-
+import AlertTitle from "@mui/material/AlertTitle";
+import Alert from "@mui/material/Alert";
 library.add(faDoorClosed, faDoorOpen);
 
 const LiveUser = () => {
@@ -200,9 +201,13 @@ const LiveUser = () => {
     <div className="admin-panel mt-4">
       <h4>Aktualnie trwające egzaminy</h4>
       {loggedUsers.length === 0 ? (
-        <div className="alert alert-info" role="alert">
+        // <div className="alert alert-info" role="alert">
+        //   Brak aktywnych zdających
+        // </div>
+        <Alert severity="info">
+          <AlertTitle>Monitoring zdających</AlertTitle>
           Brak aktywnych zdających
-        </div>
+        </Alert>
       ) : (
         Object.keys(groupedUsers).map((quizID) => (
           <div key={quizID} className="mt-4">
@@ -235,9 +240,7 @@ const LiveUser = () => {
 
                   return (
                     <tr key={user.id}>
-                      <td>
-                        {user.userID}
-                      </td>
+                      <td>{user.userID}</td>
                       <td>{user.login}</td>
                       <td>{user.class}</td>
                       <td>{user.quizID}</td>

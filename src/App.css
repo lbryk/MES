@@ -435,3 +435,42 @@ a {
 	padding: 6px 0;
 }
 
+/* Poniższe usuń {zmień} w sp */
+
+/* Styl aktywnego taba */
+.nav-tabs .nav-link.active {
+  background-color: #f1f1f1; /* Kolor tła aktywnego taba */
+  color: #000000; /* Czarny tekst */
+  border: 1px solid #dcdcdc; /* Obramowanie */
+  border-radius: 5px 5px 0 0; /* Zaokrąglone górne rogi */
+  margin-right: 3px; /* Przerwa między tabami */
+}
+
+/* Styl nieaktywnego taba */
+.nav-tabs .nav-link {
+  background-color: transparent; /* Przezroczyste tło */
+  color: #88ACAC; /* Kolor tekstu nieaktywnych tabów */
+  border: 1px solid #dcdcdc; /* Obramowanie */
+  border-radius: 0; /* Brak zaokrągleń */
+  margin-right: 3px; /* Przerwa między tabami */
+  transition: all 0.3s ease-in-out;
+}
+
+/* Styl taba po najechaniu kursorem */
+.nav-tabs .nav-link:hover {
+  background-color: #eaeaea; /* Kolor tła po najechaniu kursorem */
+  color: #000000; /* Czarny tekst */
+  border: 1px solid #dcdcdc; /* Obramowanie */
+  border-radius: 5px 5px 0 0; /* Zaokrąglone górne rogi */
+  margin-right: 3px; /* Przerwa między tabami */
+}
+
+/* Styl całej sekcji z tabami */
+.nav-tabs {
+  border-bottom: 1px solid #dcdcdc; /* Dolna linia dla spójności */
+}
+
+/* Dostosowanie marginesu ostatniego taba, aby nie było przerwy na końcu */
+.nav-tabs .nav-link:last-child {
+  margin-right: 0;
+}
