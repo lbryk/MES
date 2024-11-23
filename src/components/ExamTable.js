@@ -1113,9 +1113,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                           style={{ width: "100%" }}
                         />
                       ) : (
-                        <span>
-                          {exam.description || ""}
-                        </span>
+                        <span>{exam.description || ""}</span>
                       )}
                     </td>
 
@@ -1123,7 +1121,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                       {!isTestQualification && (
                         <Button
                           variant="info"
-                          className="me-2"
+                          className="me-2 mt-2"
                           onClick={() => handleExamClick(exam)}>
                           <FontAwesomeIcon
                             title={
@@ -1140,14 +1138,17 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                       {!isTestQualification && (
                         <Button
                           variant="danger"
-                          className="me-2"
+                          className="me-2 mt-2"
+                          title="Usuń arkusz"
                           onClick={() => handleDeleteClick(exam)}>
                           <FontAwesomeIcon icon={faTrashCan} />
                         </Button>
                       )}
                       {!isTestQualification && (
                         <Button
+                          className="me-2 mt-2"
                           variant="warning"
+                          title="Klonuj arkusz"
                           onClick={() => handleDuplicate(exam)}>
                           <FontAwesomeIcon icon={faCopy} />
                         </Button>
@@ -1157,7 +1158,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
                           <Button
                             variant="success"
                             title="Dodaj pytanie do arkusza"
-                            className="ms-2"
+                            className="me-2 mt-2"
                             onClick={() => addQuestion(exam)}>
                             <FontAwesomeIcon icon={faPlus} />
                           </Button>

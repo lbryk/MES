@@ -33,9 +33,9 @@
 	margin-top: 15px;
 	align-items: end;
 	justify-self: flex-end;
-	background-color: #2baab1;
-	border: 1px solid #2baab1;
-	transition: all 0.7s;
+	background-color: #2baab1 !important;
+	border: 1px solid #2baab1 !important;
+	transition: all 0.7s !important;
 }
 
 .submitLogin:hover,

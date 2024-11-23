@@ -212,7 +212,7 @@ const LoginExam = () => {
           <Form.Group className="groupForm" controlId="formBasicEmail">
             <Form.Label>Login:</Form.Label>
             <Form.Control
-              className="fieldsLogin"
+              className="fieldsLogin w-75"
               type="text"
               placeholder="Podaj login zdającego"
               onChange={(e) => setLogin(e.target.value)}
@@ -225,7 +225,7 @@ const LoginExam = () => {
           <Form.Group className="groupForm" controlId="formBasicPassword">
             <Form.Label>Hasło:</Form.Label>
             <Form.Control
-              className="fieldsLogin"
+              className="fieldsLogin w-75"
               type="password"
               placeholder="Wprowadź hasło do egzaminu"
               onChange={(e) => setPassword(e.target.value)}
