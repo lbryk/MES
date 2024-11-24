@@ -19,6 +19,7 @@ import ShowAdmins from "./ShowAdmins";
 import AddAdmin from "./AddAdmin";
 import ShowProfessions from "./ShowProfessions";
 import ChangePassword from "./ChangePassword";
+import ShowQualifications from "./ShowQualifications";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -435,7 +436,7 @@ const AdminPanel = () => {
                     className="nav-link"
                     id="admin-panel-settings-btn"
                     data-bs-toggle="pill"
-                    data-bs-target="#admin-panel-settings-tab"
+                    data-bs-target="#nav-qalifications"
                     type="button"
                     role="tab"
                     aria-controls="admin-panel-settings-tab"
@@ -472,6 +473,16 @@ const AdminPanel = () => {
                   aria-labelledby="nav-professions-tab"
                   tabindex="0">
                   <ShowProfessions />
+                </div>
+              </div>
+              <div className="tab-content " id="nav-tabContent">
+                <div
+                  className="tab-pane fade"
+                  id="nav-qalifications"
+                  role="tabpanel"
+                  aria-labelledby="nav-professions-tab"
+                  tabindex="0">
+                  <ShowQualifications />
                 </div>
               </div>
             </div>
