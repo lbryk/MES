@@ -10,6 +10,7 @@ import {
   arrayUnion,
   query,
   where,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { Editor } from "@tinymce/tinymce-react";
@@ -49,23 +50,20 @@ const ExamCreator = ({
   const [description, setDescription] = useState("");
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      const q = query(
-        collection(db, "users"),
-        where("role", "in", ["sa", "a"])
-      );
-      const querySnapshot = await getDocs(q);
+    const q = query(collection(db, "users"), where("role", "in", ["sa", "a"]));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedUsers = [];
-      querySnapshot.forEach((doc) => {
+      snapshot.forEach((doc) => {
         if (doc.id !== currentUser) {
           fetchedUsers.push({ id: doc.id, ...doc.data() });
         }
       });
       setUsers(fetchedUsers);
       setAvailableUsers(fetchedUsers);
-    };
+    });
 
-    fetchUsers();
+    return () => unsubscribe(); // Wyłączenie nasłuchiwania po odmontowaniu komponentu
   }, []);
 
   const handleSelectUser = (userId) => {

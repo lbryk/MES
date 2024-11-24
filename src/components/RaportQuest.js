@@ -1,615 +1,614 @@
-import React, { useState, useEffect } from 'react';
-import 'bootstrap/dist/js/bootstrap.bundle';
+import React, { useState, useEffect } from "react";
+import "bootstrap/dist/js/bootstrap.bundle";
 import {
-	collection,
-	getDocs,
-	doc,
-	updateDoc,
-	deleteDoc,
-} from 'firebase/firestore';
-import db from '../firebase';
-import Pagination from './Pagination';
-import AddUserForm from './AddUserForm';
-import WindowConfirm from './WindowConfirm';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { library } from '@fortawesome/fontawesome-svg-core';
+  collection,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+} from "firebase/firestore";
+import db from "../firebase";
+import Pagination from "./Pagination";
+import AddUserForm from "./AddUserForm";
+import WindowConfirm from "./WindowConfirm";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { library } from "@fortawesome/fontawesome-svg-core";
 import {
-	faTrashCan,
-	faFileExcel,
-	faFile,
-	faUserPlus,
-	faUserMinus,
-} from '@fortawesome/free-solid-svg-icons';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+  faTrashCan,
+  faFileExcel,
+  faFile,
+  faUserPlus,
+  faUserMinus,
+} from "@fortawesome/free-solid-svg-icons";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 library.add(faTrashCan, faFileExcel, faFile, faUserPlus, faUserMinus);
 
 const RaportExam = () => {
-	const [originalUsers, setOriginalUsers] = useState([]);
-	const fetchData = async () => {
-		const data = await getDocs(collection(db, 'users'));
-		const usersData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-		setUsers(usersData);
-		setOriginalUsers(usersData);
-	};
+  const [originalUsers, setOriginalUsers] = useState([]);
 
-	const [users, setUsers] = useState([]);
-	const [currentPage, setCurrentPage] = useState(1);
-	const [usersPerPage] = useState(10);
-	const [selectedUser, setSelectedUser] = useState(null);
-	const [oldTime, setOldTime] = useState(null);
+  const fetchData = () => {
+    const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
+      const usersData = snapshot.docs.map((doc) => ({
+        ...doc.data(),
+        id: doc.id,
+      }));
+      setUsers(usersData);
+      setOriginalUsers(usersData);
+    });
 
-	useEffect(() => {
-		fetchData();
-	}, []);
+    return unsubscribe; // Funkcja do zakończenia nasłuchiwania
+  };
 
-	const [quizCodes, setQuizCodes] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [usersPerPage] = useState(10);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [oldTime, setOldTime] = useState(null);
 
-	useEffect(() => {
-		const fetchQuizCodes = async () => {
-			const querySnapshot = await getDocs(collection(db, 'quizCode'));
-			const codes = querySnapshot.docs.map((doc) => doc.id);
-			setQuizCodes(codes);
-		};
-		fetchQuizCodes();
-	}, []);
+  useEffect(() => {
+    const unsubscribe = fetchData(); // Rozpocznij nasłuchiwanie zmian
+    return () => unsubscribe(); // Wyłącz nasłuchiwanie po odmontowaniu komponentu
+  }, []);
+  
+  const [quizCodes, setQuizCodes] = useState([]);
 
-	const [profession, setfetchProfession] = useState([]);
-	useEffect(() => {
-		const fetchProfession = async () => {
-			const querySnapshot = await getDocs(collection(db, 'professions'));
-			const codes = querySnapshot.docs.map((doc) => doc.id);
-			setfetchProfession(codes);
-		};
-		fetchProfession();
-	}, []);
-	// Get current users
-	const filteredUsers = users.filter(
-		(user) => typeof user.role === 'string' && user.role.includes('s')
-	);
-	const indexOfLastUser = currentPage * usersPerPage;
-	const indexOfFirstUser = indexOfLastUser - usersPerPage;
-	const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "quizCode"), (snapshot) => {
+      const codes = snapshot.docs.map((doc) => doc.id);
+      setQuizCodes(codes);
+    });
 
-	// Change page
-	const paginate = (pageNumber) => setCurrentPage(pageNumber);
-	const handleRowClick = (user) => {
-		setSelectedUser(user);
-	};
+    return () => unsubscribe(); // Wyłącz subskrypcję po odmontowaniu komponentu
+  }, []);
 
-	const [editingIndex, setEditingIndex] = useState(null);
-	const [editingField, setEditingField] = useState(null);
-	const [editingValue, setEditingValue] = useState('');
+  const [profession, setfetchProfession] = useState([]);
 
-	const handleDoubleClick = (index, field, value) => {
-		setEditingIndex(index);
-		setEditingField(field);
-		setEditingValue(value);
-	};
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      collection(db, "professions"),
+      (snapshot) => {
+        const codes = snapshot.docs.map((doc) => doc.id);
+        setfetchProfession(codes);
+      }
+    );
 
-	const handleKeyDown = async (event, index, field) => {
-		if (event.key === 'Enter' || field === 'quizID') {
-			// Calculate the index of the user in the `users` array
-			const userIndex = usersPerPage * (currentPage - 1) + index;
+    return () => unsubscribe(); // Wyłącz subskrypcję po odmontowaniu komponentu
+  }, []);
 
-			const newUsers = [...users];
-			newUsers[userIndex][field] = editingValue;
-			setUsers(newUsers);
+  // Get current users
+  const filteredUsers = users.filter(
+    (user) => typeof user.role === "string" && user.role.includes("s")
+  );
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
 
-			// Update the data in your Firebase database
-			try {
-				const userRef = doc(db, 'users', newUsers[userIndex].id);
-				await updateDoc(userRef, { [field]: editingValue });
-			} catch (error) {
-				console.error('Error updating document: ', error);
-			}
+  // Change page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const handleRowClick = (user) => {
+    setSelectedUser(user);
+  };
 
-			// Reset oldTime when done editing quizTime
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [editingField, setEditingField] = useState(null);
+  const [editingValue, setEditingValue] = useState("");
 
-			setEditingIndex(null);
-			setEditingField(null);
-		}
-	};
-	useEffect(() => {
-		if (editingIndex !== null && editingField !== null) {
-			// Add event listener when the input field is being edited
-			document.addEventListener('mousedown', handleClickOutside);
-		} else {
-			// Remove event listener when the input field is not being edited
-			document.removeEventListener('mousedown', handleClickOutside);
-		}
+  const handleDoubleClick = (index, field, value) => {
+    setEditingIndex(index);
+    setEditingField(field);
+    setEditingValue(value);
+  };
 
-		// Cleanup function
-		return () => {
-			document.removeEventListener('mousedown', handleClickOutside);
-		};
-	}, [editingIndex, editingField]);
+  const handleKeyDown = async (event, index, field) => {
+    if (event.key === "Enter" || field === "quizID") {
+      // Calculate the index of the user in the `users` array
+      const userIndex = usersPerPage * (currentPage - 1) + index;
 
-	const handleClickOutside = (event, field) => {
-		if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'SELECT') {
-			setEditingIndex(null);
-			setEditingField(null);
-		}
-	};
+      const newUsers = [...users];
+      newUsers[userIndex][field] = editingValue;
+      setUsers(newUsers);
 
-	const [modalIsOpen, setModalIsOpen] = useState(false);
-	const [userIndex, setUserIndex] = useState(null);
-	const handleDelete = (index) => {
-		// Calculate the index of the user in the `users` array
-		const userIndex = usersPerPage * (currentPage - 1) + index;
-		setUserIndex(userIndex);
-		setModalIsOpen(true);
-	};
+      // Update the data in your Firebase database
+      try {
+        const userRef = doc(db, "users", newUsers[userIndex].id);
+        await updateDoc(userRef, { [field]: editingValue });
+      } catch (error) {
+        console.error("Error updating document: ", error);
+      }
 
-	const deleteUser = async () => {
-		if (userIndex === null) return;
-		const id = toast.loading('Trwa usuwanie profili zdającego...', {
-			autoClose: false,
-		});
-		try {
-			// Delete the user from your Firebase database
-			const userRef = doc(db, 'users', users[userIndex].id);
-			await deleteDoc(userRef);
+      // Reset oldTime when done editing quizTime
 
-			// Remove the existing toast before creating a new one
-			toast.dismiss(id);
+      setEditingIndex(null);
+      setEditingField(null);
+    }
+  };
+  useEffect(() => {
+    if (editingIndex !== null && editingField !== null) {
+      // Add event listener when the input field is being edited
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      // Remove event listener when the input field is not being edited
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
 
-			// Create a new toast to indicate successful deletion
-			const successId = toast.success(
-				'Usuwanie zdającego zakończone z powodzeniem',
-				{
-					autoClose: 1000, // Close the success message after 3 seconds
-				}
-			);
+    // Cleanup function
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [editingIndex, editingField]);
 
-			// Fetch the updated list of users from Firebase
-			fetchData();
-		} catch (error) {
-			// Display an error toast if the deletion fails
-			toast.error('Błąd podczas usuwania zdającego: ' + error.message, {
-				autoClose: 5000, // Close the error message after 5 seconds
-			});
-		}
-	};
+  const handleClickOutside = (event, field) => {
+    if (event.target.tagName !== "INPUT" && event.target.tagName !== "SELECT") {
+      setEditingIndex(null);
+      setEditingField(null);
+    }
+  };
 
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [userIndex, setUserIndex] = useState(null);
+  const handleDelete = (index) => {
+    // Calculate the index of the user in the `users` array
+    const userIndex = usersPerPage * (currentPage - 1) + index;
+    setUserIndex(userIndex);
+    setModalIsOpen(true);
+  };
 
-	const handleInputChange = (event, index, field) => {
-		setEditingValue(event.target.value);
-		const userIndex = usersPerPage * (currentPage - 1) + index;
+  const deleteUser = async () => {
+    if (userIndex === null) return;
+    const id = toast.loading("Trwa usuwanie profili zdającego...", {
+      autoClose: false,
+    });
+    try {
+      // Delete the user from your Firebase database
+      const userRef = doc(db, "users", users[userIndex].id);
+      await deleteDoc(userRef);
 
-		const newUsers = [...users];
-		newUsers[userIndex][field] = event.target.value;
-		setUsers(newUsers);
-	};
+      // Remove the existing toast before creating a new one
+      toast.dismiss(id);
 
-	const handleSelectBlur = async (index, field) => {
-		// Calculate the index of the user in the `users` array
-		const userIndex = usersPerPage * (currentPage - 1) + index;
+      // Create a new toast to indicate successful deletion
+      const successId = toast.success(
+        "Usuwanie zdającego zakończone z powodzeniem",
+        {
+          autoClose: 1000, // Close the success message after 3 seconds
+        }
+      );
 
-		// Update the data in your Firebase database
-		try {
-			const userRef = doc(db, 'users', users[userIndex].id);
-			await updateDoc(userRef, { [field]: users[userIndex][field] });
-		} catch (error) {
-			console.error('Error updating document: ', error);
-		}
+      // Fetch the updated list of users from Firebase
+      fetchData();
+    } catch (error) {
+      // Display an error toast if the deletion fails
+      toast.error("Błąd podczas usuwania zdającego: " + error.message, {
+        autoClose: 5000, // Close the error message after 5 seconds
+      });
+    }
+  };
 
-		if (field === 'quizID') {
-			setEditingIndex(null);
-			setEditingField(null);
-		}
-	};
-	const [sortField, setSortField] = useState(null);
-	const [sortDirection, setSortDirection] = useState('asc');
+  const handleInputChange = (event, index, field) => {
+    setEditingValue(event.target.value);
+    const userIndex = usersPerPage * (currentPage - 1) + index;
 
-	const handleSort = (field) => {
-		let direction = 'asc';
-		if (sortField === field && sortDirection === 'asc') {
-			direction = 'desc';
-		}
-		setSortField(field);
-		setSortDirection(direction);
-	};
+    const newUsers = [...users];
+    newUsers[userIndex][field] = event.target.value;
+    setUsers(newUsers);
+  };
 
-	useEffect(() => {
-		let sortedUsers = [...users];
-		if (sortField !== null) {
-			sortedUsers.sort((a, b) => {
-				if (a[sortField] < b[sortField]) {
-					return sortDirection === 'asc' ? -1 : 1;
-				}
-				if (a[sortField] > b[sortField]) {
-					return sortDirection === 'asc' ? 1 : -1;
-				}
-				return 0;
-			});
-		}
-		setUsers(sortedUsers);
-	}, [sortField, sortDirection]);
+  const handleSelectBlur = async (index, field) => {
+    // Calculate the index of the user in the `users` array
+    const userIndex = usersPerPage * (currentPage - 1) + index;
 
-	const [selectedUsers, setSelectedUsers] = useState([]);
-	const [lpSortDirection, setLpSortDirection] = useState('asc');
-	const [selectAll, setSelectAll] = useState(false);
-	const [deleteModalIsOpen, setDeleteModalIsOpen] = useState(false);
+    // Update the data in your Firebase database
+    try {
+      const userRef = doc(db, "users", users[userIndex].id);
+      await updateDoc(userRef, { [field]: users[userIndex][field] });
+    } catch (error) {
+      console.error("Error updating document: ", error);
+    }
 
-	const deleteSelectedUsers = async () => {
-		for (const id of selectedUsers) {
-			try {
-				// Delete the user from your Firebase database
-				const userRef = doc(db, 'users', id);
-				await deleteDoc(userRef);
-				const successId = toast.success(
-					'Usuwanie zdającego zakończone z powodzeniem',
-					{
-						autoClose: 1000, // Close the success message after 3 seconds
-					}
-				);
-			} catch (error) {
-				toast.error('Błąd podczas usuwania zdającego: ' + error.message, {
-					autoClose: 5000, // Close the error message after 5 seconds
-				});
-			}
-		}
+    if (field === "quizID") {
+      setEditingIndex(null);
+      setEditingField(null);
+    }
+  };
+  const [sortField, setSortField] = useState(null);
+  const [sortDirection, setSortDirection] = useState("asc");
 
-		fetchData();
-		setSelectedUsers([]);
-	};
+  const handleSort = (field) => {
+    let direction = "asc";
+    if (sortField === field && sortDirection === "asc") {
+      direction = "desc";
+    }
+    setSortField(field);
+    setSortDirection(direction);
+  };
 
-	const updateAttemptUsers = async () => {
-		for (const id of selectedUsers) {
-			try {
-				// Update the user in your Firebase database
-				const userRef = doc(db, 'users', id);
-				await updateDoc(userRef, { attemptToSolve: 0 });
-			} catch (error) {
-				console.error('Error updating document: ', error);
-			}
-		}
-		fetchData();
-	};
+  useEffect(() => {
+    let sortedUsers = [...users];
+    if (sortField !== null) {
+      sortedUsers.sort((a, b) => {
+        if (a[sortField] < b[sortField]) {
+          return sortDirection === "asc" ? -1 : 1;
+        }
+        if (a[sortField] > b[sortField]) {
+          return sortDirection === "asc" ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    setUsers(sortedUsers);
+  }, [sortField, sortDirection]);
 
-	const deactiveAttemptUsers = async () => {
-		for (const id of selectedUsers) {
-			try {
-				// Update the user in your Firebase database
-				const userRef = doc(db, 'users', id);
-				await updateDoc(userRef, { attemptToSolve: 1 });
-			} catch (error) {
-				console.error('Error updating document: ', error);
-			}
-		}
-		fetchData();
-	};
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [lpSortDirection, setLpSortDirection] = useState("asc");
+  const [selectAll, setSelectAll] = useState(false);
+  const [deleteModalIsOpen, setDeleteModalIsOpen] = useState(false);
 
-	const [isFormVisible, setFormVisible] = useState(false);
-	const handleSave = (user) => {
-		toast.success('Zdający został poprawnie dodany!');
-		setFormVisible(false);
-	};
-	return (
-		<div className='mt-4'>
-			<table className='table table-striped'>
-				<thead>
-					<tr>
-						<th>
-							<input
-								type='checkbox'
-								className='form-check-input'
-								checked={selectAll}
-								onChange={() => {
-									setSelectAll(!selectAll);
-									if (!selectAll) {
-										setSelectedUsers(users.map((user) => user.id));
-									} else {
-										setSelectedUsers([]);
-									}
-								}}
-							/>
-						</th>
-						<th>lp</th>
-						<th onClick={() => handleSort('firstname')}>Imię</th>
-						<th onClick={() => handleSort('lastname')}>Nazwisko</th>
-						<th onClick={() => handleSort('login')}>Login</th>
-						<th onClick={() => handleSort('password')}>Hasło</th>
-						<th onClick={() => handleSort('profession')}>Zawód</th>
-						<th onClick={() => handleSort('class')}>Klasa</th>
-						<th onClick={() => handleSort('quizID')}>Przypisz arkusz</th>
-						<th onClick={() => handleSort('quizTime')}>Czas egzaminu</th>
-						<th onClick={() => handleSort('attemptToSolve')}>
-							Dostęp do arkusza
-						</th>
-						<th>
-							<div style={{ textAlign: 'center' }}>
-								<FontAwesomeIcon icon='fa-solid fa-trash-can' />
-							</div>
-						</th>
-					</tr>
-				</thead>
-				<tbody>
-					{currentUsers.map((user, index) => (
-						<tr key={index} onClick={() => handleRowClick(user)}>
-							<td>
-								<input
-									className='form-check-input'
-									type='checkbox'
-									checked={selectedUsers.includes(user.id)}
-									onChange={() => {
-										if (selectedUsers.includes(user.id)) {
-											setSelectedUsers(
-												selectedUsers.filter((id) => id !== user.id)
-											);
-										} else {
-											setSelectedUsers([...selectedUsers, user.id]);
-										}
-									}}
-								/>
-							</td>
-							<td>
-								{lpSortDirection === 'asc'
-									? (currentPage - 1) * usersPerPage + index + 1
-									: filteredUsers.length -
-									  ((currentPage - 1) * usersPerPage + index)}
-							</td>
-							<td
-								onClick={() =>
-									handleDoubleClick(index, 'firstname', user.firstname)
-								}
-							>
-								{editingIndex === index && editingField === 'firstname' ? (
-									<input
-										className='form-control'
-										type='text'
-										style={{ width: '80%' }}
-										value={editingValue}
-										onChange={handleInputChange}
-										onKeyDown={(e) => handleKeyDown(e, index, 'firstname')}
-									/>
-								) : (
-									user.firstname
-								)}
-							</td>
-							<td
-								onClick={() =>
-									handleDoubleClick(index, 'lastname', user.lastname)
-								}
-							>
-								{editingIndex === index && editingField === 'lastname' ? (
-									<input
-										type='text'
-										className='form-control'
-										style={{ width: '80%' }}
-										value={editingValue}
-										onChange={handleInputChange}
-										onKeyDown={(e) => handleKeyDown(e, index, 'lastname')}
-									/>
-								) : (
-									user.lastname
-								)}
-							</td>
+  const deleteSelectedUsers = async () => {
+    for (const id of selectedUsers) {
+      try {
+        // Delete the user from your Firebase database
+        const userRef = doc(db, "users", id);
+        await deleteDoc(userRef);
+        const successId = toast.success(
+          "Usuwanie zdającego zakończone z powodzeniem",
+          {
+            autoClose: 1000, // Close the success message after 3 seconds
+          }
+        );
+      } catch (error) {
+        toast.error("Błąd podczas usuwania zdającego: " + error.message, {
+          autoClose: 5000, // Close the error message after 5 seconds
+        });
+      }
+    }
 
-							<td className='text-success font-weight-bold'>{user.login}</td>
-							<td className='text-success font-weight-bold'>{user.password}</td>
-							<td>
-								{editingIndex === index && editingField === 'profession' ? (
-									<select
-										className='form-select'
-										style={{ width: '100%' }}
-										value={editingValue}
-										onChange={async (e) => {
-											await handleInputChange(e, index, 'profession');
-											await handleSelectBlur(index, 'profession');
-										}}
-									>
-										{profession.map((code, i) => (
-											<option key={i} value={code}>
-												{code}
-											</option>
-										))}
-									</select>
-								) : (
-									<span
-										onClick={() =>
-											handleDoubleClick(index, 'profession', user.profession)
-										}
-									>
-										{user.profession || 'Przypisz zawód'}
-									</span>
-								)}
-							</td>
-							<td onClick={() => handleDoubleClick(index, 'class', user.class)}>
-								{editingIndex === index && editingField === 'class' ? (
-									<input
-										type='text'
-										className='form-control'
-										style={{ width: '80%' }}
-										value={editingValue}
-										onChange={handleInputChange}
-										onKeyDown={(e) => handleKeyDown(e, index, 'class')}
-									/>
-								) : (
-									user.class
-								)}
-							</td>
-							<td>
-								{editingIndex === index && editingField === 'quizID' ? (
-									<select
-										className='form-select'
-										style={{ width: '105%' }}
-										value={editingValue}
-										onChange={async (e) => {
-											await handleInputChange(e, index, 'quizID');
-											await handleSelectBlur(index, 'quizID');
-										}}
-									>
-										{quizCodes.map((code, i) => (
-											<option key={i} value={code}>
-												{code}
-											</option>
-										))}
-									</select>
-								) : (
-									<span
-										onClick={() =>
-											handleDoubleClick(index, 'quizID', user.quizID)
-										}
-									>
-										{user.quizID || 'Przypisz egzamin'}
-									</span>
-								)}
-							</td>
+    fetchData();
+    setSelectedUsers([]);
+  };
 
-							<td
-								onClick={() =>
-									handleDoubleClick(index, 'quizTime', user.quizTime)
-								}
-							>
-								{editingIndex === index && editingField === 'quizTime' ? (
-									<input
-										id='typeNumber'
-										type='number'
-										min='0'
-										className='form-control'
-										style={{ width: '80%' }}
-										value={editingValue}
-										onChange={async (e) => {
-											await handleInputChange(e, index, 'quizTime');
-											await handleSelectBlur(index, 'quizTime');
-										}}
-										onKeyDown={(e) => handleKeyDown(e, index, 'quizTime')}
-									/>
-								) : (
-									user.quizTime
-								)}{' '}
-								min
-							</td>
+  const updateAttemptUsers = async () => {
+    for (const id of selectedUsers) {
+      try {
+        // Update the user in your Firebase database
+        const userRef = doc(db, "users", id);
+        await updateDoc(userRef, { attemptToSolve: 0 });
+      } catch (error) {
+        console.error("Error updating document: ", error);
+      }
+    }
+    fetchData();
+  };
 
-							<td>
-								{editingIndex === index && editingField === 'attemptToSolve' ? (
-									<select
-										className='form-select'
-										style={{ width: '100%' }}
-										value={editingValue}
-										onChange={async (e) => {
-											await handleInputChange(e, index, 'attemptToSolve');
-											await handleSelectBlur(index, 'attemptToSolve');
-										}}
-									>
-										<option value={0}>Tak</option>
-										<option value={1}>Nie</option>
-									</select>
-								) : (
-									<span
-										onClick={() =>
-											handleDoubleClick(
-												index,
-												'attemptToSolve',
-												user.attemptToSolve
-											)
-										}
-									>
-										{Number(user.attemptToSolve) === 0 ? 'Tak' : 'Nie'}
-									</span>
-								)}
-							</td>
-							<td>
-								<button
-									className='btn btn-danger'
-									onClick={() => handleDelete(index)}
-									disabled={selectedUsers.length > 1}
-								>
-									<FontAwesomeIcon icon='fa-solid fa-trash-can' />
-								</button>
-								<WindowConfirm
-									isOpen={modalIsOpen}
-									onClose={() => setModalIsOpen(false)}
-									title='Usuwanie zdającego'
-									windowText={`Czy napewno chcesz usunąć: ${users[userIndex]?.firstname} ${users[userIndex]?.lastname}?`}
-									onConfirm={() => {
-										setModalIsOpen(false);
-										deleteUser();
-									}}
-								/>
-							</td>
-						</tr>
-					))}
-				</tbody>
-			</table>
-			<button
-				className='btn btn-danger'
-				onClick={() => setDeleteModalIsOpen(true)}
-				disabled={selectedUsers.length === 0}
-			>
-				Usuń zaznaczonych zdających &nbsp;
-				<FontAwesomeIcon icon='fa-solid fa-trash-can' />
-			</button>{' '}
-			<button
-				className='btn btn-warning'
-				onClick={updateAttemptUsers}
-				disabled={selectedUsers.length === 0}
-			>
-				Aktywuj dostęp do arkuszy &nbsp;
-				<FontAwesomeIcon icon='fa-solid fa-file' />
-			</button>{' '}
-			<button
-				className='btn btn-secondary'
-				onClick={deactiveAttemptUsers}
-				disabled={selectedUsers.length === 0}
-			>
-				Zabroń dostępu do arkuszy &nbsp;
-				<FontAwesomeIcon icon='fa-solid fa-file-excel' />
-			</button>{' '}
-			<button
-				className='btn btn-success'
-				onClick={() => setFormVisible(!isFormVisible)}
-			>
-				{isFormVisible ? (
-					<>
-						Ukryj formularz <FontAwesomeIcon icon='fa-solid fa-user-minus' />
-					</>
-				) : (
-					<>
-						Dodaj zdającego <FontAwesomeIcon icon='fa-solid fa-user-plus' />
-					</>
-				)}
-				&nbsp;
-			</button>
-			{isFormVisible && (
-				<AddUserForm
-					onSave={handleSave}
-					examcode={quizCodes}
-					profession={profession}
-					refreshUsers={fetchData}
-				/>
-			)}
-			<WindowConfirm
-				isOpen={deleteModalIsOpen}
-				onClose={() => setDeleteModalIsOpen(false)}
-				title='Usuwanie zdającego'
-				windowText={
-					selectedUsers.length === 1
-						? `Czy napewno chcesz usunąć: ${
-								users.find((user) => user.id === selectedUsers[0])?.firstname
-						  } ${
-								users.find((user) => user.id === selectedUsers[0])?.lastname
-						  }?`
-						: `Czy napewno chcesz usunąć wszystkich zaznaczonych zdających?`
-				}
-				onConfirm={() => {
-					setDeleteModalIsOpen(false);
-					deleteSelectedUsers();
-				}}
-			/>
-			<div className='mt-4'>
-				<ToastContainer />
-			</div>
-			<Pagination
-				usersPerPage={usersPerPage}
-				totalUsers={filteredUsers.length}
-				paginate={paginate}
-			/>
-			<div style={{ height: 50 }}></div>
-		</div>
-	);
+  const deactiveAttemptUsers = async () => {
+    for (const id of selectedUsers) {
+      try {
+        // Update the user in your Firebase database
+        const userRef = doc(db, "users", id);
+        await updateDoc(userRef, { attemptToSolve: 1 });
+      } catch (error) {
+        console.error("Error updating document: ", error);
+      }
+    }
+    fetchData();
+  };
+
+  const [isFormVisible, setFormVisible] = useState(false);
+  const handleSave = (user) => {
+    toast.success("Zdający został poprawnie dodany!");
+    setFormVisible(false);
+  };
+  return (
+    <div className="mt-4">
+      <table className="table table-striped">
+        <thead>
+          <tr>
+            <th>
+              <input
+                type="checkbox"
+                className="form-check-input"
+                checked={selectAll}
+                onChange={() => {
+                  setSelectAll(!selectAll);
+                  if (!selectAll) {
+                    setSelectedUsers(users.map((user) => user.id));
+                  } else {
+                    setSelectedUsers([]);
+                  }
+                }}
+              />
+            </th>
+            <th>lp</th>
+            <th onClick={() => handleSort("firstname")}>Imię</th>
+            <th onClick={() => handleSort("lastname")}>Nazwisko</th>
+            <th onClick={() => handleSort("login")}>Login</th>
+            <th onClick={() => handleSort("password")}>Hasło</th>
+            <th onClick={() => handleSort("profession")}>Zawód</th>
+            <th onClick={() => handleSort("class")}>Klasa</th>
+            <th onClick={() => handleSort("quizID")}>Przypisz arkusz</th>
+            <th onClick={() => handleSort("quizTime")}>Czas egzaminu</th>
+            <th onClick={() => handleSort("attemptToSolve")}>
+              Dostęp do arkusza
+            </th>
+            <th>
+              <div style={{ textAlign: "center" }}>
+                <FontAwesomeIcon icon="fa-solid fa-trash-can" />
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {currentUsers.map((user, index) => (
+            <tr key={index} onClick={() => handleRowClick(user)}>
+              <td>
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  checked={selectedUsers.includes(user.id)}
+                  onChange={() => {
+                    if (selectedUsers.includes(user.id)) {
+                      setSelectedUsers(
+                        selectedUsers.filter((id) => id !== user.id)
+                      );
+                    } else {
+                      setSelectedUsers([...selectedUsers, user.id]);
+                    }
+                  }}
+                />
+              </td>
+              <td>
+                {lpSortDirection === "asc"
+                  ? (currentPage - 1) * usersPerPage + index + 1
+                  : filteredUsers.length -
+                    ((currentPage - 1) * usersPerPage + index)}
+              </td>
+              <td
+                onClick={() =>
+                  handleDoubleClick(index, "firstname", user.firstname)
+                }>
+                {editingIndex === index && editingField === "firstname" ? (
+                  <input
+                    className="form-control"
+                    type="text"
+                    style={{ width: "80%" }}
+                    value={editingValue}
+                    onChange={handleInputChange}
+                    onKeyDown={(e) => handleKeyDown(e, index, "firstname")}
+                  />
+                ) : (
+                  user.firstname
+                )}
+              </td>
+              <td
+                onClick={() =>
+                  handleDoubleClick(index, "lastname", user.lastname)
+                }>
+                {editingIndex === index && editingField === "lastname" ? (
+                  <input
+                    type="text"
+                    className="form-control"
+                    style={{ width: "80%" }}
+                    value={editingValue}
+                    onChange={handleInputChange}
+                    onKeyDown={(e) => handleKeyDown(e, index, "lastname")}
+                  />
+                ) : (
+                  user.lastname
+                )}
+              </td>
+
+              <td className="text-success font-weight-bold">{user.login}</td>
+              <td className="text-success font-weight-bold">{user.password}</td>
+              <td>
+                {editingIndex === index && editingField === "profession" ? (
+                  <select
+                    className="form-select"
+                    style={{ width: "100%" }}
+                    value={editingValue}
+                    onChange={async (e) => {
+                      await handleInputChange(e, index, "profession");
+                      await handleSelectBlur(index, "profession");
+                    }}>
+                    {profession.map((code, i) => (
+                      <option key={i} value={code}>
+                        {code}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span
+                    onClick={() =>
+                      handleDoubleClick(index, "profession", user.profession)
+                    }>
+                    {user.profession || "Przypisz zawód"}
+                  </span>
+                )}
+              </td>
+              <td onClick={() => handleDoubleClick(index, "class", user.class)}>
+                {editingIndex === index && editingField === "class" ? (
+                  <input
+                    type="text"
+                    className="form-control"
+                    style={{ width: "80%" }}
+                    value={editingValue}
+                    onChange={handleInputChange}
+                    onKeyDown={(e) => handleKeyDown(e, index, "class")}
+                  />
+                ) : (
+                  user.class
+                )}
+              </td>
+              <td>
+                {editingIndex === index && editingField === "quizID" ? (
+                  <select
+                    className="form-select"
+                    style={{ width: "105%" }}
+                    value={editingValue}
+                    onChange={async (e) => {
+                      await handleInputChange(e, index, "quizID");
+                      await handleSelectBlur(index, "quizID");
+                    }}>
+                    {quizCodes.map((code, i) => (
+                      <option key={i} value={code}>
+                        {code}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span
+                    onClick={() =>
+                      handleDoubleClick(index, "quizID", user.quizID)
+                    }>
+                    {user.quizID || "Przypisz egzamin"}
+                  </span>
+                )}
+              </td>
+
+              <td
+                onClick={() =>
+                  handleDoubleClick(index, "quizTime", user.quizTime)
+                }>
+                {editingIndex === index && editingField === "quizTime" ? (
+                  <input
+                    id="typeNumber"
+                    type="number"
+                    min="0"
+                    className="form-control"
+                    style={{ width: "80%" }}
+                    value={editingValue}
+                    onChange={async (e) => {
+                      await handleInputChange(e, index, "quizTime");
+                      await handleSelectBlur(index, "quizTime");
+                    }}
+                    onKeyDown={(e) => handleKeyDown(e, index, "quizTime")}
+                  />
+                ) : (
+                  user.quizTime
+                )}{" "}
+                min
+              </td>
+
+              <td>
+                {editingIndex === index && editingField === "attemptToSolve" ? (
+                  <select
+                    className="form-select"
+                    style={{ width: "100%" }}
+                    value={editingValue}
+                    onChange={async (e) => {
+                      await handleInputChange(e, index, "attemptToSolve");
+                      await handleSelectBlur(index, "attemptToSolve");
+                    }}>
+                    <option value={0}>Tak</option>
+                    <option value={1}>Nie</option>
+                  </select>
+                ) : (
+                  <span
+                    onClick={() =>
+                      handleDoubleClick(
+                        index,
+                        "attemptToSolve",
+                        user.attemptToSolve
+                      )
+                    }>
+                    {Number(user.attemptToSolve) === 0 ? "Tak" : "Nie"}
+                  </span>
+                )}
+              </td>
+              <td>
+                <button
+                  className="btn btn-danger"
+                  onClick={() => handleDelete(index)}
+                  disabled={selectedUsers.length > 1}>
+                  <FontAwesomeIcon icon="fa-solid fa-trash-can" />
+                </button>
+                <WindowConfirm
+                  isOpen={modalIsOpen}
+                  onClose={() => setModalIsOpen(false)}
+                  title="Usuwanie zdającego"
+                  windowText={`Czy napewno chcesz usunąć: ${users[userIndex]?.firstname} ${users[userIndex]?.lastname}?`}
+                  onConfirm={() => {
+                    setModalIsOpen(false);
+                    deleteUser();
+                  }}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <button
+        className="btn btn-danger"
+        onClick={() => setDeleteModalIsOpen(true)}
+        disabled={selectedUsers.length === 0}>
+        Usuń zaznaczonych zdających &nbsp;
+        <FontAwesomeIcon icon="fa-solid fa-trash-can" />
+      </button>{" "}
+      <button
+        className="btn btn-warning"
+        onClick={updateAttemptUsers}
+        disabled={selectedUsers.length === 0}>
+        Aktywuj dostęp do arkuszy &nbsp;
+        <FontAwesomeIcon icon="fa-solid fa-file" />
+      </button>{" "}
+      <button
+        className="btn btn-secondary"
+        onClick={deactiveAttemptUsers}
+        disabled={selectedUsers.length === 0}>
+        Zabroń dostępu do arkuszy &nbsp;
+        <FontAwesomeIcon icon="fa-solid fa-file-excel" />
+      </button>{" "}
+      <button
+        className="btn btn-success"
+        onClick={() => setFormVisible(!isFormVisible)}>
+        {isFormVisible ? (
+          <>
+            Ukryj formularz <FontAwesomeIcon icon="fa-solid fa-user-minus" />
+          </>
+        ) : (
+          <>
+            Dodaj zdającego <FontAwesomeIcon icon="fa-solid fa-user-plus" />
+          </>
+        )}
+        &nbsp;
+      </button>
+      {isFormVisible && (
+        <AddUserForm
+          onSave={handleSave}
+          examcode={quizCodes}
+          profession={profession}
+          refreshUsers={fetchData}
+        />
+      )}
+      <WindowConfirm
+        isOpen={deleteModalIsOpen}
+        onClose={() => setDeleteModalIsOpen(false)}
+        title="Usuwanie zdającego"
+        windowText={
+          selectedUsers.length === 1
+            ? `Czy napewno chcesz usunąć: ${
+                users.find((user) => user.id === selectedUsers[0])?.firstname
+              } ${
+                users.find((user) => user.id === selectedUsers[0])?.lastname
+              }?`
+            : `Czy napewno chcesz usunąć wszystkich zaznaczonych zdających?`
+        }
+        onConfirm={() => {
+          setDeleteModalIsOpen(false);
+          deleteSelectedUsers();
+        }}
+      />
+      <div className="mt-4">
+        <ToastContainer />
+      </div>
+      <Pagination
+        usersPerPage={usersPerPage}
+        totalUsers={filteredUsers.length}
+        paginate={paginate}
+      />
+      <div style={{ height: 50 }}></div>
+    </div>
+  );
 };
 
 export default RaportExam;

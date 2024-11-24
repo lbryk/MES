@@ -5,6 +5,7 @@ import {
   setDoc,
   deleteDoc,
   doc,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -23,61 +24,64 @@ const ShowProfessions = () => {
   const [isBulkDelete, setIsBulkDelete] = useState(false);
   const [disableActionButtons, setDisableActionButtons] = useState(false);
 
-  useEffect(() => {
-    fetchProfessions();
-  }, []);
+  const fetchProfessions = () => {
+    const unsubscribe = onSnapshot(
+      collection(db, "professions"),
+      (snapshot) => {
+        const professionsData = snapshot.docs.map((doc, index) => ({
+          id: doc.id,
+          name: doc.data().name || doc.id,
+          index: index + 1,
+        }));
+        setProfessions(professionsData);
+      }
+    );
 
-  const fetchProfessions = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, "professions"));
-      const professionsData = querySnapshot.docs.map((doc, index) => ({
-        id: doc.id,
-        name: doc.data().name || doc.id,
-        index: index + 1,
-      }));
-      setProfessions(professionsData);
-    } catch (error) {
-      toast.error("Błąd podczas pobierania danych z kolekcji professions.");
-    }
+    return unsubscribe; // Funkcja do zakończenia nasłuchiwania
   };
+
+  useEffect(() => {
+    const unsubscribe = fetchProfessions(); // Rozpocznij nasłuchiwanie zmian
+    return () => unsubscribe(); // Wyłącz nasłuchiwanie po odmontowaniu komponentu
+  }, []);
 
   const handleDoubleClick = (index, currentName) => {
     setEditingIndex(index);
     setEditingValue(currentName);
   };
 
- const handleSaveEdit = async (oldId) => {
-   // Exit early if there's no change in the name
-   if (editingValue === oldId) {
-     setEditingIndex(null); // Exit editing mode
-     return;
-   }
+  const handleSaveEdit = async (oldId) => {
+    // Exit early if there's no change in the name
+    if (editingValue === oldId) {
+      setEditingIndex(null); // Exit editing mode
+      return;
+    }
 
-   // Check if the new name is a duplicate
-   const isDuplicate = await checkIfProfessionExists(editingValue, oldId);
-   if (isDuplicate) {
-     toast.error("Zawód już istnieje. Użyj innej nazwy.");
-     return;
-   }
+    // Check if the new name is a duplicate
+    const isDuplicate = await checkIfProfessionExists(editingValue, oldId);
+    if (isDuplicate) {
+      toast.error("Zawód już istnieje. Użyj innej nazwy.");
+      return;
+    }
 
-   try {
-     // Proceed with renaming the document if no duplicate found
-     const uniqueName = editingValue;
-     await setDoc(doc(db, "professions", uniqueName), { name: uniqueName });
-     await deleteDoc(doc(db, "professions", oldId));
-     fetchProfessions();
-     toast.success("Nazwa zawodu zaktualizowana");
-   } catch (error) {
-     toast.error("Błąd aktualizacji: " + error.message);
-   }
+    try {
+      // Proceed with renaming the document if no duplicate found
+      const uniqueName = editingValue;
+      await setDoc(doc(db, "professions", uniqueName), { name: uniqueName });
+      await deleteDoc(doc(db, "professions", oldId));
+      fetchProfessions();
+      toast.success("Nazwa zawodu zaktualizowana");
+    } catch (error) {
+      toast.error("Błąd aktualizacji: " + error.message);
+    }
 
-   setEditingIndex(null);
- };
+    setEditingIndex(null);
+  };
 
-const checkIfProfessionExists = async (name, excludeId = null) => {
-  const snapshot = await getDocs(collection(db, "professions"));
-  return snapshot.docs.some((doc) => doc.id === name && doc.id !== excludeId);
-};
+  const checkIfProfessionExists = async (name, excludeId = null) => {
+    const snapshot = await getDocs(collection(db, "professions"));
+    return snapshot.docs.some((doc) => doc.id === name && doc.id !== excludeId);
+  };
 
   const handleDeleteClick = (id) => {
     setProfessionToDelete(id);
@@ -112,12 +116,12 @@ const checkIfProfessionExists = async (name, excludeId = null) => {
   };
 
   const handleBulkDelete = async () => {
- if (selectedProfessions.length === 0) {
-   toast.warning("Wybierz przynajmniej jeden zawód do usunięcia.");
-   return;
- }
- setIsBulkDelete(true); // Bulk delete mode
- setModalIsOpen(true);
+    if (selectedProfessions.length === 0) {
+      toast.warning("Wybierz przynajmniej jeden zawód do usunięcia.");
+      return;
+    }
+    setIsBulkDelete(true); // Bulk delete mode
+    setModalIsOpen(true);
   };
 
   const handleAddProfession = async () => {

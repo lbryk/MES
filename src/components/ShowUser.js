@@ -9,7 +9,7 @@ import {
   doc,
   updateDoc,
   deleteDoc,
-  getDoc,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import Pagination from "./Pagination";
@@ -32,14 +32,19 @@ library.add(faTrashCan, faFileExcel, faFile, faUserPlus, faUserMinus, faPrint);
 
 const ShowUser = ({ refreshKey }) => {
   const [originalUsers, setOriginalUsers] = useState([]);
-  const fetchData = async () => {
-    const data = await getDocs(collection(db, "users"));
-    // setUsers(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-    const usersData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-    setUsers(usersData);
-    // setOriginalUsers(usersData);
 
-  };
+const fetchData = () => {
+  const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
+    const usersData = snapshot.docs.map((doc) => ({
+      ...doc.data(),
+      id: doc.id,
+    }));
+    setUsers(usersData);
+  });
+
+  // Zwróć funkcję do zatrzymania nasłuchiwania w razie potrzeby
+  return unsubscribe;
+};
 
   const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -47,20 +52,26 @@ const ShowUser = ({ refreshKey }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [oldTime, setOldTime] = useState(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+useEffect(() => {
+  const unsubscribe = fetchData(); // Rozpocznij nasłuchiwanie zmian
+  return () => unsubscribe(); // Wyłącz nasłuchiwanie po odmontowaniu komponentu
+}, []);
 
   const [quizCodes, setQuizCodes] = useState([]);
 
-  useEffect(() => {
-    const fetchQuizCodes = async () => {
-      const querySnapshot = await getDocs(collection(db, "quizCode"));
-      const codes = querySnapshot.docs.map((doc) => doc.id);
-      setQuizCodes(codes);
-    };
-    fetchQuizCodes();
-  }, [refreshKey]);
+const fetchQuizCodes = () => {
+  const unsubscribe = onSnapshot(collection(db, "quizCode"), (snapshot) => {
+    const codes = snapshot.docs.map((doc) => doc.id);
+    setQuizCodes(codes);
+  });
+
+  return unsubscribe;
+};
+
+useEffect(() => {
+  const unsubscribe = fetchQuizCodes();
+  return () => unsubscribe();
+}, [refreshKey]);
 
   const [profession, setfetchProfession] = useState([]);
   useEffect(() => {

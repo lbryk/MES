@@ -10,6 +10,7 @@ import {
   updateDoc,
   deleteDoc,
   getDoc,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import Pagination from "./Pagination";
@@ -33,12 +34,18 @@ library.add(faTrashCan, faFileExcel, faFile, faUserPlus, faUserMinus);
 
 const ShowAdmins = ({ currentUserId }) => {
   const [originalUsers, setOriginalUsers] = useState([]);
-  const fetchData = async () => {
-    const data = await getDocs(collection(db, "users"));
-    // setUsers(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-    const usersData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-    setUsers(usersData);
-    setOriginalUsers(usersData);
+
+  const fetchData = () => {
+    const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
+      const usersData = snapshot.docs.map((doc) => ({
+        ...doc.data(),
+        id: doc.id,
+      }));
+      setUsers(usersData);
+      setOriginalUsers(usersData);
+    });
+
+    return unsubscribe; // Funkcja do zakończenia nasłuchiwania
   };
 
   const [users, setUsers] = useState([]);
@@ -47,17 +54,22 @@ const ShowAdmins = ({ currentUserId }) => {
   const [selectedUser, setSelectedUser] = useState(null);
 
   useEffect(() => {
-    fetchData();
+    const unsubscribe = fetchData(); // Rozpocznij nasłuchiwanie zmian
+    return () => unsubscribe(); // Wyłącz nasłuchiwanie po odmontowaniu komponentu
   }, []);
 
   const [profession, setfetchProfession] = useState([]);
+
   useEffect(() => {
-    const fetchProfession = async () => {
-      const querySnapshot = await getDocs(collection(db, "professions"));
-      const codes = querySnapshot.docs.map((doc) => doc.id);
-      setfetchProfession(codes);
-    };
-    fetchProfession();
+    const unsubscribe = onSnapshot(
+      collection(db, "professions"),
+      (snapshot) => {
+        const codes = snapshot.docs.map((doc) => doc.id);
+        setfetchProfession(codes);
+      }
+    );
+
+    return () => unsubscribe(); // Wyłącz subskrypcję po odmontowaniu komponentu
   }, []);
 
   const [suggestionsFirstName, setSuggestionsFirstName] = useState([]);

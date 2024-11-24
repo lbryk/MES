@@ -7,6 +7,7 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import Pagination from "./Pagination";
@@ -41,12 +42,18 @@ library.add(
 const RaportExam = ({ quizCodesData }) => {
   const [originalUsers, setOriginalUsers] = useState([]);
   const [selectedQuizCode, setSelectedQuizCode] = useState("URFvzAVO"); // inicjalizacja z kodem testu
-  const fetchData = async () => {
-    const data = await getDocs(collection(db, "users"));
-    // setUsers(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-    const usersData = data.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-    setUsers(usersData);
-    setOriginalUsers(usersData);
+
+  const fetchData = () => {
+    const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
+      const usersData = snapshot.docs.map((doc) => ({
+        ...doc.data(),
+        id: doc.id,
+      }));
+      setUsers(usersData);
+      setOriginalUsers(usersData);
+    });
+
+    return unsubscribe; // Funkcja do zakończenia nasłuchiwania
   };
 
   const [users, setUsers] = useState([]);
@@ -55,18 +62,20 @@ const RaportExam = ({ quizCodesData }) => {
   const [selectedUser, setSelectedUser] = useState(null);
 
   useEffect(() => {
-    fetchData();
+    const unsubscribe = fetchData(); // Rozpocznij nasłuchiwanie zmian
+    return () => unsubscribe(); // Wyłącz nasłuchiwanie po odmontowaniu komponentu
   }, []);
+
 
   const [quizCodes, setQuizCodes] = useState([]);
 
   useEffect(() => {
-    const fetchQuizCodes = async () => {
-      const querySnapshot = await getDocs(collection(db, "quizCode"));
-      const codes = querySnapshot.docs.map((doc) => doc.id);
+    const unsubscribe = onSnapshot(collection(db, "quizCode"), (snapshot) => {
+      const codes = snapshot.docs.map((doc) => doc.id);
       setQuizCodes(codes);
-    };
-    fetchQuizCodes();
+    });
+
+    return () => unsubscribe(); // Wyłącz subskrypcję po odmontowaniu komponentu
   }, []);
 
   useEffect(() => {
@@ -74,14 +83,19 @@ const RaportExam = ({ quizCodesData }) => {
   }, [selectedQuizCode]);
 
   const [profession, setfetchProfession] = useState([]);
+
   useEffect(() => {
-    const fetchProfession = async () => {
-      const querySnapshot = await getDocs(collection(db, "professions"));
-      const codes = querySnapshot.docs.map((doc) => doc.id);
-      setfetchProfession(codes);
-    };
-    fetchProfession();
+    const unsubscribe = onSnapshot(
+      collection(db, "professions"),
+      (snapshot) => {
+        const codes = snapshot.docs.map((doc) => doc.id);
+        setfetchProfession(codes);
+      }
+    );
+
+    return () => unsubscribe(); // Wyłącz subskrypcję po odmontowaniu komponentu
   }, []);
+
   // Get current users
   const filteredUsers = users.filter(
     (user) =>

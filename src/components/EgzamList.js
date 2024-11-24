@@ -3,7 +3,13 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle";
 import { Button, Badge, Collapse } from "react-bootstrap";
 import { db } from "../firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  onSnapshot,
+} from "firebase/firestore";
 import AppContext from "./AppContext";
 import Pagination from "./Pagination";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -24,11 +30,10 @@ const ExamList = ({ refreshKey }) => {
   const [expandedExams, setExpandedExams] = useState({});
   const { userName } = useContext(AppContext);
 
-  const fetchExams = async () => {
-    try {
-      const q = query(collection(db, "quizCode"));
-      const querySnapshot = await getDocs(q);
-      const examsData = querySnapshot.docs.map((doc) => {
+  const fetchExams = () => {
+    const q = query(collection(db, "quizCode"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const examsData = snapshot.docs.map((doc) => {
         const exam = {
           id: doc.id,
           name: doc.id,
@@ -52,13 +57,14 @@ const ExamList = ({ refreshKey }) => {
         exam.autors.includes(userName)
       );
       setExams(filteredExams);
-    } catch (error) {
-      console.error("Error fetching exams: ", error);
-    }
+    });
+
+    return unsubscribe; // Zwracamy funkcję do wyłączenia nasłuchiwania
   };
 
   useEffect(() => {
-    fetchExams();
+    const unsubscribe = fetchExams(); // Rozpocznij nasłuchiwanie zmian
+    return () => unsubscribe(); // Wyłącz nasłuchiwanie po odmontowaniu komponentu
   }, [refreshKey]);
 
   const handleSort = (field) => {
@@ -97,8 +103,6 @@ const ExamList = ({ refreshKey }) => {
     const previewWindow = window.open("", "_blank", "width=1000,height=800");
 
     try {
-
-
       // Pobierz pytania z kolekcji o nazwie exam.collectionName
       const questionsRef = collection(db, collectionName); // "collectionName" to nazwa kolekcji pytań
       const querySnapshot = await getDocs(questionsRef);
@@ -182,8 +186,7 @@ const ExamList = ({ refreshKey }) => {
                                 ${questions
                                   .map((q, index) => {
                                     // Sprawdzamy, która odpowiedź jest poprawna na podstawie pola "answer"
-                                    const correctAnswer =
-                                      q.answer;
+                                    const correctAnswer = q.answer;
                                     const getAnswerClass = (option) =>
                                       option === correctAnswer
                                         ? "correct-answer"
@@ -249,19 +252,19 @@ const ExamList = ({ refreshKey }) => {
     }
   };
 
-const handlePrintExam = async (collectionName, qualification) => {
-  try {
-    const questionsRef = collection(db, collectionName);
-    const querySnapshot = await getDocs(questionsRef);
+  const handlePrintExam = async (collectionName, qualification) => {
+    try {
+      const questionsRef = collection(db, collectionName);
+      const querySnapshot = await getDocs(questionsRef);
 
-    const questions = querySnapshot.docs
-      .map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
-      .sort((a, b) => parseInt(a.id) - parseInt(b.id));
+      const questions = querySnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .sort((a, b) => parseInt(a.id) - parseInt(b.id));
 
-    const printContent = `
+      const printContent = `
       <html>
       <head>
         <title>Wydruk egzaminu - ${collectionName}</title>
@@ -330,28 +333,24 @@ const handlePrintExam = async (collectionName, qualification) => {
       </html>
     `;
 
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "absolute";
-    iframe.style.top = "-10000px";
-    document.body.appendChild(iframe);
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "absolute";
+      iframe.style.top = "-10000px";
+      document.body.appendChild(iframe);
 
-    const iframeDoc = iframe.contentWindow || iframe.contentDocument;
-    iframeDoc.document.open();
-    iframeDoc.document.write(printContent);
-    iframeDoc.document.close();
+      const iframeDoc = iframe.contentWindow || iframe.contentDocument;
+      iframeDoc.document.open();
+      iframeDoc.document.write(printContent);
+      iframeDoc.document.close();
 
-    iframeDoc.focus();
-    iframeDoc.print();
+      iframeDoc.focus();
+      iframeDoc.print();
 
-    iframeDoc.onafterprint = () => document.body.removeChild(iframe);
-  } catch (error) {
-    console.error("Błąd podczas drukowania egzaminu:", error);
-  }
-};
-
-
-
-
+      iframeDoc.onafterprint = () => document.body.removeChild(iframe);
+    } catch (error) {
+      console.error("Błąd podczas drukowania egzaminu:", error);
+    }
+  };
 
   return (
     <div className="mt-4">

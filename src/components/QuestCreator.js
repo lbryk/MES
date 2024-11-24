@@ -22,15 +22,6 @@ const cleanContent = (content) => {
     .trim();
 };
 
-  // const cleanContent = (content) => {
-  //   return content
-  //     .replace(
-        // /<p>|<\/p>|<pre>|<\/pre>|<h1>|<\/h1>|<h2>|<\/h2>|<h3>|<\/h3>|<h4>|<\/h4>|<h5>|<\/h5>|<h6>|<\/h6>/g,
-        // ""
-  //     )
-  //     .trim();
-  // };
-
 const QuestCreator = ({ examName }) => {
   const editorRef = useRef(null);
   const { editorApiKey } = useContext(AppContext); // Context placeholder

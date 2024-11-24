@@ -40,6 +40,7 @@ import {
   setDoc,
   arrayUnion,
   writeBatch,
+  onSnapshot,
 } from "firebase/firestore";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -97,11 +98,10 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
     }
   };
 
-  const fetchExams = async () => {
-    try {
-      const q = query(collection(db, "quizCode"));
-      const querySnapshot = await getDocs(q);
-      const examsData = querySnapshot.docs.map((doc) => ({
+  const fetchExams = () => {
+    const q = query(collection(db, "quizCode"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const examsData = snapshot.docs.map((doc) => ({
         id: doc.id,
         name: doc.id,
         qualification: formatQualificationForDisplay(doc.data().Qualification),
@@ -124,52 +124,65 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
       }
       setExams(filteredExams);
       fetchExamDocCounts(filteredExams);
-    } catch (error) {
-      console.error("Error fetching exams: ", error);
-    }
-  };
-
-  const fetchUsers = async () => {
-    const q = query(collection(db, "users"), where("role", "in", ["a", "sa"]));
-    const querySnapshot = await getDocs(q);
-    const fetchedUsers = [];
-    querySnapshot.forEach((doc) => {
-      fetchedUsers.push({ id: doc.id, ...doc.data() });
     });
-    setAvailableUsers(fetchedUsers);
+
+    return unsubscribe;
   };
 
-  const fetchProfessionsAndQualifications = async () => {
-    try {
-      const professionsSnapshot = await getDocs(collection(db, "professions"));
-      const professionsData = {};
-      professionsSnapshot.forEach((doc) => {
-        professionsData[doc.id] = doc.data();
-      });
-      setProfessionsData(professionsData);
+  const fetchUsers = () => {
+    const q = query(collection(db, "users"), where("role", "in", ["a", "sa"]));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedUsers = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setAvailableUsers(fetchedUsers);
+    });
 
-      const qualificationsSnapshot = await getDocs(
-        collection(db, "qualificationName")
-      );
-      const qualificationData = {};
-      qualificationsSnapshot.forEach((doc) => {
-        qualificationData[doc.id] = doc.data();
-      });
-      setQualificationName(qualificationData);
-    } catch (error) {
-      console.error("Error fetching professions and qualifications: ", error);
-    }
+    return unsubscribe;
   };
 
-  useEffect(() => {
-    fetchUserRole();
-  }, [currentUser]);
+  const fetchProfessionsAndQualifications = () => {
+    const unsubscribeProfessions = onSnapshot(
+      collection(db, "professions"),
+      (snapshot) => {
+        const professionsData = {};
+        snapshot.docs.forEach((doc) => {
+          professionsData[doc.id] = doc.data();
+        });
+        setProfessionsData(professionsData);
+      }
+    );
+
+    const unsubscribeQualifications = onSnapshot(
+      collection(db, "qualificationName"),
+      (snapshot) => {
+        const qualificationData = {};
+        snapshot.docs.forEach((doc) => {
+          qualificationData[doc.id] = doc.data();
+        });
+        setQualificationName(qualificationData);
+      }
+    );
+
+    return () => {
+      unsubscribeProfessions();
+      unsubscribeQualifications();
+    };
+  };
 
   useEffect(() => {
     if (userRole && !isEditorVisible) {
-      fetchExams();
-      fetchUsers();
-      fetchProfessionsAndQualifications();
+      const unsubscribeExams = fetchExams();
+      const unsubscribeUsers = fetchUsers();
+      const unsubscribeProfessionsAndQualifications =
+        fetchProfessionsAndQualifications();
+
+      return () => {
+        unsubscribeExams();
+        unsubscribeUsers();
+        unsubscribeProfessionsAndQualifications();
+      };
     }
   }, [userRole, userName, updateKey, refreshKey]);
 
@@ -262,7 +275,6 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
     setTempDescription(description);
   };
 
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (editingDescriptionId !== null && !event.target.closest(`textarea`)) {
@@ -274,7 +286,7 @@ const ExamTable = ({ refreshKey, onExamCreated }) => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [editingDescriptionId, tempDescription]); 
+  }, [editingDescriptionId, tempDescription]);
 
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);

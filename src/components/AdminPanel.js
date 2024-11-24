@@ -23,7 +23,13 @@ import ShowQualifications from "./ShowQualifications";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { collection, getDocs, getDoc, doc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  getDoc,
+  doc,
+  onSnapshot,
+} from "firebase/firestore";
 import { db, remoteConfig } from "../firebase";
 import {
   getRemoteConfig,
@@ -44,30 +50,30 @@ const AdminPanel = () => {
   const { login, setLogin } = useContext(AppContext);
   const [refreshExams, setRefreshExams] = useState(0);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [productKey, setProductKey] = useState('brak numery seryjnego');
-  const [newAppVersion, setNewAppVersion] = useState('1.0.0');
+  const [productKey, setProductKey] = useState("brak numery seryjnego");
+  const [newAppVersion, setNewAppVersion] = useState("1.0.0");
 
   if (userName === "") {
     checkLogin(`/login`);
   }
 
-    const { setEditorApiKey } = useContext(AppContext); // Get the setter function from context
+  const { setEditorApiKey } = useContext(AppContext); // Get the setter function from context
 
-    useEffect(() => {
-      const fetchApiKey = async () => {
-        try {
-          const docRef = doc(db, "settings", "tinyMCE");
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            setEditorApiKey(docSnap.data().apiKey); // Set the API key in context
-          }
-        } catch (error) {
-          console.error("Klucz tinyMCE nie został załadowany", error);
+  useEffect(() => {
+    const fetchApiKey = async () => {
+      try {
+        const docRef = doc(db, "settings", "tinyMCE");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setEditorApiKey(docSnap.data().apiKey); // Set the API key in context
         }
-      };
+      } catch (error) {
+        console.error("Klucz tinyMCE nie został załadowany", error);
+      }
+    };
 
-      fetchApiKey();
-    }, [setEditorApiKey]);
+    fetchApiKey();
+  }, [setEditorApiKey]);
 
   useEffect(() => {
     const checkForUpdates = async () => {
@@ -75,7 +81,7 @@ const AdminPanel = () => {
         await fetchAndActivate(remoteConfig);
         const latestVersion = getValue(
           remoteConfig,
-          "latest_version",
+          "latest_version"
         ).asString();
 
         setProductKey(getValue(remoteConfig, "product_key").asString());
@@ -92,43 +98,46 @@ const AdminPanel = () => {
   }, []);
 
   useEffect(() => {
-    const fetchQuizCodes = async () => {
-      const querySnapshot = await getDocs(collection(db, "quizCode"));
+    const unsubscribe = onSnapshot(collection(db, "quizCode"), (snapshot) => {
       const codesData = {};
-      querySnapshot.docs.forEach((doc) => {
+      snapshot.docs.forEach((doc) => {
         codesData[doc.id] = doc.data();
       });
       setQuizCodesData(codesData);
-    };
-    fetchQuizCodes();
+    });
+
+    return () => unsubscribe(); // Wyłącz subskrypcję po odmontowaniu komponentu
   }, []);
 
   const [professionsData, setProfessionsData] = useState({});
 
-  useEffect(() => {
-    const fetchProfessions = async () => {
-      const querySnapshot = await getDocs(collection(db, "professions"));
-      const professions = {};
-      querySnapshot.docs.forEach((doc) => {
-        professions[doc.id] = doc.data();
-      });
-      setProfessionsData(professions);
-    };
-    fetchProfessions();
-  }, []);
+useEffect(() => {
+  const unsubscribe = onSnapshot(collection(db, "professions"), (snapshot) => {
+    const professions = {};
+    snapshot.docs.forEach((doc) => {
+      professions[doc.id] = doc.data();
+    });
+    setProfessionsData(professions);
+  });
+
+  return () => unsubscribe(); // Wyłącz subskrypcję po odmontowaniu komponentu
+}, []);
 
   const [qualificationNameData, setQualificationNameData] = useState({});
 
   useEffect(() => {
-    const fetchqualificationNameData = async () => {
-      const querySnapshot = await getDocs(collection(db, "qualificationName"));
-      const qualificationName = {};
-      querySnapshot.docs.forEach((doc) => {
-        qualificationName[doc.id] = doc.data();
-      });
-      setQualificationNameData(qualificationName);
-    };
-    fetchqualificationNameData();
+    const unsubscribe = onSnapshot(
+      collection(db, "qualificationName"),
+      (snapshot) => {
+        const qualificationName = {};
+        snapshot.docs.forEach((doc) => {
+          qualificationName[doc.id] = doc.data();
+        });
+        setQualificationNameData(qualificationName);
+      }
+    );
+
+    return () => unsubscribe(); // Wyłącz subskrypcję po odmontowaniu komponentu
   }, []);
 
   const handleRefreshExams = useCallback(() => {
