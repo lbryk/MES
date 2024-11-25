@@ -28,22 +28,36 @@ const ShowQualifications = () => {
   const [editingId, setEditingId] = useState(null);
   const editingAreaRef = useRef(null);
   const dropdownAreaRef = useRef(null);
+  const tableRef = useRef(null);
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [qualificationToDelete, setQualificationToDelete] = useState(null);
   const [editingValue, setEditingValue] = useState("");
+  const [editingField, setEditingField] = useState(null);
+
+  const formatDocumentName = (id) => {
+    return id.toLowerCase().replace(".", "");
+  };
 
   useEffect(() => {
     const unsubscribeQualifications = fetchQualifications();
     const unsubscribeProfessions = fetchProfessions();
 
-    document.addEventListener("mousedown", handleClickOutside);
+    // document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
       unsubscribeQualifications(); // Wyłącz nasłuchiwanie dla kwalifikacji
       unsubscribeProfessions(); // Wyłącz nasłuchiwanie dla zawodów
-      document.removeEventListener("mousedown", handleClickOutside);
+      // document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Funkcja obsługująca kliknięcie poza tabelą
+  const handleClickOutside = (event) => {
+    if (tableRef.current && !tableRef.current.contains(event.target)) {
+      setEditingId(null);
+      setEditingField(null);
+    }
+  };
 
   const fetchQualifications = () => {
     const unsubscribe = onSnapshot(
@@ -73,16 +87,26 @@ const ShowQualifications = () => {
     return unsubscribe; // Funkcja do zakończenia nasłuchiwania
   };
 
-  const handleClickOutside = (event) => {
-    if (
-      editingAreaRef.current &&
-      !editingAreaRef.current.contains(event.target) &&
-      dropdownAreaRef.current &&
-      !dropdownAreaRef.current.contains(event.target)
-    ) {
-      setEditingId(null); // Close the dropdown if clicked outside
+  useEffect(() => {
+    function handleBodyClick(event) {
+      // Sprawdzenie czy kliknięcie było poza obszarem tabeli oraz dropdown
+      if (
+        !tableRef.current.contains(event.target) &&
+        !event.target.closest(".dropdown-menu, .dropdown-toggle")
+      ) {
+        setEditingId(null);
+        setEditingField(null);
+      }
     }
-  };
+
+    // Dodanie nasłuchiwacza na kliknięcia w całym dokumencie
+    document.addEventListener("mousedown", handleBodyClick);
+
+    return () => {
+      // Usunięcie nasłuchiwacza
+      document.removeEventListener("mousedown", handleBodyClick);
+    };
+  }, []);
 
   const handleAddProfession = async (qualificationId, profession) => {
     const qualificationRef = doc(db, "qualificationName", qualificationId);
@@ -127,9 +151,12 @@ const ShowQualifications = () => {
       defaultProfession = professions[0]; // Pierwszy dokument w kolekcji professions
     }
 
+    const formattedName = formatDocumentName(newId);
+
     try {
       await setDoc(doc(db, "qualificationName", newId), {
         professions: [defaultProfession],
+        name: formattedName,
       });
       fetchQualifications(); // Odśwież dane
       toast.success("Dodano nową kwalifikację");
@@ -165,8 +192,9 @@ const ShowQualifications = () => {
     return `Czy na pewno chcesz usunąć kwalifikację: ${qualification?.id}?`;
   };
 
-  const handleDoubleClick = (id, currentName) => {
+  const handleDoubleClick = (id, field, currentName) => {
     setEditingId(id);
+    setEditingField(field); // Ustawienie, które pole jest edytowane
     setEditingValue(currentName);
   };
 
@@ -187,10 +215,13 @@ const ShowQualifications = () => {
         return;
       }
 
+      const formattedName = formatDocumentName(editingValue);
+
       // Zmień nazwę dokumentu w Firestore
       await setDoc(doc(db, "qualificationName", editingValue), {
         professions:
           qualifications.find((q) => q.id === oldId)?.professions || [],
+        name: formattedName,
       });
       await deleteDoc(doc(db, "qualificationName", oldId));
       fetchQualifications(); // Odśwież dane
@@ -213,6 +244,16 @@ const ShowQualifications = () => {
     }
   };
 
+  const handleClickProfessions = (id) => {
+    if (editingId === id && editingField === "professions") {
+      setEditingId(null);
+      setEditingField(null);
+    } else {
+      setEditingId(id);
+      setEditingField("professions");
+    }
+  };
+
   const renderProfessions = (qualification) => {
     return qualification.professions.map((profession, index) => (
       <Badge
@@ -226,23 +267,31 @@ const ShowQualifications = () => {
     ));
   };
 
+  const dropdownRef = useRef(null);
+
   const renderDropdown = (qualification) => {
-    return (
-      <DropdownButton
-        ref={dropdownAreaRef}
-        title="Dodaj zawód"
-        variant="success"
-        className="d-inline-block"
-        onSelect={(event) => handleAddProfession(qualification.id, event)}>
-        {professions
-          .filter((prof) => !qualification.professions.includes(prof))
-          .map((profession) => (
-            <Dropdown.Item key={profession} eventKey={profession}>
-              {profession}
-            </Dropdown.Item>
-          ))}
-      </DropdownButton>
-    );
+    if (editingId === qualification.id && editingField === "professions") {
+      return (
+        <DropdownButton
+          ref={dropdownRef}
+          title="Dodaj zawód"
+          variant="success"
+          className="flex"
+          onSelect={(event) => handleAddProfession(qualification.id, event)}
+          show={
+            editingId === qualification.id && editingField === "professions"
+          }>
+          {professions
+            .filter((prof) => !qualification.professions.includes(prof))
+            .map((profession) => (
+              <Dropdown.Item key={profession} eventKey={profession}>
+                {profession}
+              </Dropdown.Item>
+            ))}
+        </DropdownButton>
+      );
+    }
+    return null;
   };
 
   return (
@@ -264,9 +313,9 @@ const ShowQualifications = () => {
               <td>{index + 1}</td>
               <td
                 onDoubleClick={() =>
-                  handleDoubleClick(qualification.id, qualification.id)
+                  handleDoubleClick(qualification.id, "code", qualification.id)
                 }>
-                {editingId === qualification.id ? (
+                {editingId === qualification.id && editingField === "code" ? (
                   <input
                     type="text"
                     className="form-control"
@@ -281,10 +330,9 @@ const ShowQualifications = () => {
                   qualification.id
                 )}
               </td>
-              <td onClick={() => setEditingId(qualification.id)}>
+              <td onClick={() => handleClickProfessions(qualification.id)}>
                 {renderProfessions(qualification)}
-                {editingId === qualification.id &&
-                  renderDropdown(qualification)}
+                {renderDropdown(qualification)}
               </td>
               <td style={{ textAlign: "center" }}>
                 <button
