@@ -42,7 +42,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 library.add(faClose, faDownload);
 
 const AdminPanel = () => {
-  const currentVersion = "3.11.20"; // wersja aplikacji
+  const currentVersion = "3.02.25"; // wersja aplikacji
   const checkLogin = useNavigate();
   const { userRole, setUserRole } = useContext(AppContext);
   const [quizCodesData, setQuizCodesData] = useState({});

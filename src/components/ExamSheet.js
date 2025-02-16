@@ -111,7 +111,7 @@ const ExamSheet = ({ quizCodesData }) => {
     return () => unsubscribe(); // Wyłącz subskrypcję po odmontowaniu komponentu
   }, []);
   // Get current users
-  
+
   const filteredUsers = users.filter(
     (user) =>
       typeof user.role === "string" &&
@@ -146,9 +146,10 @@ const ExamSheet = ({ quizCodesData }) => {
   const handlePDFraport = async (group) => {
     if (group && group.quizID && quizCodesData[group.quizID]) {
       const data = quizCodesData[group.quizID];
+
       if (data && data.Qualification) {
         const qualification = data.Qualification;
-        generatePDF(group, qualification); // Pass user and qualification to generatePDF
+        generatePDF(group, qualification, data); // Pass user and qualification to generatePDF
       } else {
         console.error(
           "Qualification field is missing or invalid in the document data"
@@ -331,10 +332,10 @@ const ExamSheet = ({ quizCodesData }) => {
   const groupedUsersArray = Object.values(groupedUsers);
   const [open, setOpen] = useState({});
 
-  const generatePDF = (group, qualification) => {
+  const generatePDF = async (group, qualification, quizData) => {
     try {
       const docpdf = new jsPDF("p", "pt", "a4");
-
+      const qualification = quizData.Qualification;
       docpdf.addFileToVFS("Roboto-Regular.ttf", robotoBase64);
       docpdf.addFont("Roboto-Regular.ttf", "Roboto", "normal");
 
@@ -381,6 +382,47 @@ const ExamSheet = ({ quizCodesData }) => {
       });
       y += 180;
 
+      // Pobranie poprawnych odpowiedzi
+      const collectionName = `${qualification.toLowerCase().replace(".", "")}${
+        quizData.Year
+      }${quizData.Session}`;
+      const questionsRef = collection(db, collectionName);
+      const questionsSnapshot = await getDocs(questionsRef);
+
+      const correctAnswers = {};
+      questionsSnapshot.docs.forEach((doc) => {
+        correctAnswers[doc.id] = doc.data().answer;
+      });
+
+      // Liczenie błędnych odpowiedzi
+      const errorCounts = {};
+      group.users.forEach((user) => {
+        if (user.myAnswers) {
+          user.myAnswers.forEach((answer, index) => {
+            const questionNumber = Object.keys(correctAnswers)[index];
+            if (questionNumber && answer !== correctAnswers[questionNumber]) {
+              errorCounts[questionNumber] =
+                (errorCounts[questionNumber] || 0) + 1;
+            }
+          });
+        }
+      });
+
+      const rowsWrong = Object.entries(errorCounts).map(([question, count]) => [
+        question,
+        count,
+      ]);
+
+      if (rowsWrong.length > 0) {
+        docpdf.text(`Zestawienie błędnych odpowiedzi`, 20, y + 30);
+
+        docpdf.autoTable({
+          head: [["Numer pytania", "Liczba błędnych odpowiedzi"]],
+          body: rowsWrong,
+          styles: { font: "Roboto", fontSize: 10 },
+          startY: y + 50,
+        });
+      }
       docpdf.text(20, y, `Lista zdających:`);
       y += 20; // Add space after the inscription
 
@@ -445,11 +487,39 @@ const ExamSheet = ({ quizCodesData }) => {
     }
   };
 
-  const handleGroupPrint = (group) => {
+  const handleGroupPrint = async (group) => {
     if (group && group.quizID) {
       const data = quizCodesData[group.quizID];
       if (data && data.Qualification) {
         const qualification = data.Qualification;
+
+        // Pobranie poprawnych odpowiedzi
+        const collectionName = `${qualification
+          .toLowerCase()
+          .replace(".", "")}${data.Year}${data.Session}`;
+        const questionsRef = collection(db, collectionName);
+        const questionsSnapshot = await getDocs(questionsRef);
+
+        // Sortowanie i mapowanie poprawnych odpowiedzi
+        const correctAnswers = questionsSnapshot.docs.reduce((acc, doc) => {
+          acc[doc.id] = doc.data().answer;
+          return acc;
+        }, {});
+
+        // Liczenie błędnych odpowiedzi dla każdego pytania
+        const errorCounts = {};
+        group.users.forEach((user) => {
+          if (user.myAnswers) {
+            user.myAnswers.forEach((answer, index) => {
+              const questionNumber = Object.keys(correctAnswers)[index];
+              if (questionNumber && answer !== correctAnswers[questionNumber]) {
+                errorCounts[questionNumber] =
+                  (errorCounts[questionNumber] || 0) + 1;
+              }
+            });
+          }
+        });
+
         let iframe = document.createElement("iframe");
 
         // Set the iframe to be invisible
@@ -503,6 +573,28 @@ const ExamSheet = ({ quizCodesData }) => {
     ).toFixed(2)}</td>
 	</tr>
 </table><br />
+<h3>Zestawienie błędnych odpowiedzi:</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                <thead>
+                    <tr>
+                        <th style="border: 1px solid black; padding: 10px;">Numer pytania</th>
+                        <th style="border: 1px solid black; padding: 10px;">Liczba błędnych odpowiedzi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${Object.entries(errorCounts)
+                      .map(
+                        ([question, count]) => `
+                        <tr>
+                            <td style="border: 1px solid black; padding: 10px;">${question}</td>
+                            <td style="border: 1px solid black; padding: 10px;">${count}</td>
+                        </tr>
+                    `
+                      )
+                      .join("")}
+                </tbody>
+            </table>
+            <br />
 <p>Lista zdających:</p><br />
 <table style="width: 100%; border-collapse: collapse;">
 	<tr>
