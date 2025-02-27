@@ -24,6 +24,7 @@ import {
   faFilePdf,
   faPrint,
   faFilter,
+  faCalculator,
 } from "@fortawesome/free-solid-svg-icons";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -52,7 +53,8 @@ library.add(
   faUserMinus,
   faFilePdf,
   faPrint,
-  faFilter
+  faFilter,
+  faCalculator
 );
 
 const StyledBadge = styled(Badge)(({ theme }) => ({
@@ -857,6 +859,74 @@ const ExamSheet = ({ quizCodesData }) => {
     ),
   ].filter(Boolean);
 
+  // Funkcja przeliczająca ponownie arkusz
+  const recalculateExamResults = async (group) => {
+    try {
+      if (!group || !group.quizID) {
+        console.error("Brak informacji o arkuszu egzaminacyjnym.");
+        return;
+      }
+
+      const data = quizCodesData[group.quizID];
+      if (!data || !data.Qualification) {
+        console.error("Brak informacji o kwalifikacji egzaminacyjnej.");
+        return;
+      }
+
+      const qualification = data.Qualification;
+
+      // Pobranie poprawnych odpowiedzi z Firebase
+      const collectionName = `${qualification.toLowerCase().replace(".", "")}${
+        data.Year
+      }${data.Session}`;
+      const questionsRef = collection(db, collectionName);
+      const questionsSnapshot = await getDocs(questionsRef);
+
+      // Mapowanie poprawnych odpowiedzi
+      const correctAnswers = {};
+      questionsSnapshot.docs.forEach((doc) => {
+        correctAnswers[doc.id] = doc.data().answer;
+      });
+
+      // Iteracja po wszystkich zdających i przeliczenie wyników
+      const updates = group.users.map(async (user) => {
+        if (!user.login) return;
+
+        const userDocRef = doc(db, "users", `user${user.login}`);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) return;
+
+        const myAnswers = userDoc.data().myAnswers || [];
+
+        // Przeliczanie poprawnych odpowiedzi
+        let correctCount = 0;
+        myAnswers.forEach((answer, index) => {
+          const questionNumber = Object.keys(correctAnswers)[index];
+          if (questionNumber && answer === correctAnswers[questionNumber]) {
+            correctCount += 1;
+          }
+        });
+
+        const totalQuestions = Object.keys(correctAnswers).length;
+        const percentResult =
+          totalQuestions > 0 ? (correctCount / totalQuestions) * 100 : 0;
+
+        // Aktualizacja wyniku ucznia w bazie danych
+        await updateDoc(userDocRef, {
+          quizResult: correctCount,
+          percentResult: percentResult.toFixed(2),
+        });
+      });
+
+      await Promise.all(updates);
+      toast.success("Wyniki egzaminu zostały ponownie przeliczone.");
+    } catch (error) {
+      console.error("Błąd podczas przeliczania wyników egzaminu:", error);
+      toast.error("Wystąpił błąd podczas ponownego przeliczania wyników.");
+    }
+  };
+
   return (
     <div className="mt-4">
       <div className="row d-flex align-items-center">
@@ -1057,6 +1127,13 @@ const ExamSheet = ({ quizCodesData }) => {
                         // onClick={() => handlePDFraport(selectedUser)}
                       >
                         <FontAwesomeIcon icon="fa-solid fa-file-pdf" />
+                      </button>
+                      &nbsp;
+                      <button
+                        className="btn btn-success"
+                        title="Przelicz ponownie egzamin zdającym"
+                        onClick={() => recalculateExamResults(group)}>
+                        <FontAwesomeIcon icon="fa-solid fa-calculator" />
                       </button>
                     </td>
                   </tr>
